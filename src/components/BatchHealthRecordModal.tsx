@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { X, Plus, Trash2, Upload, Download, Heart, Activity, Droplets, Scale, User, Calendar, Clock } from 'lucide-react';
+import React, { useState, useRef, useEffect } from 'react';
+import { X, Plus, Trash2, Upload, Heart, Activity, Droplets, Scale, User, Calendar, Clock } from 'lucide-react';
 import { usePatients } from '../context/PatientContext';
 
 interface BatchHealthRecordModalProps {
@@ -38,6 +38,17 @@ const BatchHealthRecordModal: React.FC<BatchHealthRecordModalProps> = ({ onClose
   ]);
   const [isUploading, setIsUploading] = useState(false);
   const [uploadResults, setUploadResults] = useState<{ success: number; failed: number; errors: string[] } | null>(null);
+  const recordsContainerRef = useRef<HTMLDivElement>(null);
+
+  // Scroll to bottom when records change
+  useEffect(() => {
+    if (recordsContainerRef.current) {
+      recordsContainerRef.current.scrollTo({
+        top: recordsContainerRef.current.scrollHeight,
+        behavior: 'smooth'
+      });
+    }
+  }, [records]);
 
   const getTypeIcon = (type: string) => {
     switch (type) {
@@ -96,7 +107,6 @@ const BatchHealthRecordModal: React.FC<BatchHealthRecordModalProps> = ({ onClose
       errors.push('請填寫記錄時間');
     }
 
-    // 根據記錄類型驗證必填欄位
     if (recordType === '生命表徵') {
       const hasVitalSign = record.血壓收縮壓 || record.血壓舒張壓 || record.脈搏 ||
         record.體溫 || record.血含氧量 || record.呼吸頻率;
@@ -168,7 +178,6 @@ const BatchHealthRecordModal: React.FC<BatchHealthRecordModalProps> = ({ onClose
       });
 
       if (failedCount === 0) {
-        // 全部成功，3秒後自動關閉
         setTimeout(() => {
           onClose();
         }, 3000);
@@ -199,7 +208,6 @@ const BatchHealthRecordModal: React.FC<BatchHealthRecordModalProps> = ({ onClose
 
     headers = [...headers, '備註', '記錄人員'];
 
-    // 創建範例資料
     const exampleData = patients.slice(0, 3).map(patient => {
       let row = [
         patient.床號,
@@ -220,7 +228,6 @@ const BatchHealthRecordModal: React.FC<BatchHealthRecordModalProps> = ({ onClose
       return row;
     });
 
-    // 生成 CSV 內容
     const csvContent = [
       `"${recordType}批量上傳範本"`,
       `"生成日期: ${new Date().toLocaleDateString('zh-TW')}"`,
@@ -229,7 +236,6 @@ const BatchHealthRecordModal: React.FC<BatchHealthRecordModalProps> = ({ onClose
       ...exampleData.map(row => row.map(cell => `"${cell}"`).join(','))
     ].join('\n');
 
-    // 下載檔案
     const blob = new Blob(['\uFEFF' + csvContent], { type: 'text/csv;charset=utf-8;' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
@@ -254,7 +260,6 @@ const BatchHealthRecordModal: React.FC<BatchHealthRecordModalProps> = ({ onClose
               </div>
             </div>
             <div className="flex items-center space-x-2">
-            
               <button
                 onClick={onClose}
                 className="text-gray-400 hover:text-gray-600"
@@ -266,7 +271,6 @@ const BatchHealthRecordModal: React.FC<BatchHealthRecordModalProps> = ({ onClose
         </div>
 
         <div className="p-6">
-          {/* 上傳結果 */}
           {uploadResults && (
             <div className={`mb-6 p-4 rounded-lg border ${
               uploadResults.failed === 0
@@ -305,7 +309,6 @@ const BatchHealthRecordModal: React.FC<BatchHealthRecordModalProps> = ({ onClose
             </div>
           )}
 
-          {/* 記錄列表 */}
           <div className="space-y-4">
             <div className="flex items-center justify-between">
               <h3 className="text-lg font-medium text-gray-900">
@@ -313,7 +316,7 @@ const BatchHealthRecordModal: React.FC<BatchHealthRecordModalProps> = ({ onClose
               </h3>
             </div>
 
-            <div className="space-y-3 max-h-[400px] overflow-y-auto">
+            <div ref={recordsContainerRef} className="space-y-3 max-h-[400px] overflow-y-auto">
               {records.map((record, index) => (
                 <div key={record.id} className="border rounded-lg p-4 bg-gray-50">
                   <div className="flex items-center justify-between mb-3">
@@ -330,7 +333,6 @@ const BatchHealthRecordModal: React.FC<BatchHealthRecordModalProps> = ({ onClose
                   </div>
 
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                    {/* 基本資訊 */}
                     <div>
                       <label className="form-label">
                         <User className="h-4 w-4 inline mr-1" />
@@ -391,7 +393,6 @@ const BatchHealthRecordModal: React.FC<BatchHealthRecordModalProps> = ({ onClose
                     </div>
                   </div>
 
-                  {/* 根據記錄類型顯示不同欄位 */}
                   {recordType === '生命表徵' && (
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mt-4">
                       <div>
@@ -508,7 +509,6 @@ const BatchHealthRecordModal: React.FC<BatchHealthRecordModalProps> = ({ onClose
                     </div>
                   )}
 
-                  {/* 備註 */}
                   <div className="mt-4">
                     <label className="form-label">備註</label>
                     <textarea
@@ -524,7 +524,6 @@ const BatchHealthRecordModal: React.FC<BatchHealthRecordModalProps> = ({ onClose
             </div>
           </div>
 
-          {/* 底部按鈕區：左側上傳，右側新增記錄（取代取消） */}
           <div className="flex space-x-3 pt-6 border-t border-gray-200">
             <button
               onClick={handleBatchUpload}
@@ -556,7 +555,7 @@ const BatchHealthRecordModal: React.FC<BatchHealthRecordModalProps> = ({ onClose
           </div>
         </div>
       </div>
-    </div> 
+    </div>
   );
 };
 
