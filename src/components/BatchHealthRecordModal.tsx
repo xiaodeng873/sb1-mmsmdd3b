@@ -254,13 +254,7 @@ const BatchHealthRecordModal: React.FC<BatchHealthRecordModalProps> = ({ onClose
               </div>
             </div>
             <div className="flex items-center space-x-2">
-              <button
-                onClick={downloadTemplate}
-                className="btn-secondary flex items-center space-x-2"
-              >
-                <Download className="h-4 w-4" />
-                <span>下載範本</span>
-              </button>
+  
               <button
                 onClick={onClose}
                 className="text-gray-400 hover:text-gray-600"
