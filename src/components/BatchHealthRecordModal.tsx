@@ -1,9 +1,5 @@
-import React, { useState, useRef, useEffect } from 'react';
-import {
-  X, Plus, Trash2, Upload, Download,
-  Heart, Activity, Droplets, Scale,
-  User, Calendar, Clock
-} from 'lucide-react';
+import React, { useState } from 'react';
+import { X, Plus, Trash2, Upload, Download, Heart, Activity, Droplets, Scale, User, Calendar, Clock } from 'lucide-react';
 import { usePatients } from '../context/PatientContext';
 
 interface BatchHealthRecordModalProps {
@@ -30,33 +26,18 @@ interface BatchRecord {
 
 const BatchHealthRecordModal: React.FC<BatchHealthRecordModalProps> = ({ onClose, recordType }) => {
   const { patients, addHealthRecord } = usePatients();
-
   const [records, setRecords] = useState<BatchRecord[]>([
     {
       id: Date.now().toString(),
       院友id: '',
       記錄日期: new Date().toISOString().split('T')[0],
-      記錄時間: new Date().toTimeString().substring(0, 5),
+      記錄時間: new Date().toTimeString().slice(0, 5),
       備註: '',
       記錄人員: ''
     }
   ]);
-
   const [isUploading, setIsUploading] = useState(false);
-  const [uploadResults, setUploadResults] = useState<{
-    success: number;
-    failed: number;
-    errors: string[];
-  } | null>(null);
-
-  // 滾動到最底的參考元素
-  const listEndRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    if (listEndRef.current) {
-      listEndRef.current.scrollIntoView({ behavior: 'smooth' });
-    }
-  }, [records.length]);
+  const [uploadResults, setUploadResults] = useState<{ success: number; failed: number; errors: string[] } | null>(null);
 
   const getTypeIcon = (type: string) => {
     switch (type) {
@@ -81,46 +62,55 @@ const BatchHealthRecordModal: React.FC<BatchHealthRecordModalProps> = ({ onClose
       id: Date.now().toString(),
       院友id: '',
       記錄日期: new Date().toISOString().split('T')[0],
-      記錄時間: new Date().toTimeString().substring(0, 5),
+      記錄時間: new Date().toTimeString().slice(0, 5),
       備註: '',
       記錄人員: ''
     };
-    setRecords(prev => [...prev, newRecord]);
+    setRecords([...records, newRecord]);
   };
 
   const removeRecord = (id: string) => {
     if (records.length > 1) {
-      setRecords(records.filter(r => r.id !== id));
+      setRecords(records.filter(record => record.id !== id));
     }
   };
 
   const updateRecord = (id: string, field: string, value: string) => {
-    setRecords(prev =>
-      prev.map(record => record.id === id ? { ...record, [field]: value } : record)
-    );
+    setRecords(records.map(record =>
+      record.id === id ? { ...record, [field]: value } : record
+    ));
   };
 
   const validateRecord = (record: BatchRecord): string[] => {
     const errors: string[] = [];
-    if (!record.院友id) errors.push('請選擇院友');
-    if (!record.記錄日期) errors.push('請填寫記錄日期');
-    if (!record.記錄時間) errors.push('請填寫記錄時間');
 
-    if (recordType === '生命表徵' &&
-      !(
-        record.血壓收縮壓 || record.血壓舒張壓 || record.脈搏 ||
-        record.體溫 || record.血含氧量 || record.呼吸頻率
-      )
-    ) {
-      errors.push('至少需一項生命表徵數值');
+    if (!record.院友id) {
+      errors.push('請選擇院友');
     }
 
-    if (recordType === '血糖控制' && !record.血糖值) {
-      errors.push('請填寫血糖值');
+    if (!record.記錄日期) {
+      errors.push('請填寫記錄日期');
     }
 
-    if (recordType === '體重控制' && !record.體重) {
-      errors.push('請填寫體重');
+    if (!record.記錄時間) {
+      errors.push('請填寫記錄時間');
+    }
+
+    // 根據記錄類型驗證必填欄位
+    if (recordType === '生命表徵') {
+      const hasVitalSign = record.血壓收縮壓 || record.血壓舒張壓 || record.脈搏 ||
+        record.體溫 || record.血含氧量 || record.呼吸頻率;
+      if (!hasVitalSign) {
+        errors.push('至少需要填寫一項生命表徵數值');
+      }
+    } else if (recordType === '血糖控制') {
+      if (!record.血糖值) {
+        errors.push('請填寫血糖值');
+      }
+    } else if (recordType === '體重控制') {
+      if (!record.體重) {
+        errors.push('請填寫體重');
+      }
     }
 
     return errors;
@@ -130,175 +120,435 @@ const BatchHealthRecordModal: React.FC<BatchHealthRecordModalProps> = ({ onClose
     setIsUploading(true);
     setUploadResults(null);
 
+    let successCount = 0;
+    let failedCount = 0;
     const errors: string[] = [];
-    let success = 0;
-    let failed = 0;
 
-    for (let i = 0; i < records.length; i++) {
-      const record = records[i];
-      const validationErrors = validateRecord(record);
+    try {
+      for (let i = 0; i < records.length; i++) {
+        const record = records[i];
+        const recordErrors = validateRecord(record);
 
-      if (validationErrors.length > 0) {
-        failed++;
-        errors.push(`第 ${i + 1} 筆：${validationErrors.join(', ')}`);
-        continue;
+        if (recordErrors.length > 0) {
+          failedCount++;
+          errors.push(`第 ${i + 1} 筆記錄：${recordErrors.join(', ')}`);
+          continue;
+        }
+
+        try {
+          const recordData = {
+            院友id: parseInt(record.院友id),
+            記錄日期: record.記錄日期,
+            記錄時間: record.記錄時間,
+            記錄類型: recordType,
+            血壓收縮壓: record.血壓收縮壓 ? parseInt(record.血壓收縮壓) : null,
+            血壓舒張壓: record.血壓舒張壓 ? parseInt(record.血壓舒張壓) : null,
+            脈搏: record.脈搏 ? parseInt(record.脈搏) : null,
+            體溫: record.體溫 ? parseFloat(record.體溫) : null,
+            血含氧量: record.血含氧量 ? parseInt(record.血含氧量) : null,
+            呼吸頻率: record.呼吸頻率 ? parseInt(record.呼吸頻率) : null,
+            血糖值: record.血糖值 ? parseFloat(record.血糖值) : null,
+            體重: record.體重 ? parseFloat(record.體重) : null,
+            備註: record.備註 || null,
+            記錄人員: record.記錄人員 || null
+          };
+
+          await addHealthRecord(recordData);
+          successCount++;
+        } catch (error) {
+          failedCount++;
+          errors.push(`第 ${i + 1} 筆記錄：儲存失敗 - ${error instanceof Error ? error.message : '未知錯誤'}`);
+        }
       }
 
-      try {
-        const payload = {
-          院友id: parseInt(record.院友id),
-          記錄類型: recordType,
-          記錄日期: record.記錄日期,
-          記錄時間: record.記錄時間,
-          血壓收縮壓: record.血壓收縮壓 ? parseInt(record.血壓收縮壓) : null,
-          血壓舒張壓: record.血壓舒張壓 ? parseInt(record.血壓舒張壓) : null,
-          脈搏: record.脈搏 ? parseInt(record.脈搏) : null,
-          體溫: record.體溫 ? parseFloat(record.體溫) : null,
-          血含氧量: record.血含氧量 ? parseInt(record.血含氧量) : null,
-          呼吸頻率: record.呼吸頻率 ? parseInt(record.呼吸頻率) : null,
-          血糖值: record.血糖值 ? parseFloat(record.血糖值) : null,
-          體重: record.體重 ? parseFloat(record.體重) : null,
-          備註: record.備註 || null,
-          記錄人員: record.記錄人員 || null
-        };
+      setUploadResults({
+        success: successCount,
+        failed: failedCount,
+        errors: errors
+      });
 
-        await addHealthRecord(payload);
-        success++;
-      } catch (e: any) {
-        failed++;
-        errors.push(`第 ${i + 1} 筆：儲存失敗 - ${e.message || '未知錯誤'}`);
+      if (failedCount === 0) {
+        // 全部成功，3秒後自動關閉
+        setTimeout(() => {
+          onClose();
+        }, 3000);
       }
-    }
 
-    setUploadResults({ success, failed, errors });
-    setIsUploading(false);
-
-    if (failed === 0) {
-      setTimeout(() => onClose(), 3000);
+    } catch (error) {
+      console.error('批量上傳失敗:', error);
+      setUploadResults({
+        success: successCount,
+        failed: records.length - successCount,
+        errors: ['批量上傳過程中發生錯誤，請重試']
+      });
+    } finally {
+      setIsUploading(false);
     }
   };
 
   const downloadTemplate = () => {
-    const headers = ['院友床號', '院友姓名', '記錄日期', '記錄時間'];
-    if (recordType === '生命表徵')
-      headers.push('血壓收縮壓', '血壓舒張壓', '脈搏', '體溫', '血含氧量', '呼吸頻率');
-    if (recordType === '血糖控制') headers.push('血糖值');
-    if (recordType === '體重控制') headers.push('體重');
-    headers.push('備註', '記錄人員');
+    let headers: string[] = ['院友床號', '院友姓名', '記錄日期', '記錄時間'];
 
-    const rows = patients.slice(0, 3).map(p => {
-      const base = [p.床號, p.中文姓名, new Date().toISOString().split('T')[0], '08:00'];
-      if (recordType === '生命表徵') base.push('120', '80', '72', '36.5', '98', '18');
-      if (recordType === '血糖控制') base.push('5.5');
-      if (recordType === '體重控制') base.push('65.0');
-      base.push('', '');
-      return base;
+    if (recordType === '生命表徵') {
+      headers = [...headers, '血壓收縮壓', '血壓舒張壓', '脈搏', '體溫', '血含氧量', '呼吸頻率'];
+    } else if (recordType === '血糖控制') {
+      headers = [...headers, '血糖值'];
+    } else if (recordType === '體重控制') {
+      headers = [...headers, '體重'];
+    }
+
+    headers = [...headers, '備註', '記錄人員'];
+
+    // 創建範例資料
+    const exampleData = patients.slice(0, 3).map(patient => {
+      let row = [
+        patient.床號,
+        patient.中文姓名,
+        new Date().toISOString().split('T')[0],
+        '08:00'
+      ];
+
+      if (recordType === '生命表徵') {
+        row = [...row, '120', '80', '72', '36.5', '98', '18'];
+      } else if (recordType === '血糖控制') {
+        row = [...row, '5.5'];
+      } else if (recordType === '體重控制') {
+        row = [...row, '65.0'];
+      }
+
+      row = [...row, '', ''];
+      return row;
     });
 
-    const csv = [
-      `${recordType}批量上傳範本`,
-      `生成日期: ${new Date().toLocaleDateString('zh-TW')}`,
+    // 生成 CSV 內容
+    const csvContent = [
+      `"${recordType}批量上傳範本"`,
+      `"生成日期: ${new Date().toLocaleDateString('zh-TW')}"`,
       '',
-      headers.join(','),
-      ...rows.map(r => r.map(f => `"${f}"`).join(','))
+      headers.map(h => `"${h}"`).join(','),
+      ...exampleData.map(row => row.map(cell => `"${cell}"`).join(','))
     ].join('\n');
 
-    const blob = new Blob([`\uFEFF${csv}`], { type: 'text/csv;charset=utf-8;' });
+    // 下載檔案
+    const blob = new Blob(['\uFEFF' + csvContent], { type: 'text/csv;charset=utf-8;' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
     a.download = `${recordType}批量上傳範本.csv`;
-    document.body.appendChild(a);
     a.click();
     URL.revokeObjectURL(url);
-    document.body.removeChild(a);
   };
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
       <div className="bg-white rounded-lg max-w-6xl w-full max-h-[90vh] overflow-y-auto">
-        <div className="sticky top-0 bg-white border-b border-gray-200 px-6 py-4 flex justify-between items-center">
-          <div className="flex items-center space-x-3">
-            <div className={`p-2 rounded-lg ${getTypeColor(recordType)} bg-opacity-10`}>
-              {getTypeIcon(recordType)}
+        <div className="sticky top-0 bg-white border-b border-gray-200 px-6 py-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-3">
+              <div className={`p-2 rounded-lg ${getTypeColor(recordType)} bg-opacity-10`}>
+                {getTypeIcon(recordType)}
+              </div>
+              <div>
+                <h2 className="text-xl font-semibold text-gray-900">批量新增{recordType}記錄</h2>
+                <p className="text-sm text-gray-600">一次新增多筆{recordType}記錄</p>
+              </div>
             </div>
-            <div>
-              <h2 className="text-xl font-semibold">批量新增{recordType}記錄</h2>
-              <p className="text-sm text-gray-600">一次新增多筆{recordType}記錄</p>
+            <div className="flex items-center space-x-2">
+  
+              <button
+                onClick={onClose}
+                className="text-gray-400 hover:text-gray-600"
+              >
+                <X className="h-6 w-6" />
+              </button>
             </div>
-          </div>
-          <div className="flex items-center space-x-2">
-            <button onClick={downloadTemplate} className="btn-secondary flex items-center space-x-1">
-              <Download className="h-4 w-4" />
-              <span>下載範本</span>
-            </button>
-            <button onClick={onClose} className="text-gray-400 hover:text-gray-600">
-              <X className="h-6 w-6" />
-            </button>
           </div>
         </div>
 
         <div className="p-6">
+          {/* 上傳結果 */}
           {uploadResults && (
-            <div className={`mb-4 p-4 rounded border ${uploadResults.failed === 0 ? 'bg-green-50 border-green-300' : 'bg-yellow-50 border-yellow-300'}`}>
-              <div className="font-medium mb-1">
-                {uploadResults.failed === 0 ? '✅ 所有記錄成功上傳' : '⚠️ 部分記錄上傳失敗'}
+            <div className={`mb-6 p-4 rounded-lg border ${
+              uploadResults.failed === 0
+                ? 'bg-green-50 border-green-200'
+                : 'bg-yellow-50 border-yellow-200'
+            }`}>
+              <div className="flex items-center space-x-2 mb-2">
+                {uploadResults.failed === 0 ? (
+                  <div className="flex items-center text-green-800">
+                    <Heart className="h-5 w-5 mr-2" />
+                    <span className="font-medium">批量上傳完成！</span>
+                  </div>
+                ) : (
+                  <div className="flex items-center text-yellow-800">
+                    <Activity className="h-5 w-5 mr-2" />
+                    <span className="font-medium">批量上傳部分完成</span>
+                  </div>
+                )}
               </div>
-              <div>成功：{uploadResults.success} 筆　失敗：{uploadResults.failed} 筆</div>
-              {uploadResults.errors.length > 0 && (
-                <ul className="mt-2 list-disc list-inside text-sm text-red-600 space-y-1">
-                  {uploadResults.errors.map((e, idx) => <li key={idx}>{e}</li>)}
-                </ul>
-              )}
+              <div className="text-sm">
+                <p>成功：{uploadResults.success} 筆，失敗：{uploadResults.failed} 筆</p>
+                {uploadResults.errors.length > 0 && (
+                  <div className="mt-2">
+                    <p className="font-medium">錯誤詳情：</p>
+                    <ul className="list-disc list-inside space-y-1">
+                      {uploadResults.errors.map((error, index) => (
+                        <li key={index} className="text-red-600">{error}</li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+              </div>
               {uploadResults.failed === 0 && (
-                <p className="text-green-600 text-sm mt-2">系統將於 3 秒後自動關閉此視窗。</p>
+                <p className="text-sm text-green-600 mt-2">視窗將在 3 秒後自動關閉...</p>
               )}
             </div>
           )}
 
-          <div className="space-y-3 max-h-[400px] overflow-y-auto">
-            {records.map((record, index) => (
-              <div key={record.id} className="border p-4 rounded bg-gray-50">
-                <div className="flex justify-between items-center mb-2">
-                  <div className="font-medium">第 {index + 1} 筆記錄</div>
-                  {records.length > 1 && (
-                    <button onClick={() => removeRecord(record.id)} className="text-red-600 hover:underline">
-                      <Trash2 className="h-4 w-4" />
-                    </button>
+          {/* 記錄列表 */}
+          <div className="space-y-4">
+            <div className="flex items-center justify-between">
+              <h3 className="text-lg font-medium text-gray-900">
+                記錄列表 ({records.length} 筆)
+              </h3>
+            </div>
+
+            <div className="space-y-3 max-h-[400px] overflow-y-auto">
+              {records.map((record, index) => (
+                <div key={record.id} className="border rounded-lg p-4 bg-gray-50">
+                  <div className="flex items-center justify-between mb-3">
+                    <h4 className="font-medium text-gray-900">第 {index + 1} 筆記錄</h4>
+                    {records.length > 1 && (
+                      <button
+                        onClick={() => removeRecord(record.id)}
+                        className="text-red-600 hover:text-red-700"
+                        title="刪除此記錄"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </button>
+                    )}
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                    {/* 基本資訊 */}
+                    <div>
+                      <label className="form-label">
+                        <User className="h-4 w-4 inline mr-1" />
+                        院友 *
+                      </label>
+                      <select
+                        value={record.院友id}
+                        onChange={(e) => updateRecord(record.id, '院友id', e.target.value)}
+                        className="form-input"
+                        required
+                      >
+                        <option value="">請選擇院友</option>
+                        {patients.map(patient => (
+                          <option key={patient.院友id} value={patient.院友id}>
+                            {patient.床號} - {patient.中文姓名}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+
+                    <div>
+                      <label className="form-label">
+                        <Calendar className="h-4 w-4 inline mr-1" />
+                        記錄日期 *
+                      </label>
+                      <input
+                        type="date"
+                        value={record.記錄日期}
+                        onChange={(e) => updateRecord(record.id, '記錄日期', e.target.value)}
+                        className="form-input"
+                        required
+                      />
+                    </div>
+
+                    <div>
+                      <label className="form-label">
+                        <Clock className="h-4 w-4 inline mr-1" />
+                        記錄時間 *
+                      </label>
+                      <input
+                        type="time"
+                        value={record.記錄時間}
+                        onChange={(e) => updateRecord(record.id, '記錄時間', e.target.value)}
+                        className="form-input"
+                        required
+                      />
+                    </div>
+
+                    <div>
+                      <label className="form-label">記錄人員</label>
+                      <input
+                        type="text"
+                        value={record.記錄人員}
+                        onChange={(e) => updateRecord(record.id, '記錄人員', e.target.value)}
+                        className="form-input"
+                        placeholder="記錄人員姓名"
+                      />
+                    </div>
+                  </div>
+
+                  {/* 根據記錄類型顯示不同欄位 */}
+                  {recordType === '生命表徵' && (
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mt-4">
+                      <div>
+                        <label className="form-label">血壓收縮壓 (mmHg)</label>
+                        <input
+                          type="number"
+                          value={record.血壓收縮壓}
+                          onChange={(e) => updateRecord(record.id, '血壓收縮壓', e.target.value)}
+                          className="form-input"
+                          placeholder="120"
+                          min="0"
+                          max="300"
+                        />
+                      </div>
+                      <div>
+                        <label className="form-label">血壓舒張壓 (mmHg)</label>
+                        <input
+                          type="number"
+                          value={record.血壓舒張壓}
+                          onChange={(e) => updateRecord(record.id, '血壓舒張壓', e.target.value)}
+                          className="form-input"
+                          placeholder="80"
+                          min="0"
+                          max="200"
+                        />
+                      </div>
+                      <div>
+                        <label className="form-label">脈搏 (每分鐘)</label>
+                        <input
+                          type="number"
+                          value={record.脈搏}
+                          onChange={(e) => updateRecord(record.id, '脈搏', e.target.value)}
+                          className="form-input"
+                          placeholder="72"
+                          min="0"
+                          max="300"
+                        />
+                      </div>
+                      <div>
+                        <label className="form-label">體溫 (°C)</label>
+                        <input
+                          type="number"
+                          value={record.體溫}
+                          onChange={(e) => updateRecord(record.id, '體溫', e.target.value)}
+                          className="form-input"
+                          placeholder="36.5"
+                          min="30"
+                          max="45"
+                          step="0.1"
+                        />
+                      </div>
+                      <div>
+                        <label className="form-label">血含氧量 (%)</label>
+                        <input
+                          type="number"
+                          value={record.血含氧量}
+                          onChange={(e) => updateRecord(record.id, '血含氧量', e.target.value)}
+                          className="form-input"
+                          placeholder="98"
+                          min="0"
+                          max="100"
+                        />
+                      </div>
+                      <div>
+                        <label className="form-label">呼吸頻率 (每分鐘)</label>
+                        <input
+                          type="number"
+                          value={record.呼吸頻率}
+                          onChange={(e) => updateRecord(record.id, '呼吸頻率', e.target.value)}
+                          className="form-input"
+                          placeholder="18"
+                          min="0"
+                          max="100"
+                        />
+                      </div>
+                    </div>
                   )}
+
+                  {recordType === '血糖控制' && (
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+                      <div>
+                        <label className="form-label">血糖值 (mmol/L) *</label>
+                        <input
+                          type="number"
+                          value={record.血糖值}
+                          onChange={(e) => updateRecord(record.id, '血糖值', e.target.value)}
+                          className="form-input"
+                          placeholder="5.5"
+                          min="0"
+                          max="50"
+                          step="0.1"
+                          required
+                        />
+                      </div>
+                    </div>
+                  )}
+
+                  {recordType === '體重控制' && (
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+                      <div>
+                        <label className="form-label">體重 (kg) *</label>
+                        <input
+                          type="number"
+                          value={record.體重}
+                          onChange={(e) => updateRecord(record.id, '體重', e.target.value)}
+                          className="form-input"
+                          placeholder="65.0"
+                          min="0"
+                          max="300"
+                          step="0.1"
+                          required
+                        />
+                      </div>
+                    </div>
+                  )}
+
+                  {/* 備註 */}
+                  <div className="mt-4">
+                    <label className="form-label">備註</label>
+                    <textarea
+                      value={record.備註}
+                      onChange={(e) => updateRecord(record.id, '備註', e.target.value)}
+                      className="form-input"
+                      rows={2}
+                      placeholder="其他備註資訊..."
+                    />
+                  </div>
                 </div>
-                {/* 這裡保留原本的欄位結構 */}
-                {/* ... 這裡省略輸入欄位，保有你的項目內容，例如 select、input、textarea ... */}
-              </div>
-            ))}
-            {/* 新增記錄後自動滾動進入可視區塊 */}
-            <div ref={listEndRef} />
+              ))}
+            </div>
           </div>
 
-          {/* 底部操作區：左 - 一鍵上傳 / 右 - 新增記錄 */}
-          <div className="mt-6 flex space-x-3 border-t pt-4">
+          {/* 底部按鈕區：左側上傳，右側新增記錄（取代取消） */}
+          <div className="flex space-x-3 pt-6 border-t border-gray-200">
             <button
               onClick={handleBatchUpload}
-              disabled={isUploading}
+              disabled={isUploading || records.length === 0}
               className="btn-primary flex-1 flex items-center justify-center space-x-2"
             >
               {isUploading ? (
                 <>
-                  <div className="animate-spin h-4 w-4 rounded-full border-t-2 border-white" />
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
                   <span>上傳中...</span>
                 </>
               ) : (
                 <>
                   <Upload className="h-4 w-4" />
-                  <span>一鍵上傳（{records.length} 筆）</span>
+                  <span>一鍵上傳 ({records.length} 筆記錄)</span>
                 </>
               )}
             </button>
+
             <button
-              onClick={addRecord}
-              disabled={isUploading}
               type="button"
+              onClick={addRecord}
               className="btn-secondary flex-1 flex items-center justify-center space-x-2"
+              disabled={isUploading}
             >
               <Plus className="h-4 w-4" />
               <span>新增記錄</span>
