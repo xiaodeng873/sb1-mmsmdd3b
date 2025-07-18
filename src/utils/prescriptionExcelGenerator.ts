@@ -262,26 +262,42 @@ export const applyPrescriptionTemplateFormat = (
     }
   }
   
-  // Step 7: Ensure column L has proper right borders for rows 1-49
-  console.log('第7步: 確保L欄右邊框完整...');
-  const rightBorderStyle = {
-    style: 'thin',
-    color: { argb: 'FF000000' }
-  };
-  
-  for (let row = 1; row <= 49; row++) {
-    const cell = worksheet.getCell(`L${row}`);
-    const existingBorder = cell.border || {};
-    
-    // Ensure right border exists
-    cell.border = {
-      ...existingBorder,
-      right: existingBorder.right || rightBorderStyle
-    };
-  }
-  
-  console.log('=== 處方箋範本格式應用完成 ===');
+// Step 7: Ensure column L has proper right borders for rows 1-49
+console.log('第7步: 確保L欄右邊框完整...');
+const rightBorderStyle = {
+  style: 'thin',
+  color: { argb: 'FF000000' }
 };
+
+for (let row = 1; row <= 49; row++) {
+  const cell = worksheet.getCell(`L${row}`);
+  const existingBorder = cell.border || {};
+  
+  cell.border = {
+    ...existingBorder,
+    right: existingBorder.right || rightBorderStyle
+  };
+}
+
+// Step 8: Ensure G15:G44 have a thin dashed left border
+console.log('第8步: 確保G15:G44左邊框為最幼虛線...');
+const leftBorderStyle = {
+  style: 'dash',
+  color: { argb: 'FF000000' }
+};
+
+for (let row = 15; row <= 44; row++) {
+  const cell = worksheet.getCell(`G${row}`);
+  const existingBorder = cell.border || {};
+
+  cell.border = {
+    ...existingBorder,
+    left: existingBorder.left || leftBorderStyle
+  };
+}
+console.log('=== G15:G44左邊框應用完成 ===');
+
+console.log('=== 處方箋範本格式應用完成 ===');
 
 // 創建處方箋工作簿
 export const createPrescriptionWorkbook = async (
