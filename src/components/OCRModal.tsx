@@ -600,6 +600,16 @@ const OCRModal: React.FC<OCRModalProps> = ({ onClose, onResult }) => {
                   />
                   <label className="form-label mb-0">需要時</label>
                 </div>
+                
+                {/* 需要時藥物的說明 */}
+                {ocrResult.需要時 === 'true' && (
+                  <div className="text-sm text-blue-600 bg-blue-50 p-2 rounded border border-blue-200">
+                    <div className="flex items-center space-x-1">
+                      <span>ℹ️</span>
+                      <span>此為「需要時」藥物，服用時間可由護理人員依院友需要決定</span>
+                    </div>
+                  </div>
+                )}
 
                 <div>
                   <label className="form-label">服用時間</label>
