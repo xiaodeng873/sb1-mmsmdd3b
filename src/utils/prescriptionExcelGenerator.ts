@@ -286,7 +286,7 @@ const leftBorderStyle = {
   color: { argb: 'FF000000' } // Black color
 };
 
-for (let row = 15; row <= 44; row++) {
+for (let row = 14; row <= 44; row++) {
   const cell = worksheet.getCell(`G${row}`);
   const existingBorder = cell.border || {};
   
