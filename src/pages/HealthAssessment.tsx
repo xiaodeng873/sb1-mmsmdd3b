@@ -40,6 +40,8 @@ const HealthAssessment: React.FC = () => {
   const [selectedRows, setSelectedRows] = useState<Set<number>>(new Set());
   const [showBatchModal, setShowBatchModal] = useState(false);
   const [batchRecordType, setBatchRecordType] = useState<'生命表徵' | '血糖控制' | '體重控制'>('生命表徵');
+  const [dateFilter, setDateFilter] = useState('');
+  const [showAdvancedFilters, setShowAdvancedFilters] = useState(false);
 
   if (loading) {
     return (
@@ -54,9 +56,16 @@ const HealthAssessment: React.FC = () => {
 
   const filteredRecords = healthRecords.filter(record => {
     const patient = patients.find(p => p.院友id === record.院友id);
+    
+    // 日期篩選
+    if (dateFilter && record.記錄日期 !== dateFilter) {
+      return false;
+    }
+    
     const matchesSearch = patient?.中文姓名.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          patient?.床號.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          record.備註?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         new Date(record.記錄日期).toLocaleDateString('zh-TW').includes(searchTerm.toLowerCase()) ||
                          false;
     const matchesType = selectedType === 'all' || record.記錄類型 === selectedType;
     return matchesSearch && matchesType;
@@ -202,6 +211,12 @@ const HealthAssessment: React.FC = () => {
   const handleBatchUpload = (recordType: '生命表徵' | '血糖控制' | '體重控制') => {
     setBatchRecordType(recordType);
     setShowBatchModal(true);
+  };
+
+  const clearFilters = () => {
+    setSearchTerm('');
+    setSelectedType('all');
+    setDateFilter('');
   };
 
   const calculateWeightChange = (currentWeight: number, patientId: number, currentDate: string): string => {
@@ -398,27 +413,76 @@ const HealthAssessment: React.FC = () => {
 
       {/* 搜索和篩選 */}
       <div className="card p-4">
-        <div className="flex flex-col lg:flex-row space-y-2 lg:space-y-0 lg:space-x-4 lg:items-center">
-          <div className="flex-1 relative">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-            <input
-              type="text"
-              placeholder="搜索院友姓名、床號或備註..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="form-input pl-10"
-            />
+        <div className="space-y-4">
+          <div className="flex flex-col lg:flex-row space-y-2 lg:space-y-0 lg:space-x-4 lg:items-center">
+            <div className="flex-1 relative">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+              <input
+                type="text"
+                placeholder="搜索院友姓名、床號、記錄日期或備註..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="form-input pl-10"
+              />
+            </div>
+            
+            <div className="flex space-x-2">
+              <input
+                type="date"
+                value={dateFilter}
+                onChange={(e) => setDateFilter(e.target.value)}
+                className="form-input lg:w-40"
+                title="按記錄日期篩選"
+              />
+              
+              <button
+                onClick={() => setShowAdvancedFilters(!showAdvancedFilters)}
+                className={`btn-secondary flex items-center space-x-2 ${showAdvancedFilters ? 'bg-blue-50 text-blue-700' : ''}`}
+              >
+                <Filter className="h-4 w-4" />
+                <span>進階篩選</span>
+              </button>
+              
+              {(searchTerm || selectedType !== 'all' || dateFilter) && (
+                <button
+                  onClick={clearFilters}
+                  className="btn-secondary flex items-center space-x-2 text-red-600 hover:text-red-700"
+                >
+                  <X className="h-4 w-4" />
+                  <span>清除</span>
+                </button>
+              )}
+            </div>
           </div>
-          <select
-            value={selectedType}
-            onChange={(e) => setSelectedType(e.target.value as RecordType)}
-            className="form-input lg:w-40"
-          >
-            <option value="all">所有類型</option>
-            <option value="生命表徵">生命表徵</option>
-            <option value="血糖控制">血糖控制</option>
-            <option value="體重控制">體重控制</option>
-          </select>
+          
+          {/* 進階篩選面板 */}
+          {showAdvancedFilters && (
+            <div className="border-t border-gray-200 pt-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="form-label">記錄類型</label>
+                  <select
+                    value={selectedType}
+                    onChange={(e) => setSelectedType(e.target.value as RecordType)}
+                    className="form-input"
+                  >
+                    <option value="all">所有類型</option>
+                    <option value="生命表徵">生命表徵</option>
+                    <option value="血糖控制">血糖控制</option>
+                    <option value="體重控制">體重控制</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+          )}
+          
+          {/* 搜索結果統計 */}
+          <div className="flex items-center justify-between text-sm text-gray-600">
+            <span>顯示 {sortedRecords.length} / {healthRecords.length} 筆健康記錄</span>
+            {(searchTerm || selectedType !== 'all' || dateFilter) && (
+              <span className="text-blue-600">已套用篩選條件</span>
+            )}
+          </div>
         </div>
       </div>
 
@@ -607,17 +671,24 @@ const HealthAssessment: React.FC = () => {
           <div className="text-center py-12">
             <Heart className="h-24 w-24 mx-auto mb-4 text-gray-300" />
             <h3 className="text-lg font-medium text-gray-900 mb-2">
-              {searchTerm || selectedType !== 'all' ? '找不到符合條件的記錄' : '暫無健康記錄'}
+              {searchTerm || selectedType !== 'all' || dateFilter ? '找不到符合條件的記錄' : '暫無健康記錄'}
             </h3>
             <p className="text-gray-600 mb-4">
-              {searchTerm || selectedType !== 'all' ? '請嘗試調整搜索條件' : '開始記錄院友的健康狀況'}
+              {searchTerm || selectedType !== 'all' || dateFilter ? '請嘗試調整搜索條件' : '開始記錄院友的健康狀況'}
             </p>
-            {!searchTerm && selectedType === 'all' && (
+            {!searchTerm && selectedType === 'all' && !dateFilter ? (
               <button
                 onClick={() => setShowModal(true)}
                 className="btn-primary"
               >
                 新增健康記錄
+              </button>
+            ) : (
+              <button
+                onClick={clearFilters}
+                className="btn-secondary"
+              >
+                清除所有篩選
               </button>
             )}
           </div>

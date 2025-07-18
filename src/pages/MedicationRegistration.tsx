@@ -30,6 +30,7 @@ const MedicationRegistration: React.FC = () => {
   const [deletingIds, setDeletingIds] = useState<Set<number>>(new Set());
   const [filters, setFilters] = useState<FilterOption[]>([]);
   const [showFilterPanel, setShowFilterPanel] = useState(false);
+  const [dateFilter, setDateFilter] = useState('');
 
   if (loading) {
     return (
@@ -45,12 +46,18 @@ const MedicationRegistration: React.FC = () => {
   const filteredPrescriptions = prescriptions.filter(prescription => {
     const patient = patients.find(p => p.院友id === prescription.院友id);
     
+    // 日期篩選
+    if (dateFilter && prescription.處方日期 !== dateFilter) {
+      return false;
+    }
+    
     // 搜索條件
     let matchesSearch = true;
     if (searchTerm) {
       matchesSearch = prescription.藥物名稱.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          (patient?.中文姓名.toLowerCase().includes(searchTerm.toLowerCase()) || false) ||
-                         (patient?.床號.toLowerCase().includes(searchTerm.toLowerCase()) || false);
+                         (patient?.床號.toLowerCase().includes(searchTerm.toLowerCase()) || false) ||
+                         new Date(prescription.處方日期).toLocaleDateString('zh-TW').includes(searchTerm.toLowerCase());
     }
     
     // 篩選條件
@@ -457,6 +464,8 @@ const MedicationRegistration: React.FC = () => {
 
   const clearAllFilters = () => {
     setFilters([]);
+    setSearchTerm('');
+    setDateFilter('');
   };
 
   const getFieldOptions = () => [
@@ -531,15 +540,37 @@ const MedicationRegistration: React.FC = () => {
       {/* Search */}
       <div className="card p-4">
         <div className="space-y-3">
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-            <input
-              type="text"
-              placeholder="搜索藥物名稱、院友姓名或床號..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="form-input pl-10"
-            />
+          <div className="flex flex-col lg:flex-row space-y-2 lg:space-y-0 lg:space-x-4 lg:items-center">
+            <div className="flex-1 relative">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+              <input
+                type="text"
+                placeholder="搜索藥物名稱、院友姓名、床號或處方日期..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="form-input pl-10"
+              />
+            </div>
+            
+            <div className="flex space-x-2">
+              <input
+                type="date"
+                value={dateFilter}
+                onChange={(e) => setDateFilter(e.target.value)}
+                className="form-input lg:w-40"
+                title="按處方日期篩選"
+              />
+              
+              {(searchTerm || dateFilter || filters.length > 0) && (
+                <button
+                  onClick={clearAllFilters}
+                  className="btn-secondary flex items-center space-x-2 text-red-600 hover:text-red-700"
+                >
+                  <X className="h-4 w-4" />
+                  <span>清除</span>
+                </button>
+              )}
+            </div>
           </div>
           
           {/* Filter Controls */}
@@ -567,7 +598,10 @@ const MedicationRegistration: React.FC = () => {
               )}
             </div>
             <div className="text-sm text-gray-600">
-              顯示 {filteredPrescriptions.length} / {prescriptions.length} 筆記錄
+              顯示 {filteredPrescriptions.length} / {prescriptions.length} 筆處方記錄
+              {(searchTerm || dateFilter || filters.length > 0) && (
+                <span className="text-blue-600 ml-2">已套用篩選條件</span>
+              )}
             </div>
           </div>
           
@@ -833,12 +867,12 @@ const MedicationRegistration: React.FC = () => {
           <div className="text-center py-12">
             <Pill className="h-24 w-24 mx-auto mb-4 text-gray-300" />
             <h3 className="text-lg font-medium text-gray-900 mb-2">
-              {searchTerm ? '找不到符合條件的處方' : '暫無處方記錄'}
+              {searchTerm || dateFilter || filters.length > 0 ? '找不到符合條件的處方' : '暫無處方記錄'}
             </h3>
             <p className="text-gray-600 mb-4">
-              {searchTerm ? '請嘗試調整搜索條件' : '開始掃描藥物標籤或手動登記'}
+              {searchTerm || dateFilter || filters.length > 0 ? '請嘗試調整搜索條件' : '開始掃描藥物標籤或手動登記'}
             </p>
-            {!searchTerm && (
+            {!searchTerm && !dateFilter && filters.length === 0 ? (
               <div className="flex justify-center space-x-4">
                 <button
                   onClick={handleCameraCapture}
@@ -855,6 +889,13 @@ const MedicationRegistration: React.FC = () => {
                   <span>手動登記</span>
                 </button>
               </div>
+            ) : (
+              <button
+                onClick={clearAllFilters}
+                className="btn-secondary"
+              >
+                清除所有篩選
+              </button>
             )}
           </div>
         )}
