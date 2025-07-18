@@ -39,12 +39,17 @@ const BatchHealthRecordModal: React.FC<BatchHealthRecordModalProps> = ({ onClose
   const [isUploading, setIsUploading] = useState(false);
   const [uploadResults, setUploadResults] = useState<{ success: number; failed: number; errors: string[] } | null>(null);
   const recordsContainerRef = useRef<HTMLDivElement>(null);
+  const recordRefs = useRef<Map<string, HTMLDivElement>>(new Map());
 
-  // Scroll to bottom when records change
+  // Scroll to the top of the newest record when records change
   useEffect(() => {
-    if (recordsContainerRef.current) {
-      recordsContainerRef.current.scrollTo({
-        top: recordsContainerRef.current.scrollHeight,
+    const newestRecordId = records[records.length - 1]?.id;
+    const newestRecordElement = recordRefs.current.get(newestRecordId);
+    if (newestRecordElement && recordsContainerRef.current) {
+      const container = recordsContainerRef.current;
+      const recordTop = newestRecordElement.getBoundingClientRect().top - container.getBoundingClientRect().top + container.scrollTop;
+      container.scrollTo({
+        top: recordTop,
         behavior: 'smooth'
       });
     }
@@ -83,6 +88,7 @@ const BatchHealthRecordModal: React.FC<BatchHealthRecordModalProps> = ({ onClose
   const removeRecord = (id: string) => {
     if (records.length > 1) {
       setRecords(records.filter(record => record.id !== id));
+      recordRefs.current.delete(id);
     }
   };
 
@@ -172,7 +178,7 @@ const BatchHealthRecordModal: React.FC<BatchHealthRecordModalProps> = ({ onClose
       }
 
       setUploadResults({
-        success: successCount,
+ to:       success: successCount,
         failed: failedCount,
         errors: errors
       });
@@ -318,7 +324,17 @@ const BatchHealthRecordModal: React.FC<BatchHealthRecordModalProps> = ({ onClose
 
             <div ref={recordsContainerRef} className="space-y-3 max-h-[400px] overflow-y-auto">
               {records.map((record, index) => (
-                <div key={record.id} className="border rounded-lg p-4 bg-gray-50">
+                <div
+                  key={record.id}
+                  ref={(el) => {
+                    if (el) {
+                      recordRefs.current.set(record.id, el);
+                    } else {
+                      recordRefs.current.delete(record.id);
+                    }
+                  }}
+                  className="border rounded-lg p-4 bg-gray-50"
+                >
                   <div className="flex items-center justify-between mb-3">
                     <h4 className="font-medium text-gray-900">第 {index + 1} 筆記錄</h4>
                     {records.length > 1 && (
@@ -394,79 +410,94 @@ const BatchHealthRecordModal: React.FC<BatchHealthRecordModalProps> = ({ onClose
                   </div>
 
                   {recordType === '生命表徵' && (
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mt-4">
-                      <div>
-                        <label className="form-label">血壓收縮壓 (mmHg)</label>
-                        <input
-                          type="number"
-                          value={record.血壓收縮壓}
-                          onChange={(e) => updateRecord(record.id, '血壓收縮壓', e.target.value)}
-                          className="form-input"
-                          placeholder="120"
-                          min="0"
-                          max="300"
-                        />
+                    <div className="space-y-4 mt-4">
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <div>
+                          <label className="form-label">血壓 (mmHg)</label>
+                          <div className="flex space-x-2">
+                            <input
+                              type="number"
+                              value={record.血壓收縮壓}
+                              onChange={(e) => updateRecord(record.id, '血壓收縮壓', e.target.value)}
+                              className="form-input"
+                              placeholder="120"
+                              min="0"
+                              max="300"
+                            />
+                            <span className="flex items-center text-gray-500">/</span>
+                            <input
+                              type="number"
+                              value={record.血壓舒張壓}
+                              onChange={(e) => updateRecord(record.id, '血壓舒張壓', e.target.value)}
+                              className="form-input"
+                              placeholder="80"
+                              min="0"
+                              max="200"
+                            />
+                          </div>
+                        </div>
+                        <div>
+                          <label className="form-label">脈搏 (每分鐘)</label>
+                          <input
+                            type="number"
+                            value={record.脈搏}
+                            onChange={(e) => updateRecord(record.id, '脈搏', e.target.value)}
+                            className="form-input"
+                            placeholder="72"
+                            min="0"
+                            max="300"
+                          />
+                        </div>
+                        <div>
+                          <label className="form-label">體溫 (°C)</label>
+                          <input
+                            type="number"
+                            value={record.體溫}
+                            onChange={(e) => updateRecord(record.id, '體溫', e.target.value)}
+                            className="form-input"
+                            placeholder="36.5"
+                            min="30"
+                            max="45"
+                            step="0.1"
+                          />
+                        </div>
                       </div>
-                      <div>
-                        <label className="form-label">血壓舒張壓 (mmHg)</label>
-                        <input
-                          type="number"
-                          value={record.血壓舒張壓}
-                          onChange={(e) => updateRecord(record.id, '血壓舒張壓', e.target.value)}
-                          className="form-input"
-                          placeholder="80"
-                          min="0"
-                          max="200"
-                        />
-                      </div>
-                      <div>
-                        <label className="form-label">脈搏 (每分鐘)</label>
-                        <input
-                          type="number"
-                          value={record.脈搏}
-                          onChange={(e) => updateRecord(record.id, '脈搏', e.target.value)}
-                          className="form-input"
-                          placeholder="72"
-                          min="0"
-                          max="300"
-                        />
-                      </div>
-                      <div>
-                        <label className="form-label">體溫 (°C)</label>
-                        <input
-                          type="number"
-                          value={record.體溫}
-                          onChange={(e) => updateRecord(record.id, '體溫', e.target.value)}
-                          className="form-input"
-                          placeholder="36.5"
-                          min="30"
-                          max="45"
-                          step="0.1"
-                        />
-                      </div>
-                      <div>
-                        <label className="form-label">血含氧量 (%)</label>
-                        <input
-                          type="number"
-                          value={record.血含氧量}
-                          onChange={(e) => updateRecord(record.id, '血含氧量', e.target.value)}
-                          className="form-input"
-                          placeholder="98"
-                          min="0"
-                          max="100"
-                        />
-                      </div>
-                      <div>
-                        <label className="form-label">呼吸頻率 (每分鐘)</label>
-                        <input
-                          type="number"
-                          value={record.呼吸頻率}
-                          onChange={(e) => updateRecord(record.id, '呼吸頻率', e.target.value)}
-                          className="form-input"
-                          placeholder="18"
-                          min="0"
-                          max="100"
-                        />
+
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <div>
+                          <label className="form-label">血含氧量 (%)</label>
+                          <input
+                            type="number"
+                            value={record.血含氧量}
+                            onChange={(e) => updateRecord(record.id, '血含氧量', e.target.value)}
+                            className="form-input"
+                            placeholder="98"
+                            min="0"
+                            max="100"
+                          />
+                        </div>
+                        <div>
+                          <label className="form-label">呼吸頻率 (每分鐘)</label>
+                          <input
+                            type="number"
+                            value={record.呼吸頻率}
+                            onChange={(e) => updateRecord(record.id, '呼吸頻率', e.target.value)}
+                            className="form-input"
+                            placeholder="18"
+                            min="0"
+                            max="100"
+                          />
+                        </div>
+                        <div>
+                          <label className="form-label">備註</label>
+                          <textarea
+                            value={record.備註}
+                            onChange={(e) => updateRecord(record.id, '備註', e.target.value)}
+                            className="form-input"
+                            rows={1}
+                            placeholder="其他備註資訊..."
+                          />
+                        </div>
                       </div>
                     </div>
                   )}
@@ -508,17 +539,6 @@ const BatchHealthRecordModal: React.FC<BatchHealthRecordModalProps> = ({ onClose
                       </div>
                     </div>
                   )}
-
-                  <div className="mt-4">
-                    <label className="form-label">備註</label>
-                    <textarea
-                      value={record.備註}
-                      onChange={(e) => updateRecord(record.id, '備註', e.target.value)}
-                      className="form-input"
-                      rows={2}
-                      placeholder="其他備註資訊..."
-                    />
-                  </div>
                 </div>
               ))}
             </div>
@@ -559,4 +579,4 @@ const BatchHealthRecordModal: React.FC<BatchHealthRecordModalProps> = ({ onClose
   );
 };
 
-export default BatchHealthRecordModal; 
+export default BatchHealthRecordModal;
