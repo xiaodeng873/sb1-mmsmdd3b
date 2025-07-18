@@ -382,7 +382,6 @@ const BatchHealthRecordModal: React.FC<BatchHealthRecordModalProps> = ({ onClose
                     </div>
 
                    
-                    </div>
                   </div>
 
                   {recordType === '生命表徵' && (
