@@ -95,7 +95,7 @@ const TemplateManagement: React.FC = () => {
       
       return true;
     } catch (error) {
-      console.error('儲存範本到 Supabase 失敗:', error);
+      console.error('儲存範本到資料庫失敗:', error);
       throw error;
     }
   };
@@ -565,35 +565,7 @@ const TemplateManagement: React.FC = () => {
 
       {/* 範本類型說明 */}
 
-      {/* 拖放上傳區域 */}
-      <div
-        className={`card p-8 border-2 border-dashed transition-colors ${
-          dragActive ? 'border-blue-500 bg-blue-50' : 'border-gray-300'
-        }`}
-        onDragEnter={handleDrag}
-        onDragLeave={handleDrag}
-        onDragOver={handleDrag}
-        onDrop={handleDrop}
-      >
-        <div className="text-center">
-          <Upload className="h-12 w-12 mx-auto mb-4 text-gray-400" />
-          <p className="text-lg font-medium text-gray-900 mb-2">拖放Excel或CSV文件到此處</p>
-          <p className="text-sm text-gray-600 mb-4">
-               <select
-            value={uploadType}
-            onChange={(e) => setUploadType(e.target.value as any)}
-            className="form-input"
-          >
-            {templateTypes.map(type => (
-              <option key={type.id} value={type.id}>
-                {type.name}
-              </option>
-            ))}
-          </select>當前選擇的範本類型：<span className="font-medium text-blue-600">{getTemplateDisplayName(uploadType)}</span>
-          </p>
-          <p className="text-xs text-gray-500">支援 .xlsx, .xls, .csv 格式，檔案大小限制 10MB</p>
-        </div>
-      </div>
+     
 
       {/* 搜索和篩選 */}
       <div className="card p-4">
