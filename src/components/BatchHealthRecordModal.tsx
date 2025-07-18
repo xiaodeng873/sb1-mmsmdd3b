@@ -396,7 +396,7 @@ const BatchHealthRecordModal: React.FC<BatchHealthRecordModalProps> = ({ onClose
                   {recordType === '生命表徵' && (
                     <div className="space-y-4 mt-4">
                       {/* 第一行：收縮壓/舒張壓、脈搏、體溫 */}
-                      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                      <div className="grid grid-cols-1 md:grid-cols-6 gap-4">
                         <div>
                           <label className="form-label">血壓 (mmHg)</label>
                           <div className="flex space-x-2">
