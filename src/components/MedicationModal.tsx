@@ -130,13 +130,6 @@ const MedicationModal: React.FC<MedicationModalProps> = ({ prescription, onClose
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    // 驗證服用時間
-    const timeValidationError = validateMedicationTimes();
-    if (timeValidationError) {
-      alert(timeValidationError);
-      return;
-    }
-    
     try {
       const prescriptionData = {
         院友id: parseInt(formData.院友id),
