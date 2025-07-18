@@ -334,8 +334,7 @@ const MedicationModal: React.FC<MedicationModalProps> = ({ prescription, onClose
                       <span>此為「需要時」藥物，服用時間可由護理人員依院友需要決定</span>
                     </div>
                   </div>
-                );
-                })()}
+                )}
                 
               </div>
             </div>
@@ -429,121 +428,6 @@ const MedicationModal: React.FC<MedicationModalProps> = ({ prescription, onClose
             <button
               type="submit"
               className="btn-primary flex-1"
-            >
-              {prescription ? '更新處方' : '新增處方'}
-            </button>
-            <button
-              type="button"
-              onClick={onClose}
-              className="btn-secondary flex-1"
-            >
-              取消
-            </button>
-          </div>
-        </form>
-      </div>
-    </div>
-  );
-};
-
-export default MedicationModal;
-                      {error}
-                    </div>
-                  );
-                })()}
-                
-              </div>
-            </div>
-          </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <label className="form-label">劑型</label>
-              <input
-                type="text"
-                name="劑型"
-                value={formData.劑型}
-                onChange={handleChange}
-                className="form-input"
-                placeholder="如：片劑、膠囊、液體等"
-              />
-            </div>
-
-            <div>
-              <label className="form-label">服用途徑</label>
-              <input
-                list="route-options"
-                name="服用途徑"
-                value={formData.服用途徑}
-                onChange={handleChange}
-                className="form-input"
-                placeholder="如：口服、外用等"
-              />
-              <datalist id="route-options">
-                <option value="口服" />
-                <option value="外用" />
-              </datalist>
-            </div>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <label className="form-label">服用份量</label>
-              <input
-                type="text"
-                name="服用份量"
-                value={formData.服用份量}
-                onChange={handleChange}
-                className="form-input"
-                placeholder="如：1粒、5ml等"
-              />
-            </div>
-
-            <div>
-              <label className="form-label">服用次數</label>
-              <input
-                type="text"
-                name="服用次數"
-                value={formData.服用次數}
-                onChange={handleChange}
-                className="form-input"
-                placeholder="如：每日3次、每8小時1次等"
-              />
-            </div>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <label className="form-label">服用日數</label>
-              <input
-                type="text"
-                name="服用日數"
-                value={formData.服用日數}
-                onChange={handleChange}
-                className="form-input"
-                placeholder="如：7天、14天"
-              />
-            </div>
-
-            <div className="flex items-center space-x-3 pt-6">
-              <input
-                type="checkbox"
-                id="需要時"
-                name="需要時"
-                checked={formData.需要時}
-                onChange={handleChange}
-                className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
-              />
-              <label htmlFor="需要時" className="text-sm font-medium text-gray-700">
-                需要時
-              </label>
-             </div>
-          </div>
-
-
-          <div className="flex space-x-3 pt-4">
-            <button
-              type="submit"
-              disabled={isSaving}
             >
               {prescription ? '更新處方' : '新增處方'}
             </button>
