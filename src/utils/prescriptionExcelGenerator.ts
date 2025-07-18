@@ -298,6 +298,7 @@ for (let row = 15; row <= 44; row++) {
 console.log('=== G15:G44左邊框應用完成 ===');
 
 console.log('=== 處方箋範本格式應用完成 ===');
+};
 
 // 創建處方箋工作簿
 export const createPrescriptionWorkbook = async (
