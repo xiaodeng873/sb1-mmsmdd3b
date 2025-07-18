@@ -381,15 +381,7 @@ const BatchHealthRecordModal: React.FC<BatchHealthRecordModalProps> = ({ onClose
                       />
                     </div>
 
-                    <div>
-                      <label className="form-label">記錄人員</label>
-                      <input
-                        type="text"
-                        value={record.記錄人員}
-                        onChange={(e) => updateRecord(record.id, '記錄人員', e.target.value)}
-                        className="form-input"
-                        placeholder="記錄人員姓名"
-                      />
+                   
                     </div>
                   </div>
 
