@@ -362,54 +362,7 @@ const HealthAssessment: React.FC = () => {
         </div>
       </div>
 
-      {/* 統計卡片 */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
-        <div className="card p-4">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm text-gray-600">總記錄數</p>
-              <p className="text-2xl font-bold text-gray-900">{stats.total}</p>
-            </div>
-            <Heart className="h-8 w-8 text-purple-600" />
-          </div>
-        </div>
-        <div className="card p-4">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm text-gray-600">生命表徵</p>
-              <p className="text-2xl font-bold text-blue-600">{stats.vitalSigns}</p>
-            </div>
-            <Activity className="h-8 w-8 text-blue-600" />
-          </div>
-        </div>
-        <div className="card p-4">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm text-gray-600">血糖控制</p>
-              <p className="text-2xl font-bold text-red-600">{stats.bloodSugar}</p>
-            </div>
-            <Droplets className="h-8 w-8 text-red-600" />
-          </div>
-        </div>
-        <div className="card p-4">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm text-gray-600">體重控制</p>
-              <p className="text-2xl font-bold text-green-600">{stats.weight}</p>
-            </div>
-            <Scale className="h-8 w-8 text-green-600" />
-          </div>
-        </div>
-        <div className="card p-4">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm text-gray-600">今日記錄</p>
-              <p className="text-2xl font-bold text-orange-600">{stats.today}</p>
-            </div>
-            <Calendar className="h-8 w-8 text-orange-600" />
-          </div>
-        </div>
-      </div>
+
 
       {/* 搜索和篩選 */}
       <div className="card p-4">
