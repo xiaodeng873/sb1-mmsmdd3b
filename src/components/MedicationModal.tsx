@@ -406,7 +406,7 @@ const MedicationModal: React.FC<MedicationModalProps> = ({ prescription, onClose
           <div className="flex space-x-3 pt-4">
             <button
               type="submit"
-              className="btn-primary flex-1"
+              disabled={isSaving}
             >
               {prescription ? '更新處方' : '新增處方'}
             </button>
