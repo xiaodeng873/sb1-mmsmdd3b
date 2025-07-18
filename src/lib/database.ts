@@ -101,16 +101,21 @@ export interface FollowUpAppointment {
 // Patient operations
 export async function getPatients(): Promise<Patient[]> {
   try {
+    console.log('Fetching patients from database...');
     const { data, error } = await supabase
       .from('院友主表')
       .select('*')
       .order('床號');
     
-    if (error) throw error;
+    if (error) {
+      console.error('Error fetching patients:', error);
+      throw error;
+    }
+    console.log(`Successfully fetched ${data?.length || 0} patients`);
     return data as Patient[];
   } catch (error) {
     console.error('Error fetching patients:', error);
-    return [];
+    throw error; // 重新拋出錯誤而不是返回空陣列
   }
 }
 
@@ -266,16 +271,21 @@ export async function deletePatient(id: number): Promise<boolean> {
 // Schedule operations
 export async function getSchedules(): Promise<Schedule[]> {
   try {
+    console.log('Fetching schedules from database...');
     const { data, error } = await supabase
       .from('到診排程主表')
       .select('*')
       .order('到診日期', { ascending: false });
     
-    if (error) throw error;
+    if (error) {
+      console.error('Error fetching schedules:', error);
+      throw error;
+    }
+    console.log(`Successfully fetched ${data?.length || 0} schedules`);
     return data as Schedule[];
   } catch (error) {
     console.error('Error fetching schedules:', error);
-    return [];
+    throw error; // 重新拋出錯誤而不是返回空陣列
   }
 }
 
@@ -492,16 +502,21 @@ export async function deleteScheduleDetail(detailId: number): Promise<boolean> {
 // Service reasons
 export async function getServiceReasons(): Promise<ServiceReason[]> {
   try {
+    console.log('Fetching service reasons from database...');
     const { data, error } = await supabase
       .from('看診原因選項')
       .select('*')
       .order('原因id');
     
-    if (error) throw error;
+    if (error) {
+      console.error('Error fetching service reasons:', error);
+      throw error;
+    }
+    console.log(`Successfully fetched ${data?.length || 0} service reasons`);
     return data as ServiceReason[];
   } catch (error) {
     console.error('Error fetching service reasons:', error);
-    return [];
+    throw error; // 重新拋出錯誤而不是返回空陣列
   }
 }
 

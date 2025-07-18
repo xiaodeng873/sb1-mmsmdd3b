@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { ReactNode } from 'react';
 import * as db from '../lib/database';
+import { useAuth } from './AuthContext';
 
 // Re-export types from database module
 export type { Patient, Schedule, ScheduleDetail, ServiceReason, Prescription, HealthRecord } from '../lib/database';
@@ -46,6 +47,7 @@ interface PatientProviderProps {
 const PatientContext = createContext<PatientContextType | undefined>(undefined);
 
 export const PatientProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const { user, authReady } = useAuth();
   const [patients, setPatients] = useState<db.Patient[]>([]);
   const [schedules, setSchedules] = useState<ScheduleWithDetails[]>([]);
   const [prescriptions, setPrescriptions] = useState<db.Prescription[]>([]);
@@ -53,27 +55,63 @@ export const PatientProvider: React.FC<{ children: React.ReactNode }> = ({ child
   const [healthRecords, setHealthRecords] = useState<db.HealthRecord[]>([]);
   const [followUpAppointments, setFollowUpAppointments] = useState<db.FollowUpAppointment[]>([]);
   const [loading, setLoading] = useState(true);
+  const [dataLoaded, setDataLoaded] = useState(false);
 
+  // 只有在認證準備好且有用戶時才載入資料
   useEffect(() => {
+    if (!authReady) {
+      console.log('Auth not ready yet, waiting...');
+      return;
+    }
+    
+    if (!user) {
+      console.log('No user, clearing data...');
+      // 清空資料當沒有用戶時
+      setPatients([]);
+      setSchedules([]);
+      setPrescriptions([]);
+      setServiceReasons([]);
+      setHealthRecords([]);
+      setFollowUpAppointments([]);
+      setLoading(false);
+      setDataLoaded(false);
+      return;
+    }
+    
+    if (dataLoaded) {
+      console.log('Data already loaded, skipping...');
+      return;
+    }
+    
+    console.log('Auth ready and user exists, loading data...');
     const loadData = async () => {
       try {
         await initializeAndLoadData();
       } catch (error) {
         console.error('資料載入失敗:', error);
-        // 在失敗時重新嘗試載入
-        setTimeout(loadData, 5000); // 5秒後重試
       }
     };
     loadData();
-  }, []);
+  }, [authReady, user, dataLoaded]);
 
   const initializeAndLoadData = async () => {
     try {
+      console.log('Starting data initialization...');
       setLoading(true);
       await db.initializeDatabase();
       await refreshData();
+      setDataLoaded(true);
+      console.log('Data initialization completed successfully');
     } catch (error) {
       console.error('Error initializing data:', error);
+      // 即使初始化失敗，也嘗試載入資料
+      try {
+        console.log('Attempting to refresh data despite initialization error...');
+        await refreshData();
+        setDataLoaded(true);
+      } catch (refreshError) {
+        console.error('Refresh data also failed:', refreshError);
+      }
     } finally {
       setLoading(false);
     }
@@ -81,6 +119,7 @@ export const PatientProvider: React.FC<{ children: React.ReactNode }> = ({ child
 
   const refreshData = async () => {
     try {
+      console.log('Refreshing all data...');
       const [patientsData, schedulesData, prescriptionsData, serviceReasonsData, healthRecordsData, followUpAppointmentsData] = await Promise.all([
         db.getPatients(),
         db.getSchedules(),
@@ -90,6 +129,14 @@ export const PatientProvider: React.FC<{ children: React.ReactNode }> = ({ child
         db.getFollowUpAppointments()
       ]);
 
+      console.log('Data loaded:', {
+        patients: patientsData.length,
+        schedules: schedulesData.length,
+        prescriptions: prescriptionsData.length,
+        serviceReasons: serviceReasonsData.length,
+        healthRecords: healthRecordsData.length,
+        followUpAppointments: followUpAppointmentsData.length
+      });
       setPatients(patientsData);
       setPrescriptions(prescriptionsData);
       setServiceReasons(serviceReasonsData);
@@ -108,8 +155,10 @@ export const PatientProvider: React.FC<{ children: React.ReactNode }> = ({ child
       );
 
       setSchedules(schedulesWithDetails);
+      console.log('All data refresh completed');
     } catch (error) {
       console.error('Error refreshing data:', error);
+      throw error; // 重新拋出錯誤以便上層處理
     }
   };
 
