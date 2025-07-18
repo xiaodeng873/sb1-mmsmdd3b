@@ -279,21 +279,30 @@ for (let row = 1; row <= 49; row++) {
   };
 }
 
-// Step 8: Ensure G15:G44 have a thin dashed left border
+// Step 8: Ensure G15:G44 have the finest dotted left border
 console.log('第8步: 確保G15:G44左邊框為最幼虛線...');
 const leftBorderStyle = {
-  style: 'dash',
-  color: { argb: 'FF000000' }
+  style: 'dotted', // Use 'dotted' for the finest dashed line
+  color: { argb: 'FF000000' } // Black color
 };
 
 for (let row = 15; row <= 44; row++) {
   const cell = worksheet.getCell(`G${row}`);
   const existingBorder = cell.border || {};
-
+  
+  // Log existing border for debugging
+  console.log(`G${row} 現有邊框:`, JSON.stringify(existingBorder));
+  
+  // Forcefully apply the left border
   cell.border = {
-    ...existingBorder,
-    left: existingBorder.left || leftBorderStyle
+    top: existingBorder.top || undefined,
+    right: existingBorder.right || undefined,
+    bottom: existingBorder.bottom || undefined,
+    left: leftBorderStyle // Overwrite with dotted style
   };
+  
+  // Log the updated border to confirm
+  console.log(`G${row} 更新後邊框:`, JSON.stringify(cell.border));
 }
 console.log('=== G15:G44左邊框應用完成 ===');
 
