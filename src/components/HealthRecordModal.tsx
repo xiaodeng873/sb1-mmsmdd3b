@@ -428,8 +428,6 @@ const HealthRecordModal: React.FC<HealthRecordModalProps> = ({ record, onClose }
             </div>
           )}
 
-
-
           {/* 提交按鈕 */}
           <div className="flex space-x-3 pt-4 border-t border-gray-200">
             <button
