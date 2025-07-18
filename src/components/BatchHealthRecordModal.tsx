@@ -39,12 +39,17 @@ const BatchHealthRecordModal: React.FC<BatchHealthRecordModalProps> = ({ onClose
   const [isUploading, setIsUploading] = useState(false);
   const [uploadResults, setUploadResults] = useState<{ success: number; failed: number; errors: string[] } | null>(null);
   const recordsContainerRef = useRef<HTMLDivElement>(null);
+  const recordRefs = useRef<Map<string, HTMLDivElement>>(new Map());
 
-  // Scroll to bottom when records change
+  // Scroll to the top of the newest record when records change
   useEffect(() => {
-    if (recordsContainerRef.current) {
-      recordsContainerRef.current.scrollTo({
-        top: recordsContainerRef.current.scrollHeight,
+    const newestRecordId = records[records.length - 1]?.id;
+    const newestRecordElement = recordRefs.current.get(newestRecordId);
+    if (newestRecordElement && recordsContainerRef.current) {
+      const container = recordsContainerRef.current;
+      const recordTop = newestRecordElement.getBoundingClientRect().top - container.getBoundingClientRect().top + container.scrollTop;
+      container.scrollTo({
+        top: recordTop,
         behavior: 'smooth'
       });
     }
@@ -83,6 +88,7 @@ const BatchHealthRecordModal: React.FC<BatchHealthRecordModalProps> = ({ onClose
   const removeRecord = (id: string) => {
     if (records.length > 1) {
       setRecords(records.filter(record => record.id !== id));
+      recordRefs.current.delete(id);
     }
   };
 
@@ -172,7 +178,7 @@ const BatchHealthRecordModal: React.FC<BatchHealthRecordModalProps> = ({ onClose
       }
 
       setUploadResults({
-        success: successCount,
+ to:       success: successCount,
         failed: failedCount,
         errors: errors
       });
@@ -318,7 +324,17 @@ const BatchHealthRecordModal: React.FC<BatchHealthRecordModalProps> = ({ onClose
 
             <div ref={recordsContainerRef} className="space-y-3 max-h-[400px] overflow-y-auto">
               {records.map((record, index) => (
-                <div key={record.id} className="border rounded-lg p-4 bg-gray-50">
+                <div
+                  key={record.id}
+                  ref={(el) => {
+                    if (el) {
+                      recordRefs.current.set(record.id, el);
+                    } else {
+                      recordRefs.current.delete(record.id);
+                    }
+                  }}
+                  className="border rounded-lg p-4 bg-gray-50"
+                >
                   <div className="flex items-center justify-between mb-3">
                     <h4 className="font-medium text-gray-900">第 {index + 1} 筆記錄</h4>
                     {records.length > 1 && (
@@ -381,14 +397,21 @@ const BatchHealthRecordModal: React.FC<BatchHealthRecordModalProps> = ({ onClose
                       />
                     </div>
 
-                   
+                    <div>
+                      <label className="form-label">記錄人員</label>
+                      <input
+                        type="text"
+                        value={record.記錄人員}
+                        onChange={(e) => updateRecord(record.id, '記錄人員', e.target.value)}
+                        className="form-input"
+                        placeholder="記錄人員姓名"
+                      />
+                    </div>
                   </div>
 
                   {recordType === '生命表徵' && (
                     <div className="space-y-4 mt-4">
-                      {/* 第一行：收縮壓/舒張壓、脈搏、體溫 */}
-                      <div className="grid grid-cols-1 md:grid-cols-3
-                        gap-4">
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                         <div>
                           <label className="form-label">血壓 (mmHg)</label>
                           <div className="flex space-x-2">
@@ -439,8 +462,7 @@ const BatchHealthRecordModal: React.FC<BatchHealthRecordModalProps> = ({ onClose
                           />
                         </div>
                       </div>
-                      
-                      {/* 第二行：血含氧量、呼吸頻率、備註 */}
+
                       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                         <div>
                           <label className="form-label">血含氧量 (%)</label>
@@ -517,7 +539,6 @@ const BatchHealthRecordModal: React.FC<BatchHealthRecordModalProps> = ({ onClose
                       </div>
                     </div>
                   )}
-
                 </div>
               ))}
             </div>
