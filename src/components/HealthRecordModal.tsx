@@ -347,7 +347,7 @@ const HealthRecordModal: React.FC<HealthRecordModalProps> = ({ record, onClose }
                       value={formData.備註}
                       onChange={handleChange}
                       className="form-input"
-                      rows={2}
+                      rows={1}
                       placeholder="其他備註資訊..."
                     />
                   </div>
