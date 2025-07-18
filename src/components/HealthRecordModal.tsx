@@ -428,20 +428,7 @@ const HealthRecordModal: React.FC<HealthRecordModalProps> = ({ record, onClose }
             </div>
           )}
 
-          {/* 備註和記錄人員 */}
-          <div className="grid grid-cols-1 gap-4">
-            <div>
-              <label className="form-label">記錄人員</label>
-              <input
-                type="text"
-                name="記錄人員"
-                value={formData.記錄人員}
-                onChange={handleChange}
-                className="form-input"
-                placeholder="記錄人員姓名"
-              />
-            </div>
-          </div>
+
 
           {/* 提交按鈕 */}
           <div className="flex space-x-3 pt-4 border-t border-gray-200">
