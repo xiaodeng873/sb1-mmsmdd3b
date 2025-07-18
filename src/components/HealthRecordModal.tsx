@@ -254,8 +254,219 @@ const HealthRecordModal: React.FC<HealthRecordModalProps> = ({ record, onClose }
                 生命表徵數據
               </h3>
               
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                <div className="col-span-1 md:col-span-2 lg:col-span-1">
+              <div className="space-y-4">
+                {/* 第一行：血壓、脈搏、體溫 */}
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div>
+                    <label className="form-label">血壓收縮壓 (mmHg)</label>
+                    <input
+                      type="number"
+                      name="血壓收縮壓"
+                      value={formData.血壓收縮壓}
+                      onChange={handleChange}
+                      className="form-input"
+                      placeholder="120"
+                      min="0"
+                      max="300"
+                    />
+                  </div>
+                  <div>
+                    <label className="form-label">血壓舒張壓 (mmHg)</label>
+                    <input
+                      type="number"
+                      name="血壓舒張壓"
+                      value={formData.血壓舒張壓}
+                      onChange={handleChange}
+                      className="form-input"
+                      placeholder="80"
+                      min="0"
+                      max="200"
+                    />
+                  </div>
+                  <div>
+                    <label className="form-label">脈搏 (每分鐘)</label>
+                    <input
+                      type="number"
+                      name="脈搏"
+                      value={formData.脈搏}
+                      onChange={handleChange}
+                      className="form-input"
+                      placeholder="60-100"
+                      min="0"
+                      max="300"
+                    />
+                  </div>
+                </div>
+                
+                {/* 第二行：體溫、血含氧量、呼吸頻率 */}
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div>
+                    <label className="form-label">體溫 (°C)</label>
+                    <input
+                      type="number"
+                      name="體溫"
+                      value={formData.體溫}
+                      onChange={handleChange}
+                      className="form-input"
+                      placeholder="36.5"
+                      min="30"
+                      max="45"
+                      step="0.1"
+                    />
+                  </div>
+                  <div>
+                    <label className="form-label">血含氧量 (%)</label>
+                    <input
+                      type="number"
+                      name="血含氧量"
+                      value={formData.血含氧量}
+                      onChange={handleChange}
+                      className="form-input"
+                      placeholder="95-100"
+                      min="0"
+                      max="100"
+                    />
+                  </div>
+                  <div>
+                    <label className="form-label">呼吸頻率 (每分鐘)</label>
+                    <input
+                      type="number"
+                      name="呼吸頻率"
+                      value={formData.呼吸頻率}
+                      onChange={handleChange}
+                      className="form-input"
+                      placeholder="12-20"
+                      min="0"
+                      max="100"
+                    />
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* 血糖控制 */}
+          {formData.記錄類型 === '血糖控制' && (
+            <div className="space-y-4">
+              <h3 className="text-lg font-medium text-red-600 flex items-center">
+                <Droplets className="h-5 w-5 mr-2" />
+                血糖控制數據
+              </h3>
+              
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="form-label">血糖值 (mmol/L) *</label>
+                  <input
+                    type="number"
+                    name="血糖值"
+                    value={formData.血糖值}
+                    onChange={handleChange}
+                    className="form-input"
+                    placeholder="4.0-7.0"
+                    min="0"
+                    max="50"
+                    step="0.1"
+                    required={formData.記錄類型 === '血糖控制'}
+                  />
+                  <p className="text-xs text-gray-500 mt-1">
+                    正常範圍：空腹 4.0-6.1，餐後 4.4-7.8
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* 體重控制 */}
+          {formData.記錄類型 === '體重控制' && (
+            <div className="space-y-4">
+              <h3 className="text-lg font-medium text-green-600 flex items-center">
+                <Scale className="h-5 w-5 mr-2" />
+                體重控制數據
+              </h3>
+              
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="form-label">體重 (kg) *</label>
+                  <input
+                    type="number"
+                    name="體重"
+                    value={formData.體重}
+                    onChange={handleChange}
+                    className="form-input"
+                    placeholder="50.0"
+                    min="0"
+                    max="300"
+                    step="0.1"
+                    required={formData.記錄類型 === '體重控制'}
+                  />
+                </div>
+                
+                {weightChange && (
+                  <div>
+                    <label className="form-label">與上次比較</label>
+                    <div className={`p-3 rounded-lg border ${
+                      weightChange.startsWith('+') ? 'bg-red-50 border-red-200 text-red-800' :
+                      weightChange.startsWith('-') ? 'bg-green-50 border-green-200 text-green-800' :
+                      'bg-gray-50 border-gray-200 text-gray-800'
+                    }`}>
+                      <div className="font-medium">{weightChange}</div>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* 備註和記錄人員 */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label className="form-label">備註</label>
+              <textarea
+                name="備註"
+                value={formData.備註}
+                onChange={handleChange}
+                className="form-input"
+                rows={3}
+                placeholder="其他備註資訊..."
+              />
+            </div>
+
+            <div>
+              <label className="form-label">記錄人員</label>
+              <input
+                type="text"
+                name="記錄人員"
+                value={formData.記錄人員}
+                onChange={handleChange}
+                className="form-input"
+                placeholder="記錄人員姓名"
+              />
+            </div>
+          </div>
+
+          {/* 提交按鈕 */}
+          <div className="flex space-x-3 pt-4 border-t border-gray-200">
+            <button
+              type="submit"
+              className="btn-primary flex-1"
+            >
+              {record ? '更新記錄' : '新增記錄'}
+            </button>
+            <button
+              type="button"
+              onClick={onClose}
+              className="btn-secondary flex-1"
+            >
+              取消
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+};
+
+export default HealthRecordModal;
                   <label className="form-label">血壓 (mmHg)</label>
                   <div className="flex space-x-2">
                     <input

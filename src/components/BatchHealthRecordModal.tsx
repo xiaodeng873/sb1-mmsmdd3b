@@ -394,79 +394,86 @@ const BatchHealthRecordModal: React.FC<BatchHealthRecordModalProps> = ({ onClose
                   </div>
 
                   {recordType === '生命表徵' && (
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mt-4">
-                      <div>
-                        <label className="form-label">血壓收縮壓 (mmHg)</label>
-                        <input
-                          type="number"
-                          value={record.血壓收縮壓}
-                          onChange={(e) => updateRecord(record.id, '血壓收縮壓', e.target.value)}
-                          className="form-input"
-                          placeholder="120"
-                          min="0"
-                          max="300"
-                        />
+                    <div className="space-y-4 mt-4">
+                      {/* 第一行：血壓、脈搏、體溫 */}
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <div>
+                          <label className="form-label">血壓收縮壓 (mmHg)</label>
+                          <input
+                            type="number"
+                            value={record.血壓收縮壓}
+                            onChange={(e) => updateRecord(record.id, '血壓收縮壓', e.target.value)}
+                            className="form-input"
+                            placeholder="120"
+                            min="0"
+                            max="300"
+                          />
+                        </div>
+                        <div>
+                          <label className="form-label">血壓舒張壓 (mmHg)</label>
+                          <input
+                            type="number"
+                            value={record.血壓舒張壓}
+                            onChange={(e) => updateRecord(record.id, '血壓舒張壓', e.target.value)}
+                            className="form-input"
+                            placeholder="80"
+                            min="0"
+                            max="200"
+                          />
+                        </div>
+                        <div>
+                          <label className="form-label">脈搏 (每分鐘)</label>
+                          <input
+                            type="number"
+                            value={record.脈搏}
+                            onChange={(e) => updateRecord(record.id, '脈搏', e.target.value)}
+                            className="form-input"
+                            placeholder="72"
+                            min="0"
+                            max="300"
+                          />
+                        </div>
                       </div>
-                      <div>
-                        <label className="form-label">血壓舒張壓 (mmHg)</label>
-                        <input
-                          type="number"
-                          value={record.血壓舒張壓}
-                          onChange={(e) => updateRecord(record.id, '血壓舒張壓', e.target.value)}
-                          className="form-input"
-                          placeholder="80"
-                          min="0"
-                          max="200"
-                        />
-                      </div>
-                      <div>
-                        <label className="form-label">脈搏 (每分鐘)</label>
-                        <input
-                          type="number"
-                          value={record.脈搏}
-                          onChange={(e) => updateRecord(record.id, '脈搏', e.target.value)}
-                          className="form-input"
-                          placeholder="72"
-                          min="0"
-                          max="300"
-                        />
-                      </div>
-                      <div>
-                        <label className="form-label">體溫 (°C)</label>
-                        <input
-                          type="number"
-                          value={record.體溫}
-                          onChange={(e) => updateRecord(record.id, '體溫', e.target.value)}
-                          className="form-input"
-                          placeholder="36.5"
-                          min="30"
-                          max="45"
-                          step="0.1"
-                        />
-                      </div>
-                      <div>
-                        <label className="form-label">血含氧量 (%)</label>
-                        <input
-                          type="number"
-                          value={record.血含氧量}
-                          onChange={(e) => updateRecord(record.id, '血含氧量', e.target.value)}
-                          className="form-input"
-                          placeholder="98"
-                          min="0"
-                          max="100"
-                        />
-                      </div>
-                      <div>
-                        <label className="form-label">呼吸頻率 (每分鐘)</label>
-                        <input
-                          type="number"
-                          value={record.呼吸頻率}
-                          onChange={(e) => updateRecord(record.id, '呼吸頻率', e.target.value)}
-                          className="form-input"
-                          placeholder="18"
-                          min="0"
-                          max="100"
-                        />
+                      
+                      {/* 第二行：體溫、血含氧量、呼吸頻率 */}
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <div>
+                          <label className="form-label">體溫 (°C)</label>
+                          <input
+                            type="number"
+                            value={record.體溫}
+                            onChange={(e) => updateRecord(record.id, '體溫', e.target.value)}
+                            className="form-input"
+                            placeholder="36.5"
+                            min="30"
+                            max="45"
+                            step="0.1"
+                          />
+                        </div>
+                        <div>
+                          <label className="form-label">血含氧量 (%)</label>
+                          <input
+                            type="number"
+                            value={record.血含氧量}
+                            onChange={(e) => updateRecord(record.id, '血含氧量', e.target.value)}
+                            className="form-input"
+                            placeholder="98"
+                            min="0"
+                            max="100"
+                          />
+                        </div>
+                        <div>
+                          <label className="form-label">呼吸頻率 (每分鐘)</label>
+                          <input
+                            type="number"
+                            value={record.呼吸頻率}
+                            onChange={(e) => updateRecord(record.id, '呼吸頻率', e.target.value)}
+                            className="form-input"
+                            placeholder="18"
+                            min="0"
+                            max="100"
+                          />
+                        </div>
                       </div>
                     </div>
                   )}
