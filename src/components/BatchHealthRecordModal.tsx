@@ -480,7 +480,7 @@ const BatchHealthRecordModal: React.FC<BatchHealthRecordModalProps> = ({ onClose
                             value={record.備註}
                             onChange={(e) => updateRecord(record.id, '備註', e.target.value)}
                             className="form-input"
-                            rows={2}
+                            rows={1}
                             placeholder="其他備註資訊..."
                           />
                         </div>
