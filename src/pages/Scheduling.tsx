@@ -234,6 +234,10 @@ const Scheduling: React.FC = () => {
         {filteredSchedules.length > 0 ? (
           filteredSchedules.map(schedule => (
             <div key={schedule.排程id} className="card p-6">
+             <div 
+               className="cursor-pointer" 
+               onDoubleClick={() => handleEdit(schedule)}
+             >
               <div className="flex items-center justify-between mb-4">
                 <div className="flex items-center space-x-3">
                   <Calendar className="h-6 w-6 text-blue-600" />
@@ -282,6 +286,7 @@ const Scheduling: React.FC = () => {
                   </button>
                 </div>
               </div>
+             </div>
 
               {/* Patient List */}
               <div className="space-y-3">

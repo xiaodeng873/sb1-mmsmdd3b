@@ -614,6 +614,10 @@ const TemplateManagement: React.FC = () => {
             const typeInfo = templateTypes.find(t => t.id === template.type);
             return (
               <div key={template.id} className="card p-6 hover-scale">
+               <div 
+                 className="cursor-pointer" 
+                 onDoubleClick={() => handlePreview(template)}
+               >
                 <div className="flex items-center justify-between mb-4">
                   <div className="flex items-center space-x-3">
                     <div className={`w-12 h-12 rounded-full flex items-center justify-center ${typeInfo?.color || 'bg-gray-100 text-gray-600'}`}>
@@ -666,6 +670,7 @@ const TemplateManagement: React.FC = () => {
                   </div>
                 </div>
               </div>
+               </div>
             );
           })
         ) : (

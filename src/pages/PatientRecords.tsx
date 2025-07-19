@@ -507,6 +507,10 @@ const PatientRecords: React.FC = () => {
           {sortedPatients.length > 0 ? (
             sortedPatients.map(patient => (
               <div key={patient.院友id} className="card hover-scale overflow-hidden">
+               <div 
+                 className="cursor-pointer" 
+                 onDoubleClick={() => handleEdit(patient)}
+               >
                 <div className="relative bg-gradient-to-r from-blue-50 to-indigo-50 p-6">
                   <div className="flex items-start space-x-4">
                     <div className="w-20 h-20 bg-white rounded-xl shadow-sm overflow-hidden flex items-center justify-center flex-shrink-0">
@@ -568,6 +572,7 @@ const PatientRecords: React.FC = () => {
                     </div>
                   </div>
                 </div>
+               </div>
 
                 <div className="p-6 space-y-4">
                   <div className="space-y-2">
@@ -716,6 +721,7 @@ const PatientRecords: React.FC = () => {
                     <tr 
                       key={patient.院友id} 
                       className={`hover:bg-gray-50 ${selectedRows.has(patient.院友id) ? 'bg-blue-50' : ''}`}
+                     onDoubleClick={() => handleEdit(patient)}
                     >
                       <td className="px-4 py-4 whitespace-nowrap">
                         <input

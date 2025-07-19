@@ -652,6 +652,7 @@ const FollowUpManagement: React.FC = () => {
                     <tr 
                       key={appointment.覆診id} 
                       className={`hover:bg-gray-50 ${selectedRows.has(appointment.覆診id) ? 'bg-blue-50' : ''}`}
+                     onDoubleClick={() => handleEdit(appointment)}
                     >
                       <td className="px-4 py-4 whitespace-nowrap">
                         <input

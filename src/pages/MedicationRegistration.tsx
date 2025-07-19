@@ -773,6 +773,7 @@ const MedicationRegistration: React.FC = () => {
                     <tr 
                       key={prescription.處方id} 
                       className={`hover:bg-gray-50 ${selectedRows.has(prescription.處方id) ? 'bg-blue-50' : ''}`}
+                     onDoubleClick={() => handleEdit(prescription)}
                     >
                       <td className="px-4 py-4 whitespace-nowrap">
                         <input

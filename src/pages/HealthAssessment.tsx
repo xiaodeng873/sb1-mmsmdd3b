@@ -656,6 +656,7 @@ const HealthAssessment: React.FC = () => {
                     <tr 
                       key={record.記錄id} 
                       className={`hover:bg-gray-50 ${selectedRows.has(record.記錄id) ? 'bg-blue-50' : ''}`}
+                     onDoubleClick={() => handleEdit(record)}
                     >
                       <td className="px-4 py-4 whitespace-nowrap">
                         <input
