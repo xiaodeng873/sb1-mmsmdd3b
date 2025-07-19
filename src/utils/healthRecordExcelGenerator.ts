@@ -216,10 +216,8 @@ export const applyHealthRecordTemplateFormat = (
 
   // Step 5: Fill record data starting from row 10 (assuming header ends at row 9)
   records.forEach((record, index) => {
-    const rowIndex = 10 + index;
-    
-    // A: 序號
-    worksheet.getCell(`A${rowIndex}`).value = index + 1;
+    const rowIndex = 4 + index;
+  
     
     // B: 床號
     worksheet.getCell(`B${rowIndex}`).value = record.床號;
