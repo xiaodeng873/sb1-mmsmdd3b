@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { 
-  Users, Plus, Edit3, Trash2, Search, Filter, User, Calendar, Shield, AlertTriangle,
+  Users, Plus, Edit3, Trash2, Search, Filter, User, Calendar, Shield, AlertTriangle, Pill,
   Grid3X3, List, ChevronUp, ChevronDown, Download, X
 } from 'lucide-react';
 import { usePatients } from '../context/PatientContext';
