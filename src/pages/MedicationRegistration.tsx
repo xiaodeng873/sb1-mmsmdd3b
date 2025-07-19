@@ -174,7 +174,7 @@ const MedicationRegistration: React.FC = () => {
         valueA = patientA?.床號 || '';
         valueB = patientB?.床號 || '';
         break;
-      case '中文姓名':
+      case '院友姓名':
         valueA = patientA?.中文姓名 || '';
         valueB = patientB?.中文姓名 || '';
         break;
