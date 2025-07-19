@@ -1309,3 +1309,13 @@ export default PatientRecords;
 };
 
 export default PatientRecords;
+
+[plugin:vite:react-babel] /home/project/src/pages/PatientRecords.tsx: Expected corresponding JSX closing tag for <th>. (272:4)
+  275 |   return (
+/home/project/src/pages/PatientRecords.tsx:272:4
+270|          )}
+271|        </div>
+272|      </>
+   |      ^
+273|    );
+274|
