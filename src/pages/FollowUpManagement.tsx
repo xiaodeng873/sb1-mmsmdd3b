@@ -19,6 +19,7 @@ import {
 } from 'lucide-react';
 import { usePatients, type FollowUpAppointment } from '../context/PatientContext';
 import FollowUpModal from '../components/FollowUpModal';
+import PatientTooltip from '../components/PatientTooltip';
 
 type SortField = '覆診日期' | '覆診時間' | '院友姓名' | '覆診地點' | '覆診專科' | '狀態' | '交通安排' | '陪診人員';
 type SortDirection = 'asc' | 'desc';
@@ -467,7 +468,17 @@ const FollowUpManagement: React.FC = () => {
                             )}
                           </div>
                           <div>
-                            <div className="text-sm font-medium text-gray-900">{patient?.中文姓名}</div>
+                            <div className="text-sm font-medium text-gray-900">
+                              {patient ? (
+                                <PatientTooltip patient={patient}>
+                                  <span className="cursor-help hover:text-blue-600 transition-colors">
+                                    {patient.中文姓名}
+                                  </span>
+                                </PatientTooltip>
+                              ) : (
+                                '-'
+                              )}
+                            </div>
                             <div className="text-sm text-gray-500">{patient?.床號}</div>
                           </div>
                         </div>

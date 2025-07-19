@@ -25,6 +25,7 @@ import { usePatients } from '../context/PatientContext';
 import HealthRecordModal from '../components/HealthRecordModal';
 import BatchHealthRecordModal from '../components/BatchHealthRecordModal';
 import { exportHealthRecordsToExcel, type HealthRecordExportData } from '../utils/healthRecordExcelGenerator';
+import PatientTooltip from '../components/PatientTooltip';
 
 type RecordType = '生命表徵' | '血糖控制' | '體重控制' | 'all';
 type SortField = '記錄日期' | '記錄時間' | '院友姓名' | '記錄類型' | '體重' | '血糖值' | '血壓';
@@ -538,7 +539,17 @@ const HealthAssessment: React.FC = () => {
                             )}
                           </div>
                           <div>
-                            <div className="font-medium">{patient?.中文姓名}</div>
+                            <div className="font-medium">
+                              {patient ? (
+                                <PatientTooltip patient={patient}>
+                                  <span className="cursor-help hover:text-blue-600 transition-colors">
+                                    {patient.中文姓名}
+                                  </span>
+                                </PatientTooltip>
+                              ) : (
+                                '-'
+                              )}
+                            </div>
                             <div className="text-xs text-gray-500">{patient?.床號}</div>
                           </div>
                         </div>

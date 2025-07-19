@@ -7,6 +7,7 @@ import { getMedicationTemplatesFromSupabase } from '../utils/medicationRecordExc
 import { exportPrescriptionsToExcel } from '../utils/prescriptionExcelGenerator';
 import OCRModal from '../components/OCRModal';
 import { getMedicationTimeColorClass } from '../utils/medicationTimeColors';
+import PatientTooltip from '../components/PatientTooltip';
 
 type SortField = '床號' | '中文姓名' | '處方日期' | '藥物名稱' | '劑型' | '服用途徑' | '服用次數' | '服用份量' | '服用日數' | '藥物來源';
 type SortDirection = 'asc' | 'desc';
@@ -786,7 +787,15 @@ const MedicationRegistration: React.FC = () => {
                         {patient?.床號}
                       </td>
                       <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900">
-                        {patient?.中文姓名}
+                        {patient ? (
+                          <PatientTooltip patient={patient}>
+                            <span className="cursor-help hover:text-blue-600 transition-colors">
+                              {patient.中文姓名}
+                            </span>
+                          </PatientTooltip>
+                        ) : (
+                          '-'
+                        )}
                       </td>
                       <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900">
                         {new Date(prescription.處方日期).toLocaleDateString('zh-TW')}
