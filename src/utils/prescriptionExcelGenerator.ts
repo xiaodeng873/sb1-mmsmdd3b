@@ -278,7 +278,22 @@ for (let row = 1; row <= 49; row++) {
     right: existingBorder.right || rightBorderStyle
   };
 }
+// 為 D4 加上 thin black bottom border
+const cellD4 = worksheet.getCell('D4');
+const borderD4 = cellD4.border || {};
+cellD4.border = {
+  ...borderD4,
+  bottom: bottomBorderStyle
+};
 
+// 為 A9 加上 thin black bottom border
+const cellA9 = worksheet.getCell('A9');
+const borderA9 = cellA9.border || {};
+cellA9.border = {
+  ...borderA9,
+  bottom: bottomBorderStyle
+};
+  
 // Step 8: Ensure G15:G44 have the finest dotted left border
 console.log('第8步: 確保G15:G44左邊框為最幼虛線...');
 const leftBorderStyle = {
