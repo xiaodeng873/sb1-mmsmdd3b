@@ -18,7 +18,8 @@ import {
   ChevronUp,
   ChevronDown,
   Download,
-  Upload
+  Upload,
+  X
 } from 'lucide-react';
 import { usePatients } from '../context/PatientContext';
 import HealthRecordModal from '../components/HealthRecordModal';
