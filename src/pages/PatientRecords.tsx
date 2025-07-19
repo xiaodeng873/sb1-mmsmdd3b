@@ -588,7 +588,7 @@ const PatientRecords: React.FC = () => {
                       {patient.藥物敏感?.length > 0 && (
                         <div className="bg-orange-50 border border-orange-200 rounded-lg p-3">
                           <div className="flex items-start space-x-2">
-                            <Shield className="h-4 w-4 text-orange-600 mt-0.5 flex-shrink-0" />
+                            <Pill className="h-4 w-4 text-orange-600 mt-0.5 flex-shrink-0" />
                             <div className="min-w-0">
                               <p className="text-xs font-medium text-orange-800 mb-1">藥物敏感</p>
                               <div className="flex flex-wrap gap-1">
@@ -606,7 +606,7 @@ const PatientRecords: React.FC = () => {
                       {patient.不良藥物反應?.length > 0 && (
                         <div className="bg-red-50 border border-red-200 rounded-lg p-3">
                           <div className="flex items-start space-x-2">
-                            <AlertTriangle className="h-4 w-4 text-red-600 mt-0.5 flex-shrink-0" />
+                            <Pill className="h-4 w-4 text-red-600 mt-0.5 flex-shrink-0" />
                             <div className="min-w-0">
                               <p className="text-xs font-medium text-red-800 mb-1">不良藥物反應</p>
                               <div className="flex flex-wrap gap-1">
@@ -636,7 +636,7 @@ const PatientRecords: React.FC = () => {
                     <div className="border-t border-gray-200 pt-4">
                       <div className="bg-purple-50 border border-purple-200 rounded-lg p-3">
                         <div className="flex items-start space-x-2">
-                          <Shield className="h-4 w-4 text-purple-600 mt-0.5 flex-shrink-0" />
+                          <AlertTriangle className="h-4 w-4 text-purple-600 mt-0.5 flex-shrink-0" />
                           <div className="min-w-0">
                             <p className="text-xs font-medium text-purple-800 mb-1">感染控制</p>
                             <div className="flex flex-wrap gap-1">
