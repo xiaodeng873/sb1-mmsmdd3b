@@ -748,8 +748,7 @@ const MedicationRegistration: React.FC = () => {
                       className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
                     />
                   </th>
-                  <SortableHeader field="床號">床號</SortableHeader>
-                  <SortableHeader field="中文姓名">院友姓名</SortableHeader>
+                  <SortableHeader field="中文姓名">院友</SortableHeader>
                   <SortableHeader field="處方日期">處方日期</SortableHeader>
                   <SortableHeader field="藥物名稱">藥物名稱</SortableHeader>
                   <SortableHeader field="劑型">劑型</SortableHeader>
@@ -783,19 +782,34 @@ const MedicationRegistration: React.FC = () => {
                           className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
                         />
                       </td>
-                      <td className="px-4 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                        {patient?.床號}
-                      </td>
-                      <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900">
-                        {patient ? (
-                          <PatientTooltip patient={patient}>
-                            <span className="cursor-help hover:text-blue-600 transition-colors">
-                              {patient.中文姓名}
-                            </span>
-                          </PatientTooltip>
-                        ) : (
-                          '-'
-                        )}
+                      <td className="px-4 py-4 whitespace-nowrap">
+                        <div className="flex items-center space-x-3">
+                          <div className="w-10 h-10 bg-blue-100 rounded-full overflow-hidden flex items-center justify-center">
+                            {patient?.院友相片 ? (
+                              <img 
+                                src={patient.院友相片} 
+                                alt={patient.中文姓名} 
+                                className="w-full h-full object-cover"
+                              />
+                            ) : (
+                              <User className="h-5 w-5 text-blue-600" />
+                            )}
+                          </div>
+                          <div>
+                            <div className="text-sm font-medium text-gray-900">
+                              {patient ? (
+                                <PatientTooltip patient={patient}>
+                                  <span className="cursor-help hover:text-blue-600 transition-colors">
+                                    {patient.中文姓名}
+                                  </span>
+                                </PatientTooltip>
+                              ) : (
+                                '-'
+                              )}
+                            </div>
+                            <div className="text-sm text-gray-500">{patient?.床號}</div>
+                          </div>
+                        </div>
                       </td>
                       <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900">
                         {new Date(prescription.處方日期).toLocaleDateString('zh-TW')}
