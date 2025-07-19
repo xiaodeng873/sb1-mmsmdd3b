@@ -310,15 +310,7 @@ const PatientRecords: React.FC = () => {
             </div>
             
             <div className="flex space-x-2">
-              <select
-                value={filterGender}
-                onChange={(e) => setFilterGender(e.target.value)}
-                className="form-input lg:w-32"
-              >
-                <option value="">所有性別</option>
-                <option value="男">男</option>
-                <option value="女">女</option>
-              </select>
+            
               
               <button
                 onClick={() => setShowAdvancedSearch(!showAdvancedSearch)}
