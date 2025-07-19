@@ -633,7 +633,7 @@ const HealthAssessment: React.FC = () => {
                   </th>
                   <SortableHeader field="院友姓名">院友姓名</SortableHeader>
                   <SortableHeader field="記錄日期">日期時間</SortableHeader>
-                  <SortableHeader field="記錄類型">類型</SortableHeader>
+                 
                   <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     生命表徵
                   </th>
