@@ -449,24 +449,13 @@ const PatientRecords: React.FC = () => {
               {hasActiveFilters() ? '找不到符合條件的院友' : '暫無院友記錄'}
                   />
                 </div>
-              {hasActiveFilters() ? '請嘗試調整搜索條件' : '開始新增院友資料'}
+              </div>
             </div>
-            {!hasActiveFilters() && (
-          
+          </div>
+        
           {/* 搜索結果統計 */}
-              {hasActiveFilters() ? '找不到符合條件的院友' : '暫無院友記錄'}
+          <div className="flex items-center justify-between text-sm text-gray-600 mt-4">
             <span>顯示 {filteredPatients.length} / {patients.length} 位院友</span>
-            {hasActiveFilters() && (
-              {hasActiveFilters() ? '請嘗試調整搜索條件' : '開始新增院友資料'}
-            )}
-            {!hasActiveFilters() && (
-              <button
-                onClick={clearAllFilters}
-                className="btn-secondary"
-              >
-                清除所有篩選
-              </button>
-            )}
             {hasActiveFilters() && (
               <button
                 onClick={clearAllFilters}
@@ -479,9 +468,426 @@ const PatientRecords: React.FC = () => {
         </div>
         
         {/* View Mode Toggle */}
-        <div className="flex justify-end mt-4">
-          <div className="flex-1 relative">
-            {/* View Mode Toggle */}
+        <div className="flex justify-end">
+          <div className="flex bg-gray-100 rounded-lg p-1">
+            <button
+              onClick={() => setViewMode('cards')}
+              className={`flex items-center space-x-2 px-3 py-2 rounded-md text-sm font-medium transition-colors ${
+                viewMode === 'cards' 
+                  ? 'bg-white text-blue-600 shadow-sm' 
+                  : 'text-gray-600 hover:text-gray-900'
+              }`}
+            >
+              <Grid3X3 className="h-4 w-4" />
+              <span>卡片</span>
+            </button>
+            <button
+              onClick={() => setViewMode('table')}
+              className={`flex items-center space-x-2 px-3 py-2 rounded-md text-sm font-medium transition-colors ${
+                viewMode === 'table' 
+                  ? 'bg-white text-blue-600 shadow-sm' 
+                  : 'text-gray-600 hover:text-gray-900'
+              }`}
+            >
+              <List className="h-4 w-4" />
+              <span>表格</span>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      {/* Selection Controls for Table View */}
+      {viewMode === 'table' && sortedPatients.length > 0 && (
+        <div className="card p-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-4">
+              <button
+                onClick={handleSelectAll}
+                className="text-sm text-blue-600 hover:text-blue-700 font-medium"
+              >
+                {selectedRows.size === sortedPatients.length ? '取消全選' : '全選'}
+              </button>
+              <button
+                onClick={handleInvertSelection}
+                className="text-sm text-blue-600 hover:text-blue-700 font-medium"
+              >
+                反選
+              </button>
+            </div>
+            <div className="text-sm text-gray-600">
+              已選擇 {selectedRows.size} / {sortedPatients.length} 筆記錄
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Content */}
+      {viewMode === 'cards' ? (
+        /* Cards View */
+        <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
+          {sortedPatients.length > 0 ? (
+            sortedPatients.map(patient => (
+              <div key={patient.院友id} className="card hover-scale overflow-hidden">
+                {/* Header with Photo and Basic Info */}
+                <div className="relative bg-gradient-to-r from-blue-50 to-indigo-50 p-6">
+                  <div className="flex items-start space-x-4">
+                    {/* Photo */}
+                    <div className="w-20 h-20 bg-white rounded-xl shadow-sm overflow-hidden flex items-center justify-center flex-shrink-0">
+                      {patient.院友相片 ? (
+                        <img 
+                          src={patient.院友相片} 
+                          alt={patient.中文姓名} 
+                          className="w-full h-full object-cover"
+                        />
+                      ) : (
+                        <User className="h-10 w-10 text-gray-400" />
+                      )}
+                    </div>
+                    
+                    {/* Basic Info */}
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center justify-between mb-2">
+                        <div className="bg-blue-600 text-white px-3 py-1 rounded-full text-sm font-medium">
+                           {patient.床號}
+                        </div>
+                        <div className="flex space-x-1">
+                          <button
+                            onClick={() => handleEdit(patient)}
+                            className="p-1.5 text-blue-600 hover:bg-blue-100 rounded-lg transition-colors"
+                            title="編輯"
+                          >
+                            <Edit3 className="h-4 w-4" />
+                          </button>
+                          <button
+                            onClick={() => handleDelete(patient.院友id)}
+                            className="p-1.5 text-red-600 hover:bg-red-100 rounded-lg transition-colors"
+                            title="刪除"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </button>
+                        </div>
+                      </div>
+                      
+                      <h3 className="text-lg font-semibold text-gray-900 mb-1 truncate">
+                        {patient.中文姓名}
+                      </h3>
+                      
+                      {patient.英文姓名 && (
+                        <p className="text-sm text-gray-600 truncate mb-2">
+                          {patient.英文姓名}
+                        </p>
+                      )}
+                      
+                      <div className="flex items-center space-x-3 text-xs text-gray-500">
+                        <span className={`px-2 py-1 rounded-full ${
+                          patient.性別 === '男' ? 'bg-blue-100 text-blue-700' : 'bg-pink-100 text-pink-700'
+                        }`}>
+                          {patient.性別}
+                        </span>
+                        <span className="flex items-center">
+                          <Calendar className="h-3 w-3 mr-1" />
+                          {calculateAge(patient.出生日期)}歲
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Details */}
+                <div className="p-6 space-y-4">
+                  {/* Personal Info */}
+                  <div className="space-y-2">
+                    <div className="flex items-center text-sm">
+                      <span className="text-gray-500 w-20 flex-shrink-0">身份證:</span>
+                      <span className="text-gray-900 font-mono">{patient.身份證號碼}</span>
+                    </div>
+                    <div className="flex items-center text-sm">
+                      <span className="text-gray-500 w-20 flex-shrink-0">出生日期:</span>
+                      <span className="text-gray-900">
+                        {new Date(patient.出生日期).toLocaleDateString('zh-TW')}
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Medical Alerts */}
+                  {(patient.藥物敏感?.length > 0 || patient.不良藥物反應?.length > 0 || patient.感染控制?.length > 0) && (
+                    <div className="border-t border-gray-200 pt-4">
+                      <div className="space-y-2">
+                        {patient.藥物敏感?.length > 0 && (
+                          <div className="bg-orange-50 border border-orange-200 rounded-lg p-3">
+                            <div className="flex items-start space-x-2">
+                              <Shield className="h-4 w-4 text-orange-600 mt-0.5 flex-shrink-0" />
+                              <div className="min-w-0">
+                                <p className="text-xs font-medium text-orange-800 mb-1">藥物敏感</p>
+                                <div className="flex flex-wrap gap-1">
+                                  {patient.藥物敏感.map((allergy, index) => (
+                                    <span key={index} className="text-xs text-orange-700 bg-orange-100 px-1 rounded">
+                                      {allergy}
+                                    </span>
+                                  ))}
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        )}
+                        
+                        {patient.不良藥物反應?.length > 0 && (
+                          <div className="bg-red-50 border border-red-200 rounded-lg p-3">
+                            <div className="flex items-start space-x-2">
+                              <AlertTriangle className="h-4 w-4 text-red-600 mt-0.5 flex-shrink-0" />
+                              <div className="min-w-0">
+                                <p className="text-xs font-medium text-red-800 mb-1">不良藥物反應</p>
+                                <div className="flex flex-wrap gap-1">
+                                  {patient.不良藥物反應.map((reaction, index) => (
+                                    <span key={index} className="text-xs text-red-700 bg-red-100 px-1 rounded">
+                                      {reaction}
+                                    </span>
+                                  ))}
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        )}
+                        
+                        {patient.感染控制?.length > 0 && (
+                          <div className="bg-purple-50 border border-purple-200 rounded-lg p-3">
+                            <div className="flex items-start space-x-2">
+                              <Shield className="h-4 w-4 text-purple-600 mt-0.5 flex-shrink-0" />
+                              <div className="min-w-0">
+                                <p className="text-xs font-medium text-purple-800 mb-1">感染控制</p>
+                                <div className="flex flex-wrap gap-1">
+                                  {patient.感染控制.map((control, index) => (
+                                    <span key={index} className="text-xs text-purple-700 bg-purple-100 px-1 rounded">
+                                      {control}
+                                    </span>
+                                  ))}
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* No medical alerts message */}
+                  {(!patient.藥物敏感?.length) && 
+                   (!patient.不良藥物反應?.length) && 
+                   (!patient.感染控制?.length) && (
+                    <div className="border-t border-gray-200 pt-4">
+                      <div className="bg-green-50 border border-green-200 rounded-lg p-3">
+                        <div className="flex items-center space-x-2">
+                          <Shield className="h-4 w-4 text-green-600" />
+                          <p className="text-xs text-green-700">無已知藥物敏感、不良反應或感染控制項目</p>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+            ))
+          ) : (
+            <div className="col-span-full text-center py-12">
+              <Users className="h-24 w-24 mx-auto mb-4 text-gray-300" />
+              <h3 className="text-lg font-medium text-gray-900 mb-2">
+                {hasActiveFilters() ? '找不到符合條件的院友' : '暫無院友記錄'}
+              </h3>
+              <p className="text-gray-600 mb-4">
+                {hasActiveFilters() ? '請嘗試調整搜索條件' : '開始新增院友資料'}
+              </p>
+              {!hasActiveFilters() && (
+                <button
+                  onClick={() => setShowModal(true)}
+                  className="btn-primary"
+                >
+                  新增院友
+                </button>
+              )}
+            </div>
+          )}
+        </div>
+      ) : (
+        /* Table View */
+        <div className="card overflow-hidden">
+          {sortedPatients.length > 0 ? (
+            <div className="overflow-x-auto">
+              <table className="min-w-full divide-y divide-gray-200">
+                <thead className="bg-gray-50">
+                  <tr>
+                    <th className="px-4 py-3 text-left">
+                      <input
+                        type="checkbox"
+                        checked={selectedRows.size === sortedPatients.length && sortedPatients.length > 0}
+                        onChange={handleSelectAll}
+                        className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                      />
+                    </th>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      照片
+                    </th>
+                    <SortableHeader field="床號">床號</SortableHeader>
+                    <SortableHeader field="中文姓名">中文姓名</SortableHeader>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      英文姓名
+                    </th>
+                    <SortableHeader field="性別">性別</SortableHeader>
+                    <SortableHeader field="身份證號碼">身份證號碼</SortableHeader>
+                    <SortableHeader field="出生日期">出生日期</SortableHeader>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      年齡
+                    </th>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      醫療警示
+                    </th>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      操作
+                    </th>
+                  </tr>
+                </thead>
+                <tbody className="bg-white divide-y divide-gray-200">
+                  {sortedPatients.map(patient => (
+                    <tr 
+                      key={patient.院友id} 
+                      className={`hover:bg-gray-50 ${selectedRows.has(patient.院友id) ? 'bg-blue-50' : ''}`}
+                    >
+                      <td className="px-4 py-4 whitespace-nowrap">
+                        <input
+                          type="checkbox"
+                          checked={selectedRows.has(patient.院友id)}
+                          onChange={() => handleSelectRow(patient.院友id)}
+                          className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                        />
+                      </td>
+                      <td className="px-4 py-4 whitespace-nowrap">
+                        <div className="w-10 h-10 bg-gray-100 rounded-full overflow-hidden flex items-center justify-center">
+                          {patient.院友相片 ? (
+                            <img 
+                              src={patient.院友相片} 
+                              alt={patient.中文姓名} 
+                              className="w-full h-full object-cover"
+                            />
+                          ) : (
+                            <User className="h-5 w-5 text-gray-400" />
+                          )}
+                        </div>
+                      </td>
+                      <td className="px-4 py-4 whitespace-nowrap">
+                        <span className="bg-blue-600 text-white px-2 py-1 rounded-full text-xs font-medium">
+                          {patient.床號}
+                        </span>
+                      </td>
+                      <td className="px-4 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                        {patient.中文姓名}
+                      </td>
+                      <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900">
+                        {patient.英文姓名 || '-'}
+                      </td>
+                      <td className="px-4 py-4 whitespace-nowrap">
+                        <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+                          patient.性別 === '男' ? 'bg-blue-100 text-blue-700' : 'bg-pink-100 text-pink-700'
+                        }`}>
+                          {patient.性別}
+                        </span>
+                      </td>
+                      <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900 font-mono">
+                        {patient.身份證號碼}
+                      </td>
+                      <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900">
+                        {new Date(patient.出生日期).toLocaleDateString('zh-TW')}
+                      </td>
+                      <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900">
+                        {calculateAge(patient.出生日期)}歲
+                      </td>
+                      <td className="px-4 py-4 whitespace-nowrap">
+                        <div className="flex space-x-1">
+                          {patient.藥物敏感?.length > 0 && (
+                            <span className="inline-flex items-center px-2 py-1 rounded-full text-xs bg-orange-100 text-orange-800">
+                              <Shield className="h-3 w-3 mr-1" />
+                              敏感
+                            </span>
+                          )}
+                          {patient.不良藥物反應?.length > 0 && (
+                            <span className="inline-flex items-center px-2 py-1 rounded-full text-xs bg-red-100 text-red-800">
+                              <AlertTriangle className="h-3 w-3 mr-1" />
+                              不良反應
+                            </span>
+                          )}
+                          {patient.感染控制?.length > 0 && (
+                            <span className="inline-flex items-center px-2 py-1 rounded-full text-xs bg-purple-100 text-purple-800">
+                              <Shield className="h-3 w-3 mr-1" />
+                              感染控制
+                            </span>
+                          )}
+                          {(!patient.藥物敏感?.length) && 
+                           (!patient.不良藥物反應?.length) && 
+                           (!patient.感染控制?.length) && (
+                            <span className="inline-flex items-center px-2 py-1 rounded-full text-xs bg-green-100 text-green-800">
+                              <Shield className="h-3 w-3 mr-1" />
+                              無警示
+                            </span>
+                          )}
+                        </div>
+                      </td>
+                      <td className="px-4 py-4 whitespace-nowrap text-sm font-medium">
+                        <div className="flex space-x-2">
+                          <button
+                            onClick={() => handleEdit(patient)}
+                            className="text-blue-600 hover:text-blue-900"
+                            title="編輯"
+                          >
+                            <Edit3 className="h-4 w-4" />
+                          </button>
+                          <button
+                            onClick={() => handleDelete(patient.院友id)}
+                            className="text-red-600 hover:text-red-900"
+                            title="刪除"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          ) : (
+            <div className="text-center py-12">
+              <Users className="h-24 w-24 mx-auto mb-4 text-gray-300" />
+              <h3 className="text-lg font-medium text-gray-900 mb-2">
+                {hasActiveFilters() ? '找不到符合條件的院友' : '暫無院友記錄'}
+              </h3>
+              <p className="text-gray-600 mb-4">
+                {hasActiveFilters() ? '請嘗試調整搜索條件' : '開始新增院友資料'}
+              </p>
+              {!hasActiveFilters() && (
+                <button
+                  onClick={() => setShowModal(true)}
+                  className="btn-primary"
+                >
+                  新增院友
+                </button>
+              )}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Modal */}
+      {showModal && (
+        <PatientModal
+          patient={selectedPatient}
+          onClose={() => {
+            setShowModal(false);
+            setSelectedPatient(null);
+          }}
+        />
+      )}
+    </div>
+  );
+};
+
+export default PatientRecords;
             <div className="flex bg-gray-100 rounded-lg p-1">
               <button
                 onClick={() => setViewMode('cards')}
