@@ -631,8 +631,8 @@ const HealthAssessment: React.FC = () => {
                       className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
                     />
                   </th>
-                  <SortableHeader field="記錄日期">日期時間</SortableHeader>
                   <SortableHeader field="院友姓名">院友姓名</SortableHeader>
+                  <SortableHeader field="記錄日期">日期時間</SortableHeader>
                   <SortableHeader field="記錄類型">類型</SortableHeader>
                   <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     生命表徵
@@ -667,18 +667,6 @@ const HealthAssessment: React.FC = () => {
                       </td>
                       <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900">
                         <div className="flex items-center space-x-2">
-                          <Calendar className="h-4 w-4 text-gray-400" />
-                          <div>
-                            <div>{new Date(record.記錄日期).toLocaleDateString('zh-TW')}</div>
-                            <div className="text-xs text-gray-500 flex items-center">
-                              <Clock className="h-3 w-3 mr-1" />
-                              {record.記錄時間}
-                            </div>
-                          </div>
-                        </div>
-                      </td>
-                      <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900">
-                        <div className="flex items-center space-x-2">
                           <div className="w-8 h-8 bg-blue-100 rounded-full overflow-hidden flex items-center justify-center">
                             {patient?.院友相片 ? (
                               <img 
@@ -703,6 +691,18 @@ const HealthAssessment: React.FC = () => {
                               )}
                             </div>
                             <div className="text-xs text-gray-500">{patient?.床號}</div>
+                          </div>
+                        </div>
+                      </td>
+                      <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900">
+                        <div className="flex items-center space-x-2">
+                          <Calendar className="h-4 w-4 text-gray-400" />
+                          <div>
+                            <div>{new Date(record.記錄日期).toLocaleDateString('zh-TW')}</div>
+                            <div className="text-xs text-gray-500 flex items-center">
+                              <Clock className="h-3 w-3 mr-1" />
+                              {record.記錄時間}
+                            </div>
                           </div>
                         </div>
                       </td>
