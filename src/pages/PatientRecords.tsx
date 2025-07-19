@@ -310,8 +310,6 @@ const PatientRecords: React.FC = () => {
             </div>
             
             <div className="flex space-x-2">
-            
-              
               <button
                 onClick={() => setShowAdvancedSearch(!showAdvancedSearch)}
                 className={`btn-secondary flex items-center space-x-2 ${showAdvancedSearch ? 'bg-blue-50 text-blue-700' : ''}`}
@@ -585,78 +583,72 @@ const PatientRecords: React.FC = () => {
                     </div>
                   </div>
 
-                  {(patient.藥物敏感?.length > 0 || patient.不良藥物反應?.length > 0 || patient.感染控制?.length > 0) && (
-                    <div className="border-t border-gray-200 pt-4">
-                      <div className="space-y-2">
-                        {patient.藥物敏感?.length > 0 && (
-                          <div className="bg-orange-50 border border-orange-200 rounded-lg p-3">
-                            <div className="flex items-start space-x-2">
-                              <Shield className="h-4 w-4 text-orange-600 mt-0.5 flex-shrink-0" />
-                              <div className="min-w-0">
-                                <p className="text-xs font-medium text-orange-800 mb-1">藥物敏感</p>
-                                <div className="flex flex-wrap gap-1">
-                                  {patient.藥物敏感.map((allergy, index) => (
-                                    <span key={index} className="text-xs text-orange-700 bg-orange-100 px-1 rounded">
-                                      {allergy}
-                                    </span>
-                                  ))}
-                                </div>
+                  <div className="border-t border-gray-200 pt-4">
+                    <div className="space-y-2">
+                      {patient.藥物敏感?.length > 0 && (
+                        <div className="bg-orange-50 border border-orange-200 rounded-lg p-3">
+                          <div className="flex items-start space-x-2">
+                            <Shield className="h-4 w-4 text-orange-600 mt-0.5 flex-shrink-0" />
+                            <div className="min-w-0">
+                              <p className="text-xs font-medium text-orange-800 mb-1">藥物敏感</p>
+                              <div className="flex flex-wrap gap-1">
+                                {patient.藥物敏感.map((allergy, index) => (
+                                  <span key={index} className="text-xs text-orange-700 bg-orange-100 px-1 rounded">
+                                    {allergy}
+                                  </span>
+                                ))}
                               </div>
                             </div>
                           </div>
-                        )}
-                        
-                        {patient.不良藥物反應?.length > 0 && (
-                          <div className="bg-red-50 border border-red-200 rounded-lg p-3">
-                            <div className="flex items-start space-x-2">
-                              <AlertTriangle className="h-4 w-4 text-red-600 mt-0.5 flex-shrink-0" />
-                              <div className="min-w-0">
-                                <p className="text-xs font-medium text-red-800 mb-1">不良藥物反應</p>
-                                <div className="flex flex-wrap gap-1">
-                                  {patient.不良藥物反應.map((reaction, index) => (
-                                    <span key={index} className="text-xs text-red-700 bg-red-100 px-1 rounded">
-                                      {reaction}
-                                    </span>
-                                  ))}
-                                </div>
-                              </div>
-                            </div>
-                          </div>
-                        )}
-                        
-                        {patient.感染控制?.length > 0 && (
-                          <div className="bg-purple-50 border border-purple-200 rounded-lg p-3">
-                            <div className="flex items-start space-x-2">
-                              <Shield className="h-4 w-4 text-purple-600 mt-0.5 flex-shrink-0" />
-                              <div className="min-w-0">
-                                <p className="text-xs font-medium text-purple-800 mb-1">感染控制</p>
-                                <div className="flex flex-wrap gap-1">
-                                  {patient.感染控制.map((control, index) => (
-                                    <span key={index} className="text-xs text-purple-700 bg-purple-100 px-1 rounded">
-                                      {control}
-                                    </span>
-                                  ))}
-                                </div>
-                              </div>
-                            </div>
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  )}
-
-                  {(!patient.藥物敏感?.length) && 
-                   (!patient.不良藥物反應?.length) && 
-                   (!patient.感染控制?.length) && (
-                    <div className="border-t border-gray-200 pt-4">
-                      <div className="bg-green-50 border border-green-200 rounded-lg p-3">
-                        <div className="flex items-center space-x-2">
-                          <Shield className="h-4 w-4 text-green-600" />
-                          <p className="text-xs text-green-700">無已知藥物敏感、不良反應或感染控制項目</p>
                         </div>
-                      </div>
+                      )}
+                      
+                      {patient.不良藥物反應?.length > 0 && (
+                        <div className="bg-red-50 border border-red-200 rounded-lg p-3">
+                          <div className="flex items-start space-x-2">
+                            <AlertTriangle className="h-4 w-4 text-red-600 mt-0.5 flex-shrink-0" />
+                            <div className="min-w-0">
+                              <p className="text-xs font-medium text-red-800 mb-1">不良藥物反應</p>
+                              <div className="flex flex-wrap gap-1">
+                                {patient.不良藥物反應.map((reaction, index) => (
+                                  <span key={index} className="text-xs text-red-700 bg-red-100 px-1 rounded">
+                                    {reaction}
+                                  </span>
+                                ))}
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      )}
+                      
+                      {patient.感染控制?.length > 0 && (
+                        <div className="bg-purple-50 border border-purple-200 rounded-lg p-3">
+                          <div className="flex items-start space-x-2">
+                            <Shield className="h-4 w-4 text-purple-600 mt-0.5 flex-shrink-0" />
+                            <div className="min-w-0">
+                              <p className="text-xs font-medium text-purple-800 mb-1">感染控制</p>
+                              <div className="flex flex-wrap gap-1">
+                                {patient.感染控制.map((control, index) => (
+                                  <span key={index} className="text-xs text-purple-700 bg-purple-100 px-1 rounded">
+                                    {control}
+                                  </span>
+                                ))}
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      )}
+                      
+                      {(!patient.藥物敏感?.length && !patient.不良藥物反應?.length && !patient.感染控制?.length) && (
+                        <div className="bg-green-50 border border-green-200 rounded-lg p-3">
+                          <div className="flex items-center space-x-2">
+                            <Shield className="h-4 w-4 text-green-600" />
+                            <p className="text-xs text-green-700">無已知藥物敏感、不良反應或感染控制項目</p>
+                          </div>
+                        </div>
+                      )}
                     </div>
-                  )}
+                  </div>
                 </div>
               </div>
             ))
@@ -791,9 +783,7 @@ const PatientRecords: React.FC = () => {
                               感染控制
                             </span>
                           )}
-                          {(!patient.藥物敏感?.length) && 
-                           (!patient.不良藥物反應?.length) && 
-                           (!patient.感染控制?.length) && (
+                          {(!patient.藥物敏感?.length && !patient.不良藥物反應?.length && !patient.感染控制?.length) && (
                             <span className="inline-flex items-center px-2 py-1 rounded-full text-xs bg-green-100 text-green-800">
                               <Shield className="h-3 w-3 mr-1" />
                               無警示
