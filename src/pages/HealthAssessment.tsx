@@ -219,27 +219,31 @@ const HealthAssessment: React.FC = () => {
     setDateFilter('');
   };
 
+  // --------- 新邏輯：首次體重記錄與變化顏色 ----------
   const calculateWeightChange = (currentWeight: number, patientId: number, currentDate: string): string => {
-    // 找到同一院友的上一次體重記錄
+    // 找到同一院友的所有體重記錄（排除當前日期）
     const patientWeightRecords = healthRecords
       .filter(r => r.院友id === patientId && r.體重 && r.記錄日期 !== currentDate)
-      .sort((a, b) => new Date(`${b.記錄日期} ${b.記錄時間}`).getTime() - new Date(`${a.記錄日期} ${a.記錄時間}`).getTime());
-    
+      // 將體重記錄按日期時間從早到晚排序
+      .sort((a, b) => new Date(`${a.記錄日期} ${a.記錄時間}`).getTime() - new Date(`${b.記錄日期} ${b.記錄時間}`).getTime());
+
     if (patientWeightRecords.length === 0) {
       return '首次記錄';
     }
-    
-    const lastWeight = patientWeightRecords[0].體重!;
-    const difference = currentWeight - lastWeight;
-    const percentage = ((difference / lastWeight) * 100);
-    
+
+    // 取最早的體重記錄作為基準
+    const firstWeight = patientWeightRecords[0].體重!;
+    const difference = currentWeight - firstWeight;
+    const percentage = (difference / firstWeight) * 100;
+
     if (Math.abs(percentage) < 0.1) {
       return '無變化';
     }
-    
+
     const sign = difference > 0 ? '+' : '';
     return `${sign}${difference.toFixed(1)}kg (${sign}${percentage.toFixed(1)}%)`;
   };
+  // --------------------------------------------------
 
   const getRecordTypeIcon = (type: string) => {
     switch (type) {
@@ -572,7 +576,9 @@ const HealthAssessment: React.FC = () => {
                             <div className="font-medium">{record.體重} kg</div>
                             {weightChange && weightChange !== '首次記錄' && weightChange !== '無變化' && (
                               <div className={`text-xs flex items-center ${
-                                weightChange.startsWith('+') ? 'text-red-600' : 'text-green-600'
+                                weightChange.startsWith('+')
+                                  ? 'text-green-600'
+                                  : 'text-red-600'
                               }`}>
                                 {weightChange.startsWith('+') ? 
                                   <TrendingUp className="h-3 w-3 mr-1" /> : 
@@ -642,7 +648,7 @@ const HealthAssessment: React.FC = () => {
                 className="btn-secondary"
               >
                 清除所有篩選
-              </button> 
+              </button>
             )}
           </div>
         )}
@@ -654,7 +660,7 @@ const HealthAssessment: React.FC = () => {
           record={selectedRecord}
           onClose={() => {
             setShowModal(false);
-            setSelectedRecord(null); 
+            setSelectedRecord(null);
           }}
         />
       )}
