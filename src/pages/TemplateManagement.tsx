@@ -331,7 +331,10 @@ const TemplateManagement: React.FC = () => {
     const typeMap: { [key: string]: string } = {
       'waiting-list': '院友候診記錄表',
       'prescription': 'VMO處方箋',
-      'medication-record': '個人備藥及給藥記錄'
+      'medication-record': '個人備藥及給藥記錄',
+      'vital-signs': '生命表徵記錄表',
+      'blood-sugar': '血糖測試記錄表',
+      'weight-control': '體重記錄表'
     };
     return typeMap[type] || '未知範本';
   };
@@ -341,7 +344,11 @@ const TemplateManagement: React.FC = () => {
       'waiting-list': '醫生到診前院友候診記錄表格範本，包含院友基本資料、看診原因、症狀說明等欄位',
       'prescription': '標準VMO處方箋範本，含藥物名稱、劑量、用法用量等完整處方資訊',
       'medication-record': '個人備藥及給藥執行記錄表格範本，用於追蹤院友藥物使用情況',
-      'consent-form': '約束物品使用同意書範本，記錄約束物品使用的同意與執行情況'
+      'consent-form': '約束物品使用同意書範本，記錄約束物品使用的同意與執行情況',
+      'vital-signs': '記錄院友生命表徵的格式範本，包括血壓、脈搏、體溫、血含氧量、呼吸',
+      'blood-sugar': '記錄院友血糖測試結果的格式範本',
+      'weight-control': '記錄院友體重的格式範本'
+      
     };
     return descMap[type] || '自訂範本';
   };
