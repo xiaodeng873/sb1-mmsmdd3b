@@ -27,7 +27,7 @@ import BatchHealthRecordModal from '../components/BatchHealthRecordModal';
 import { exportHealthRecordsToExcel, type HealthRecordExportData } from '../utils/healthRecordExcelGenerator';
 import PatientTooltip from '../components/PatientTooltip';
 
-type RecordType = '生命表徵' | '血糖控制' | '體重' | 'all';
+type RecordType = '生命表徵' | '血糖控制' | '體重控制' | 'all';
 type SortField = '記錄日期' | '記錄時間' | '院友姓名' | '記錄類型' | '體重' | '血糖值' | '血壓';
 type SortDirection = 'asc' | 'desc';
 
@@ -50,7 +50,7 @@ const HealthAssessment: React.FC = () => {
   const [sortDirection, setSortDirection] = useState<SortDirection>('desc');
   const [selectedRows, setSelectedRows] = useState<Set<number>>(new Set());
   const [showBatchModal, setShowBatchModal] = useState(false);
-  const [batchRecordType, setBatchRecordType] = useState<'生命表徵' | '血糖控制' | '體重'>('生命表徵');
+  const [batchRecordType, setBatchRecordType] = useState<'生命表徵' | '血糖控制' | '體重控制'>('生命表徵');
   const [showAdvancedFilters, setShowAdvancedFilters] = useState(false);
   const [advancedFilters, setAdvancedFilters] = useState<AdvancedFilters>({
     床號: '',
@@ -253,7 +253,7 @@ const HealthAssessment: React.FC = () => {
     }
   };
 
-  const handleExportSelected = async (recordType: '生命表徵' | '血糖控制' | '體重') => {
+  const handleExportSelected = async (recordType: '生命表徵' | '血糖控制' | '體重控制') => {
     const filteredByType = sortedRecords.filter(record => record.記錄類型 === recordType);
     const selectedRecords = selectedRows.size > 0 
       ? filteredByType.filter(r => selectedRows.has(r.記錄id))
@@ -295,7 +295,7 @@ const HealthAssessment: React.FC = () => {
     }
   };
 
-  const handleBatchUpload = (recordType: '生命表徵' | '血糖控制' | '體重') => {
+  const handleBatchUpload = (recordType: '生命表徵' | '血糖控制' | '體重控制') => {
     setBatchRecordType(recordType);
     setShowBatchModal(true);
   };
@@ -330,7 +330,7 @@ const HealthAssessment: React.FC = () => {
     switch (type) {
       case '生命表徵': return <Activity className="h-4 w-4" />;
       case '血糖控制': return <Droplets className="h-4 w-4" />;
-      case '體重': return <Scale className="h-4 w-4" />;
+      case '體重控制': return <Scale className="h-4 w-4" />;
       default: return <Heart className="h-4 w-4" />;
     } 
   };
@@ -339,7 +339,7 @@ const HealthAssessment: React.FC = () => {
     switch (type) {
       case '生命表徵': return 'bg-blue-100 text-blue-800';
       case '血糖控制': return 'bg-red-100 text-red-800';
-      case '體重': return 'bg-green-100 text-green-800';
+      case '體重控制': return 'bg-green-100 text-green-800';
       default: return 'bg-gray-100 text-gray-800';
     }
   };
@@ -365,7 +365,7 @@ const HealthAssessment: React.FC = () => {
     total: healthRecords.length,
     vitalSigns: healthRecords.filter(r => r.記錄類型 === '生命表徵').length,
     bloodSugar: healthRecords.filter(r => r.記錄類型 === '血糖控制').length,
-    weight: healthRecords.filter(r => r.記錄類型 === '體重').length,
+    weight: healthRecords.filter(r => r.記錄類型 === '體重控制').length,
     today: healthRecords.filter(r => r.記錄日期 === new Date().toISOString().split('T')[0]).length
   };
 
@@ -387,7 +387,7 @@ const HealthAssessment: React.FC = () => {
                 <Activity className="h-4 w-4 text-blue-600" />
                 <span>生命表徵記錄表</span>
               </button>
-              <button
+              <button 
                 onClick={() => handleExportSelected('血糖控制')}
                 className="w-full px-4 py-2 text-left text-gray-700 hover:bg-gray-50 flex items-center space-x-2"
               >
@@ -395,7 +395,7 @@ const HealthAssessment: React.FC = () => {
                 <span>血糖測試記錄表</span>
               </button>
               <button
-                onClick={() => handleExportSelected('體重')}
+                onClick={() => handleExportSelected('體重控制')}
                 className="w-full px-4 py-2 text-left text-gray-700 hover:bg-gray-50 flex items-center space-x-2"
               >
                 <Scale className="h-4 w-4 text-green-600" />
@@ -425,7 +425,7 @@ const HealthAssessment: React.FC = () => {
                 <span>批量新增血糖記錄</span>
               </button>
               <button
-                onClick={() => handleBatchUpload('體重')}
+                onClick={() => handleBatchUpload('體重控制')}
                 className="w-full px-4 py-2 text-left text-gray-700 hover:bg-gray-50 flex items-center space-x-2"
               >
                 <Scale className="h-4 w-4 text-green-600" />
@@ -553,7 +553,7 @@ const HealthAssessment: React.FC = () => {
                     <option value="">所有類型</option>
                     <option value="生命表徵">生命表徵</option>
                     <option value="血糖控制">血糖控制</option>
-                    <option value="體重">體重</option>
+                    <option value="體重控制">體重控制</option>
                   </select>
                 </div>
                 
