@@ -775,13 +775,13 @@ const PatientRecords: React.FC = () => {
                           )}
                           {patient.不良藥物反應?.length > 0 && (
                             <span className="inline-flex items-center px-2 py-1 rounded-full text-xs bg-red-100 text-red-800">
-                              <AlertTriangle className="h-3 w-3 mr-1" />
+                              <Pill className="h-3 w-3 mr-1" />
                               不良藥物反應
                             </span>
                           )}
                           {(!patient.藥物敏感?.length && !patient.不良藥物反應?.length) && (
                             <span className="inline-flex items-center px-2 py-1 rounded-full text-xs bg-green-100 text-green-800">
-                              <Pill className="h-3 w-3 mr-1" />
+                              <Shield className="h-3 w-3 mr-1" />
                               無藥物警示
                             </span>
                           )}
