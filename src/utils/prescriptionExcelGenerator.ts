@@ -268,6 +268,10 @@ const rightBorderStyle = {
   style: 'thin',
   color: { argb: 'FF000000' }
 };
+const bottomBorderStyle = {
+  style: 'thin',
+  color: { argb: 'FF000000' }
+};
 
 for (let row = 1; row <= 49; row++) {
   const cell = worksheet.getCell(`L${row}`);
