@@ -706,12 +706,7 @@ const HealthAssessment: React.FC = () => {
                           </div>
                         </div>
                       </td>
-                      <td className="px-4 py-4 whitespace-nowrap">
-                        <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getRecordTypeColor(record.記錄類型)}`}>
-                          {getRecordTypeIcon(record.記錄類型)}
-                          <span className="ml-1">{record.記錄類型}</span>
-                        </span>
-                      </td>
+                   
                       <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900">
                         <div className="space-y-1">
                           {record.血壓收縮壓 && record.血壓舒張壓 && (
