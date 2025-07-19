@@ -9,12 +9,12 @@ import OCRModal from '../components/OCRModal';
 import { getMedicationTimeColorClass } from '../utils/medicationTimeColors';
 import PatientTooltip from '../components/PatientTooltip';
 
-type SortField = '床號' | '中文姓名' | '處方日期' | '藥物名稱' | '劑型' | '服用途徑' | '服用次數' | '服用份量' | '服用日數' | '藥物來源';
+type SortField = '床號' | '院友姓名' | '處方日期' | '藥物名稱' | '劑型' | '服用途徑' | '服用次數' | '服用份量' | '服用日數' | '藥物來源';
 type SortDirection = 'asc' | 'desc';
 
 interface AdvancedFilters {
   床號: string;
-  中文姓名: string;
+  院友姓名: string;
   藥物名稱: string;
   劑型: string;
   服用途徑: string;
@@ -37,7 +37,7 @@ const MedicationRegistration: React.FC = () => {
   const [showFilterPanel, setShowFilterPanel] = useState(false);
   const [advancedFilters, setAdvancedFilters] = useState<AdvancedFilters>({
     床號: '',
-    中文姓名: '',
+    院友姓名: '',
     藥物名稱: '',
     劑型: '',
     服用途徑: '',
@@ -76,7 +76,7 @@ const MedicationRegistration: React.FC = () => {
     if (advancedFilters.床號 && !patient?.床號.toLowerCase().includes(advancedFilters.床號.toLowerCase())) {
       return false;
     }
-    if (advancedFilters.中文姓名 && !patient?.中文姓名.toLowerCase().includes(advancedFilters.中文姓名.toLowerCase())) {
+    if (advancedFilters.院友姓名 && !patient?.院友姓名.toLowerCase().includes(advancedFilters.院友姓名.toLowerCase())) {
       return false;
     }
     if (advancedFilters.藥物名稱 && !prescription.藥物名稱.toLowerCase().includes(advancedFilters.藥物名稱.toLowerCase())) {
@@ -101,7 +101,7 @@ const MedicationRegistration: React.FC = () => {
     let matchesSearch = true;
     if (searchTerm) {
       matchesSearch = prescription.藥物名稱.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         (patient?.中文姓名.toLowerCase().includes(searchTerm.toLowerCase()) || false) ||
+                         (patient?.院友姓名.toLowerCase().includes(searchTerm.toLowerCase()) || false) ||
                          (patient?.床號.toLowerCase().includes(searchTerm.toLowerCase()) || false) ||
                          new Date(prescription.處方日期).toLocaleDateString('zh-TW').includes(searchTerm.toLowerCase());
     }
@@ -118,7 +118,7 @@ const MedicationRegistration: React.FC = () => {
     setSearchTerm('');
     setAdvancedFilters({
       床號: '',
-      中文姓名: '',
+      院友姓名: '',
       藥物名稱: '',
       劑型: '',
       服用途徑: '',
@@ -174,9 +174,9 @@ const MedicationRegistration: React.FC = () => {
         valueA = patientA?.床號 || '';
         valueB = patientB?.床號 || '';
         break;
-      case '中文姓名':
-        valueA = patientA?.中文姓名 || '';
-        valueB = patientB?.中文姓名 || '';
+      case '院友姓名':
+        valueA = patientA?.院友姓名 || '';
+        valueB = patientB?.院友姓名 || '';
         break;
       case '處方日期':
         valueA = new Date(a.處方日期).getTime();
@@ -246,7 +246,7 @@ const MedicationRegistration: React.FC = () => {
     const prescription = prescriptions.find(p => p.處方id === prescriptionId);
     const patient = patients.find(p => p.院友id === prescription?.院友id);
     
-    const confirmMessage = `確定要刪除以下處方記錄嗎？\n\n院友：${patient?.中文姓名} (${patient?.床號})\n藥物：${prescription?.藥物名稱}\n日期：${new Date(prescription?.處方日期 || '').toLocaleDateString('zh-TW')}`;
+    const confirmMessage = `確定要刪除以下處方記錄嗎？\n\n院友：${patient?.院友姓名} (${patient?.床號})\n藥物：${prescription?.藥物名稱}\n日期：${new Date(prescription?.處方日期 || '').toLocaleDateString('zh-TW')}`;
     
     if (!confirm(confirmMessage)) {
       return;
@@ -420,7 +420,7 @@ const MedicationRegistration: React.FC = () => {
           
           if (template) {
             sheetsConfig.push({
-              name: `${patient.床號}${patient.中文姓名}${routeLabel}`,
+              name: `${patient.床號}${patient.院友姓名}${routeLabel}`,
               template: template,
               patient: patient,
               prescriptions: prescriptionGroup
@@ -437,7 +437,7 @@ const MedicationRegistration: React.FC = () => {
         const uniquePatients = [...new Set(Object.keys(groupedPrescriptions).map(key => key.split('_')[0]))];
         if (uniquePatients.length === 1) {
           const patient = sheetsConfig[0].patient;
-          filename = `個人備藥及給藥記錄_${patient.床號}_${patient.中文姓名}.xlsx`;
+          filename = `個人備藥及給藥記錄_${patient.床號}_${patient.院友姓名}.xlsx`;
         } else {
           filename = `個人備藥及給藥記錄(${uniquePatients.length}名院友).xlsx`;
         }
@@ -452,7 +452,7 @@ const MedicationRegistration: React.FC = () => {
           const patient = patients.find(p => p.院友id === prescription.院友id);
           return {
             床號: patient?.床號 || '',
-            中文姓名: patient?.中文姓名 || '',
+            院友姓名: patient?.院友姓名 || '',
             處方日期: prescription.處方日期,
             藥物名稱: prescription.藥物名稱,
             劑型: prescription.劑型,
@@ -617,11 +617,11 @@ const MedicationRegistration: React.FC = () => {
                 </div>
                 
                 <div>
-                  <label className="form-label">中文姓名</label>
+                  <label className="form-label">院友姓名</label>
                   <input
                     type="text"
-                    value={advancedFilters.中文姓名}
-                    onChange={(e) => updateAdvancedFilter('中文姓名', e.target.value)}
+                    value={advancedFilters.院友姓名}
+                    onChange={(e) => updateAdvancedFilter('院友姓名', e.target.value)}
                     className="form-input"
                     placeholder="搜索姓名..."
                   />
@@ -754,7 +754,7 @@ const MedicationRegistration: React.FC = () => {
                     />
                   </th>
                   <SortableHeader field="床號">床號</SortableHeader>
-                  <SortableHeader field="中文姓名">中文姓名</SortableHeader>
+                  <SortableHeader field="院友姓名">院友姓名</SortableHeader>
                   <SortableHeader field="處方日期">處方日期</SortableHeader>
                   <SortableHeader field="藥物名稱">藥物名稱</SortableHeader>
                   <SortableHeader field="劑型">劑型</SortableHeader>
@@ -795,7 +795,7 @@ const MedicationRegistration: React.FC = () => {
                         {patient ? (
                           <PatientTooltip patient={patient}>
                             <span className="cursor-help hover:text-blue-600 transition-colors">
-                              {patient.中文姓名}
+                              {patient.院友姓名}
                             </span>
                           </PatientTooltip>
                         ) : (
