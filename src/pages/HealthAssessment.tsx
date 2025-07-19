@@ -330,13 +330,13 @@ const HealthAssessment: React.FC = () => {
     switch (type) {
       case '生命表徵': return <Activity className="h-4 w-4" />;
       case '血糖控制': return <Droplets className="h-4 w-4" />;
-      case '體重': return <Scale className="h-4 w-4" />;
+      case '體重控制': return <Scale className="h-4 w-4" />;
       default: return <Heart className="h-4 w-4" />;
     }
   };
 
   const getRecordTypeColor = (type: string) => {
-    switch (type) {
+    switch (type) { 
       case '生命表徵': return 'bg-blue-100 text-blue-800';
       case '血糖控制': return 'bg-red-100 text-red-800';
       case '體重': return 'bg-green-100 text-green-800';
