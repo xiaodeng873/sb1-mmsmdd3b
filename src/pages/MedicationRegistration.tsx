@@ -617,7 +617,7 @@ const MedicationRegistration: React.FC = () => {
                 </div>
                 
                 <div>
-                  <label className="form-label">中文姓名</label>
+                  <label className="form-label">院友姓名</label>
                   <input
                     type="text"
                     value={advancedFilters.中文姓名}
