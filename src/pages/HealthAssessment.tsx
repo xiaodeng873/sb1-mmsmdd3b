@@ -626,14 +626,14 @@ const HealthAssessment: React.FC = () => {
                   <th className="px-4 py-3 text-left">
                     <input
                       type="checkbox"
-                      checked={selectedRows.size === sortedRecords.length && sortedRecords.length > 0}
+                      checked={selectedRows.size === sortedRecords.length && sortedRecords.length > 0} 
                       onChange={handleSelectAll}
                       className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
                     />
                   </th>
                   <SortableHeader field="院友姓名">院友姓名</SortableHeader>
                   <SortableHeader field="記錄日期">日期時間</SortableHeader>
-                  
+                  <SortableHeader field="記錄類型">類型</SortableHeader>
                   <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     生命表徵
                   </th>
