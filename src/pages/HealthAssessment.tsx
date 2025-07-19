@@ -238,7 +238,7 @@ const HealthAssessment: React.FC = () => {
     }
     
     const sign = difference > 0 ? '+' : '';
-    return `${sign}${difference.toFixed(1)}kg (${sign}${percentage.toFixed(1)}%)`;
+    return `${sign}${difference.toFixed(2)}kg (${sign}${percentage.toFixed(1)}%)`;
   };
 
   const getRecordTypeIcon = (type: string) => {
