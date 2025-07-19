@@ -446,7 +446,7 @@ const PatientRecords: React.FC = () => {
                     value={advancedFilters.感染控制}
                     onChange={(e) => setAdvancedFilters(prev => ({ ...prev, 感染控制: e.target.value }))}
                     className="form-input"
-              {hasActiveFilters() ? '找不到符合條件的院友' : '暫無院友記錄'}
+                     placeholder="搜索感染控制項目"
                   />
                 </div>
               </div>
