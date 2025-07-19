@@ -326,79 +326,98 @@ const ScheduleDetailModal: React.FC<ScheduleDetailModalProps> = ({ schedule, onC
             {currentSchedule.院友列表.length > 0 ? (
               currentSchedule.院友列表.map((item: any) => (
                 <div key={item.細項id} className="border rounded-lg p-4">
-                  {editingItem && editingItem.細項id === item.細項id ? (
-                    /* Edit Mode */
-                    <div className="space-y-4">
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center space-x-3">
-                          <div className="w-10 h-10 bg-blue-100 rounded-full overflow-hidden flex items-center justify-center">
-                            {item.院友.院友相片 ? (
-                              <img 
-                                src={item.院友.院友相片} 
-                                alt={item.院友.中文姓名} 
-                                className="w-full h-full object-cover"
-                              />
-                            ) : (
-                              <User className="h-5 w-5 text-blue-600" />
-                            )}
-                          </div>
-                          <div>
-                            <p className="font-medium text-gray-900">{item.院友.床號} - {item.院友.中文姓名}</p>
-                            <p className="text-sm text-gray-600">{item.院友.英文姓名}</p>
-                          </div>
-                        </div>
-                        <div className="flex space-x-2">
-                          <button
-                            onClick={handleSaveEdit}
-                            className="btn-primary text-sm"
-                          >
-                            儲存
-                          </button>
-                          <button
-                            onClick={() => setEditingItem(null)}
-                            className="btn-secondary text-sm"
-                          >
-                            取消
-                          </button>
-                        </div>
-                      </div>
-
-                      <div className="space-y-3">
-                        <div>
-                          <label className="form-label">看診原因</label>
-                          <div className="flex flex-wrap gap-2">
-                            {serviceReasons.map(reason => (
-                              <label key={reason.原因id} className="flex items-center space-x-2">
-                                <input
-                                  type="checkbox"
-                                  checked={editingItem.看診原因.includes(reason.原因名稱)}
-                                  onChange={(e) => {
-                                    const newReasons = e.target.checked
-                                      ? [...editingItem.看診原因, reason.原因名稱]
-                                      : editingItem.看診原因.filter((r: string) => r !== reason.原因名稱);
-                                    handleReasonChange(newReasons);
-                                  }}
-                                  className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                  <div 
+                    className="cursor-pointer" 
+                    onDoubleClick={() => handleEditItem(item)}
+                  >
+                    {editingItem && editingItem.細項id === item.細項id ? (
+                      /* Edit Mode */
+                      <div className="space-y-4">
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center space-x-3">
+                            <div className="w-10 h-10 bg-blue-100 rounded-full overflow-hidden flex items-center justify-center">
+                              {item.院友.院友相片 ? (
+                                <img 
+                                  src={item.院友.院友相片} 
+                                  alt={item.院友.中文姓名} 
+                                  className="w-full h-full object-cover"
                                 />
-                                <span className="text-sm text-gray-700">{reason.原因名稱}</span>
-                              </label>
-                            ))}
+                              ) : (
+                                <User className="h-5 w-5 text-blue-600" />
+                              )}
+                            </div>
+                            <div>
+                              <p className="font-medium text-gray-900">{item.院友.床號} - {item.院友.中文姓名}</p>
+                              <p className="text-sm text-gray-600">{item.院友.英文姓名}</p>
+                            </div>
+                          </div>
+                          <div className="flex space-x-2">
+                            <button
+                              onClick={handleSaveEdit}
+                              className="btn-primary text-sm"
+                            >
+                              儲存
+                            </button>
+                            <button
+                              onClick={() => setEditingItem(null)}
+                              className="btn-secondary text-sm"
+                            >
+                              取消
+                            </button>
                           </div>
                         </div>
 
-                        {/* 只有勾選申訴不適時才顯示症狀說明 */}
-                        {editingItem.看診原因.includes('申訴不適') && (
-                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <div>
-                              <label className="form-label">症狀說明</label>
-                              <textarea
-                                value={editingItem.症狀說明 || ''}
-                                onChange={(e) => handleFieldChange('症狀說明', e.target.value)}
-                                className="form-input text-sm"
-                                rows={2}
-                                placeholder="請描述症狀..."
-                              />
+                        <div className="space-y-3">
+                          <div>
+                            <label className="form-label">看診原因</label>
+                            <div className="flex flex-wrap gap-2">
+                              {serviceReasons.map(reason => (
+                                <label key={reason.原因id} className="flex items-center space-x-2">
+                                  <input
+                                    type="checkbox"
+                                    checked={editingItem.看診原因.includes(reason.原因名稱)}
+                                    onChange={(e) => {
+                                      const newReasons = e.target.checked
+                                        ? [...editingItem.看診原因, reason.原因名稱]
+                                        : editingItem.看診原因.filter((r: string) => r !== reason.原因名稱);
+                                      handleReasonChange(newReasons);
+                                    }}
+                                    className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                                  />
+                                  <span className="text-sm text-gray-700">{reason.原因名稱}</span>
+                                </label>
+                              ))}
                             </div>
+                          </div>
+
+                          {/* 只有勾選申訴不適時才顯示症狀說明 */}
+                          {editingItem.看診原因.includes('申訴不適') && (
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                              <div>
+                                <label className="form-label">症狀說明</label>
+                                <textarea
+                                  value={editingItem.症狀說明 || ''}
+                                  onChange={(e) => handleFieldChange('症狀說明', e.target.value)}
+                                  className="form-input text-sm"
+                                  rows={2}
+                                  placeholder="請描述症狀..."
+                                />
+                              </div>
+                              <div>
+                                <label className="form-label">備註</label>
+                                <textarea
+                                  value={editingItem.備註 || ''}
+                                  onChange={(e) => handleFieldChange('備註', e.target.value)}
+                                  className="form-input text-sm"
+                                  rows={2}
+                                  placeholder="其他備註..."
+                                />
+                              </div>
+                            </div>
+                          )}
+
+                          {/* 如果沒有勾選申訴不適，備註獨立顯示 */}
+                          {!editingItem.看診原因.includes('申訴不適') && (
                             <div>
                               <label className="form-label">備註</label>
                               <textarea
@@ -409,91 +428,77 @@ const ScheduleDetailModal: React.FC<ScheduleDetailModalProps> = ({ schedule, onC
                                 placeholder="其他備註..."
                               />
                             </div>
-                          </div>
-                        )}
-
-                        {/* 如果沒有勾選申訴不適，備註獨立顯示 */}
-                        {!editingItem.看診原因.includes('申訴不適') && (
-                          <div>
-                            <label className="form-label">備註</label>
-                            <textarea
-                              value={editingItem.備註 || ''}
-                              onChange={(e) => handleFieldChange('備註', e.target.value)}
-                              className="form-input text-sm"
-                              rows={2}
-                              placeholder="其他備註..."
-                            />
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  ) : (
-                    /* View Mode */
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center space-x-4">
-                        <div className="w-12 h-12 bg-blue-100 rounded-full overflow-hidden flex items-center justify-center">
-                          {item.院友?.院友相片 ? (
-                            <img 
-                              src={item.院友.院友相片} 
-                              alt={item.院友.中文姓名} 
-                              className="w-full h-full object-cover"
-                            />
-                          ) : (
-                            <User className="h-6 w-6 text-blue-600" />
                           )}
                         </div>
-                        <div className="flex-1">
-                          <p className="font-medium text-gray-900">{item.院友?.床號} - {item.院友?.中文姓名}</p>
-                          <p className="text-sm text-gray-600">{item.院友?.英文姓名}</p>
-                          <p className="text-xs text-gray-500">
-                            {item.院友?.性別} | {item.院友?.身份證號碼}
-                          </p>
-                        </div>
-                        <div className="flex-1">
-                          <div className="flex flex-wrap gap-1 mb-2">
-                            {item.看診原因.map((reason: string, index: number) => (
-                              <span key={index} className={getReasonBadgeClass(reason)}>
-                                <span className="mr-1">{getReasonIcon(reason)}</span>
-                                {reason}
-                              </span>
-                            ))}
-                            {item.看診原因.length === 0 && (
-                              <span className="reason-badge reason-default">
-                                <span className="mr-1">❓</span>
-                                未設定原因
-                              </span>
+                      </div>
+                    ) : (
+                      /* View Mode */
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center space-x-4">
+                          <div className="w-12 h-12 bg-blue-100 rounded-full overflow-hidden flex items-center justify-center">
+                            {item.院友?.院友相片 ? (
+                              <img 
+                                src={item.院友.院友相片} 
+                                alt={item.院友.中文姓名} 
+                                className="w-full h-full object-cover"
+                              />
+                            ) : (
+                              <User className="h-6 w-6 text-blue-600" />
                             )}
                           </div>
-                          {item.症狀說明 && (
-                            <p className="text-sm text-gray-600 mb-1">
-                              <strong>症狀：</strong>{item.症狀說明}
+                          <div className="flex-1">
+                            <p className="font-medium text-gray-900">{item.院友?.床號} - {item.院友?.中文姓名}</p>
+                            <p className="text-sm text-gray-600">{item.院友?.英文姓名}</p>
+                            <p className="text-xs text-gray-500">
+                              {item.院友?.性別} | {item.院友?.身份證號碼}
                             </p>
-                          )}
-                          {item.備註 && (
-                            <p className="text-sm text-gray-600">
-                              <strong>備註：</strong>{item.備註}
-                            </p>
-                          )}
+                          </div>
+                          <div className="flex-1">
+                            <div className="flex flex-wrap gap-1 mb-2">
+                              {item.看診原因.map((reason: string, index: number) => (
+                                <span key={index} className={getReasonBadgeClass(reason)}>
+                                  <span className="mr-1">{getReasonIcon(reason)}</span>
+                                  {reason}
+                                </span>
+                              ))}
+                              {item.看診原因.length === 0 && (
+                                <span className="reason-badge reason-default">
+                                  <span className="mr-1">❓</span>
+                                  未設定原因
+                                </span>
+                              )}
+                            </div>
+                            {item.症狀說明 && (
+                              <p className="text-sm text-gray-600 mb-1">
+                                <strong>症狀：</strong>{item.症狀說明}
+                              </p>
+                            )}
+                            {item.備註 && (
+                              <p className="text-sm text-gray-600">
+                                <strong>備註：</strong>{item.備註}
+                              </p>
+                            )}
+                          </div>
+                        </div>
+                        <div className="flex space-x-2">
+                          <button
+                            onClick={() => handleEditItem(item)}
+                            className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg"
+                            title="編輯"
+                          >
+                            <Edit3 className="h-4 w-4" />
+                          </button>
+                          <button
+                            onClick={() => handleDeleteItem(item.細項id)}
+                            className="p-2 text-red-600 hover:bg-red-50 rounded-lg"
+                            title="移除"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </button>
                         </div>
                       </div>
-                      <div className="flex space-x-2">
-                        <button
-                          onClick={() => handleEditItem(item)}
-                          className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg"
-                          title="編輯"
-                        >
-                          <Edit3 className="h-4 w-4" />
-                        </button>
-                        <button
-                          onClick={() => handleDeleteItem(item.細項id)}
-                          className="p-2 text-red-600 hover:bg-red-50 rounded-lg"
-                          title="移除"
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </button>
-                      </div>
-                    </div>
-                  )}
+                    )}
+                  </div>
                 </div>
               ))
             ) : (
