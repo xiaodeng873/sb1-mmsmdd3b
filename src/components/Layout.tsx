@@ -34,7 +34,7 @@ const Layout: React.FC<LayoutProps> = ({ children, user, onSignOut }) => {
     { name: '覆診管理', href: '/follow-up', icon: CalendarCheck },
     { name: '院友資料', href: '/patients', icon: Users },
     { name: '藥物登記', href: '/medication', icon: Pill },
-    { name: '生命表徵', href: '/health', icon: Heart },
+    { name: '狀況評估', href: '/health', icon: Heart },
     { name: '範本管理', href: '/templates', icon: FileText },
     { name: '報表查詢', href: '/reports', icon: BarChart3 },
   ];
