@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { 
   Users, Plus, Edit3, Trash2, Search, Filter, User, Calendar, Shield, AlertTriangle,
-  Grid3X3, List, ChevronUp, ChevronDown, Download
+  Grid3X3, List, ChevronUp, ChevronDown, Download, X
 } from 'lucide-react';
 import { usePatients } from '../context/PatientContext';
 import PatientModal from '../components/PatientModal';
@@ -20,6 +20,18 @@ const PatientRecords: React.FC = () => {
   const [selectedRows, setSelectedRows] = useState<Set<number>>(new Set());
   const [sortField, setSortField] = useState<SortField>('床號');
   const [sortDirection, setSortDirection] = useState<SortDirection>('asc');
+  const [showAdvancedSearch, setShowAdvancedSearch] = useState(false);
+  const [advancedFilters, setAdvancedFilters] = useState({
+    床號: '',
+    中文姓名: '',
+    英文姓名: '',
+    性別: '',
+    身份證號碼: '',
+    出生日期: '',
+    藥物敏感: '',
+    不良藥物反應: '',
+    感染控制: ''
+  });
 
   if (loading) {
     return (
@@ -33,12 +45,56 @@ const PatientRecords: React.FC = () => {
   }
 
   const filteredPatients = patients.filter(patient => {
-    const matchesSearch = patient.中文姓名.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         patient.床號.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         (patient.英文姓名?.toLowerCase().includes(searchTerm.toLowerCase()) || false) ||
-                         patient.身份證號碼.toLowerCase().includes(searchTerm.toLowerCase());
+    // 基本搜索
+    let matchesSearch = true;
+    if (searchTerm) {
+      matchesSearch = patient.中文姓名.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                      patient.床號.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                      (patient.英文姓名?.toLowerCase().includes(searchTerm.toLowerCase()) || false) ||
+                      patient.身份證號碼.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                      patient.出生日期.includes(searchTerm) ||
+                      (patient.藥物敏感 && Array.isArray(patient.藥物敏感) && 
+                       patient.藥物敏感.some(allergy => allergy.toLowerCase().includes(searchTerm.toLowerCase()))) ||
+                      (patient.不良藥物反應 && Array.isArray(patient.不良藥物反應) && 
+                       patient.不良藥物反應.some(reaction => reaction.toLowerCase().includes(searchTerm.toLowerCase()))) ||
+                      (patient.感染控制 && Array.isArray(patient.感染控制) && 
+                       patient.感染控制.some(control => control.toLowerCase().includes(searchTerm.toLowerCase())));
+    }
+    
+    // 進階篩選
+    let matchesAdvanced = true;
+    if (showAdvancedSearch) {
+      if (advancedFilters.床號 && !patient.床號.toLowerCase().includes(advancedFilters.床號.toLowerCase())) {
+        matchesAdvanced = false;
+      }
+      if (advancedFilters.中文姓名 && !patient.中文姓名.toLowerCase().includes(advancedFilters.中文姓名.toLowerCase())) {
+        matchesAdvanced = false;
+      }
+      if (advancedFilters.英文姓名 && (!patient.英文姓名 || !patient.英文姓名.toLowerCase().includes(advancedFilters.英文姓名.toLowerCase()))) {
+        matchesAdvanced = false;
+      }
+      if (advancedFilters.身份證號碼 && !patient.身份證號碼.toLowerCase().includes(advancedFilters.身份證號碼.toLowerCase())) {
+        matchesAdvanced = false;
+      }
+      if (advancedFilters.出生日期 && !patient.出生日期.includes(advancedFilters.出生日期)) {
+        matchesAdvanced = false;
+      }
+      if (advancedFilters.藥物敏感 && (!patient.藥物敏感 || !Array.isArray(patient.藥物敏感) || 
+          !patient.藥物敏感.some(allergy => allergy.toLowerCase().includes(advancedFilters.藥物敏感.toLowerCase())))) {
+        matchesAdvanced = false;
+      }
+      if (advancedFilters.不良藥物反應 && (!patient.不良藥物反應 || !Array.isArray(patient.不良藥物反應) || 
+          !patient.不良藥物反應.some(reaction => reaction.toLowerCase().includes(advancedFilters.不良藥物反應.toLowerCase())))) {
+        matchesAdvanced = false;
+      }
+      if (advancedFilters.感染控制 && (!patient.感染控制 || !Array.isArray(patient.感染控制) || 
+          !patient.感染控制.some(control => control.toLowerCase().includes(advancedFilters.感染控制.toLowerCase())))) {
+        matchesAdvanced = false;
+      }
+    }
+    
     const matchesGender = filterGender === '' || patient.性別 === filterGender;
-    return matchesSearch && matchesGender;
+    return matchesSearch && matchesAdvanced && matchesGender;
   });
 
   const sortedPatients = [...filteredPatients].sort((a, b) => {
@@ -145,11 +201,12 @@ const PatientRecords: React.FC = () => {
       出生日期: new Date(patient.出生日期).toLocaleDateString('zh-TW'),
       年齡: calculateAge(patient.出生日期),
       藥物敏感: patient.藥物敏感 || '無',
-      不良藥物反應: patient.不良藥物反應 || '無'
+      不良藥物反應: patient.不良藥物反應 || '無',
+      感染控制: patient.感染控制 || '無'
     }));
 
     // Create CSV content
-    const headers = ['床號', '中文姓名', '英文姓名', '性別', '身份證號碼', '出生日期', '年齡', '藥物敏感', '不良藥物反應'];
+    const headers = ['床號', '中文姓名', '英文姓名', '性別', '身份證號碼', '出生日期', '年齡', '藥物敏感', '不良藥物反應', '感染控制'];
     const csvContent = [
       headers.join(','),
       ...exportData.map(row => headers.map(header => `"${row[header as keyof typeof row]}"`).join(','))
@@ -176,6 +233,27 @@ const PatientRecords: React.FC = () => {
     }
     
     return age;
+  };
+
+  const clearAllFilters = () => {
+    setSearchTerm('');
+    setFilterGender('');
+    setAdvancedFilters({
+      床號: '',
+      中文姓名: '',
+      英文姓名: '',
+      性別: '',
+      身份證號碼: '',
+      出生日期: '',
+      藥物敏感: '',
+      不良藥物反應: '',
+      感染控制: ''
+    });
+  };
+
+  const hasActiveFilters = () => {
+    return searchTerm || filterGender || 
+           Object.values(advancedFilters).some(value => value !== '');
   };
 
   const SortableHeader: React.FC<{ field: SortField; children: React.ReactNode }> = ({ field, children }) => (
@@ -223,51 +301,211 @@ const PatientRecords: React.FC = () => {
 
       {/* Search, Filter and View Toggle */}
       <div className="card p-4">
-        <div className="flex flex-col lg:flex-row space-y-2 lg:space-y-0 lg:space-x-4 lg:items-center">
-          <div className="flex-1 relative">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-            <input
-              type="text"
-              placeholder="搜索院友姓名、床號或身份證號碼..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="form-input pl-10"
-            />
+        <div className="space-y-4">
+          <div className="flex flex-col lg:flex-row space-y-2 lg:space-y-0 lg:space-x-4 lg:items-center">
+            <div className="flex-1 relative">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+              <input
+                type="text"
+                placeholder="搜索院友姓名、床號、身份證號碼、出生日期、藥物敏感、不良反應、感染控制..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="form-input pl-10"
+              />
+            </div>
+            
+            <div className="flex space-x-2">
+              <select
+                value={filterGender}
+                onChange={(e) => setFilterGender(e.target.value)}
+                className="form-input lg:w-32"
+              >
+                <option value="">所有性別</option>
+                <option value="男">男</option>
+                <option value="女">女</option>
+              </select>
+              
+              <button
+                onClick={() => setShowAdvancedSearch(!showAdvancedSearch)}
+                className={`btn-secondary flex items-center space-x-2 ${showAdvancedSearch ? 'bg-blue-50 text-blue-700' : ''}`}
+              >
+                <Filter className="h-4 w-4" />
+                <span>進階篩選</span>
+              </button>
+              
+              {hasActiveFilters() && (
+                <button
+                  onClick={clearAllFilters}
+                  className="btn-secondary flex items-center space-x-2 text-red-600 hover:text-red-700"
+                >
+                  <X className="h-4 w-4" />
+                  <span>清除</span>
+                </button>
+              )}
+            </div>
           </div>
-          <select
-            value={filterGender}
-            onChange={(e) => setFilterGender(e.target.value)}
-            className="form-input lg:w-32"
-          >
-            <option value="">所有性別</option>
-            <option value="男">男</option>
-            <option value="女">女</option>
-          </select>
           
-          {/* View Mode Toggle */}
-          <div className="flex bg-gray-100 rounded-lg p-1">
-            <button
-              onClick={() => setViewMode('cards')}
-              className={`flex items-center space-x-2 px-3 py-2 rounded-md text-sm font-medium transition-colors ${
-                viewMode === 'cards' 
-                  ? 'bg-white text-blue-600 shadow-sm' 
-                  : 'text-gray-600 hover:text-gray-900'
-              }`}
-            >
-              <Grid3X3 className="h-4 w-4" />
-              <span>卡片</span>
-            </button>
-            <button
-              onClick={() => setViewMode('table')}
-              className={`flex items-center space-x-2 px-3 py-2 rounded-md text-sm font-medium transition-colors ${
-                viewMode === 'table' 
-                  ? 'bg-white text-blue-600 shadow-sm' 
-                  : 'text-gray-600 hover:text-gray-900'
-              }`}
-            >
-              <List className="h-4 w-4" />
-              <span>表格</span>
-            </button>
+          {/* 進階搜索面板 */}
+          {showAdvancedSearch && (
+            <div className="border-t border-gray-200 pt-4">
+              <h3 className="text-sm font-medium text-gray-900 mb-3">進階篩選</h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                <div>
+                  <label className="form-label">床號</label>
+                  <input
+                    type="text"
+                    value={advancedFilters.床號}
+                    onChange={(e) => setAdvancedFilters(prev => ({ ...prev, 床號: e.target.value }))}
+                    className="form-input"
+                    placeholder="搜索床號..."
+                  />
+                </div>
+                
+                <div>
+                  <label className="form-label">中文姓名</label>
+                  <input
+                    type="text"
+                    value={advancedFilters.中文姓名}
+                    onChange={(e) => setAdvancedFilters(prev => ({ ...prev, 中文姓名: e.target.value }))}
+                    className="form-input"
+                    placeholder="搜索中文姓名..."
+                  />
+                </div>
+                
+                <div>
+                  <label className="form-label">英文姓名</label>
+                  <input
+                    type="text"
+                    value={advancedFilters.英文姓名}
+                    onChange={(e) => setAdvancedFilters(prev => ({ ...prev, 英文姓名: e.target.value }))}
+                    className="form-input"
+                    placeholder="搜索英文姓名..."
+                  />
+                </div>
+                
+                <div>
+                  <label className="form-label">身份證號碼</label>
+                  <input
+                    type="text"
+                    value={advancedFilters.身份證號碼}
+                    onChange={(e) => setAdvancedFilters(prev => ({ ...prev, 身份證號碼: e.target.value }))}
+                    className="form-input"
+                    placeholder="搜索身份證號碼..."
+                  />
+                </div>
+                
+                <div>
+                  <label className="form-label">出生日期</label>
+                  <input
+                    type="date"
+                    value={advancedFilters.出生日期}
+                    onChange={(e) => setAdvancedFilters(prev => ({ ...prev, 出生日期: e.target.value }))}
+                    className="form-input"
+                  />
+                </div>
+                
+                <div>
+                  <label className="form-label">性別</label>
+                  <select
+                    value={advancedFilters.性別}
+                    onChange={(e) => setAdvancedFilters(prev => ({ ...prev, 性別: e.target.value }))}
+                    className="form-input"
+                  >
+                    <option value="">所有性別</option>
+                    <option value="男">男</option>
+                    <option value="女">女</option>
+                  </select>
+                </div>
+                
+                <div>
+                  <label className="form-label">藥物敏感</label>
+                  <input
+                    type="text"
+                    value={advancedFilters.藥物敏感}
+                    onChange={(e) => setAdvancedFilters(prev => ({ ...prev, 藥物敏感: e.target.value }))}
+                    className="form-input"
+                    placeholder="搜索藥物敏感..."
+                  />
+                </div>
+                
+                <div>
+                  <label className="form-label">不良藥物反應</label>
+                  <input
+                    type="text"
+                    value={advancedFilters.不良藥物反應}
+                    onChange={(e) => setAdvancedFilters(prev => ({ ...prev, 不良藥物反應: e.target.value }))}
+                    className="form-input"
+                    placeholder="搜索不良藥物反應..."
+                  />
+                </div>
+                
+                <div>
+                  <label className="form-label">感染控制</label>
+                  <input
+                    type="text"
+                    value={advancedFilters.感染控制}
+                    onChange={(e) => setAdvancedFilters(prev => ({ ...prev, 感染控制: e.target.value }))}
+                    className="form-input"
+              {hasActiveFilters() ? '找不到符合條件的院友' : '暫無院友記錄'}
+                  />
+                </div>
+              {hasActiveFilters() ? '請嘗試調整搜索條件' : '開始新增院友資料'}
+            </div>
+            {!hasActiveFilters() && (
+          
+          {/* 搜索結果統計 */}
+              {hasActiveFilters() ? '找不到符合條件的院友' : '暫無院友記錄'}
+            <span>顯示 {filteredPatients.length} / {patients.length} 位院友</span>
+            {hasActiveFilters() && (
+              {hasActiveFilters() ? '請嘗試調整搜索條件' : '開始新增院友資料'}
+            )}
+            {!hasActiveFilters() && (
+              <button
+                onClick={clearAllFilters}
+                className="btn-secondary"
+              >
+                清除所有篩選
+              </button>
+            )}
+            {hasActiveFilters() && (
+              <button
+                onClick={clearAllFilters}
+                className="btn-secondary"
+              >
+                清除所有篩選
+              </button>
+            )}
+          </div>
+        </div>
+        
+        {/* View Mode Toggle */}
+        <div className="flex justify-end mt-4">
+          <div className="flex-1 relative">
+            {/* View Mode Toggle */}
+            <div className="flex bg-gray-100 rounded-lg p-1">
+              <button
+                onClick={() => setViewMode('cards')}
+                className={`flex items-center space-x-2 px-3 py-2 rounded-md text-sm font-medium transition-colors ${
+                  viewMode === 'cards' 
+                    ? 'bg-white text-blue-600 shadow-sm' 
+                    : 'text-gray-600 hover:text-gray-900'
+                }`}
+              >
+                <Grid3X3 className="h-4 w-4" />
+                <span>卡片</span>
+              </button>
+              <button
+                onClick={() => setViewMode('table')}
+                className={`flex items-center space-x-2 px-3 py-2 rounded-md text-sm font-medium transition-colors ${
+                  viewMode === 'table' 
+                    ? 'bg-white text-blue-600 shadow-sm' 
+                    : 'text-gray-600 hover:text-gray-900'
+                }`}
+              >
+                <List className="h-4 w-4" />
+                <span>表格</span>
+              </button>
+            </div>
           </div>
         </div>
       </div>
@@ -386,7 +624,7 @@ const PatientRecords: React.FC = () => {
                   </div>
 
                   {/* Medical Alerts */}
-                  {(patient.藥物敏感?.length > 0 || patient.不良藥物反應?.length > 0) && (
+                  {(patient.藥物敏感?.length > 0 || patient.不良藥物反應?.length > 0 || patient.感染控制?.length > 0) && (
                     <div className="border-t border-gray-200 pt-4">
                       <div className="space-y-2">
                         {patient.藥物敏感?.length > 0 && (
@@ -424,18 +662,37 @@ const PatientRecords: React.FC = () => {
                             </div>
                           </div>
                         )}
+                        
+                        {patient.感染控制?.length > 0 && (
+                          <div className="bg-purple-50 border border-purple-200 rounded-lg p-3">
+                            <div className="flex items-start space-x-2">
+                              <Shield className="h-4 w-4 text-purple-600 mt-0.5 flex-shrink-0" />
+                              <div className="min-w-0">
+                                <p className="text-xs font-medium text-purple-800 mb-1">感染控制</p>
+                                <div className="flex flex-wrap gap-1">
+                                  {patient.感染控制.map((control, index) => (
+                                    <span key={index} className="text-xs text-purple-700 bg-purple-100 px-1 rounded">
+                                      {control}
+                                    </span>
+                                  ))}
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        )}
                       </div>
                     </div>
                   )}
 
                   {/* No medical alerts message */}
                   {(!patient.藥物敏感?.length) && 
-                   (!patient.不良藥物反應?.length) && (
+                   (!patient.不良藥物反應?.length) && 
+                   (!patient.感染控制?.length) && (
                     <div className="border-t border-gray-200 pt-4">
                       <div className="bg-green-50 border border-green-200 rounded-lg p-3">
                         <div className="flex items-center space-x-2">
                           <Shield className="h-4 w-4 text-green-600" />
-                          <p className="text-xs text-green-700">無已知藥物敏感或不良反應</p>
+                          <p className="text-xs text-green-700">無已知藥物敏感、不良反應或感染控制項目</p>
                         </div>
                       </div>
                     </div>
@@ -569,8 +826,15 @@ const PatientRecords: React.FC = () => {
                               不良反應
                             </span>
                           )}
+                          {patient.感染控制?.length > 0 && (
+                            <span className="inline-flex items-center px-2 py-1 rounded-full text-xs bg-purple-100 text-purple-800">
+                              <Shield className="h-3 w-3 mr-1" />
+                              感染控制
+                            </span>
+                          )}
                           {(!patient.藥物敏感?.length) && 
-                           (!patient.不良藥物反應?.length) && (
+                           (!patient.不良藥物反應?.length) && 
+                           (!patient.感染控制?.length) && (
                             <span className="inline-flex items-center px-2 py-1 rounded-full text-xs bg-green-100 text-green-800">
                               <Shield className="h-3 w-3 mr-1" />
                               無警示

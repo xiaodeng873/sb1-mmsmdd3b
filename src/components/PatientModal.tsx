@@ -17,6 +17,7 @@ const PatientModal: React.FC<PatientModalProps> = ({ patient, onClose }) => {
     身份證號碼: patient?.身份證號碼 || '',
     藥物敏感: patient?.藥物敏感 || [],
     不良藥物反應: patient?.不良藥物反應 || [],
+    感染控制: patient?.感染控制 || [],
     出生日期: patient?.出生日期 || '',
     院友相片: patient?.院友相片 || ''
   });
@@ -24,6 +25,7 @@ const PatientModal: React.FC<PatientModalProps> = ({ patient, onClose }) => {
   const [isUploading, setIsUploading] = useState(false);
   const [newAllergy, setNewAllergy] = useState('');
   const [newAdverseReaction, setNewAdverseReaction] = useState('');
+  const [newInfectionControl, setNewInfectionControl] = useState('');
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
@@ -64,6 +66,23 @@ const PatientModal: React.FC<PatientModalProps> = ({ patient, onClose }) => {
     setFormData(prev => ({
       ...prev,
       不良藥物反應: prev.不良藥物反應.filter((_, i) => i !== index)
+    }));
+  };
+
+  const addInfectionControl = () => {
+    if (newInfectionControl.trim()) {
+      setFormData(prev => ({
+        ...prev,
+        感染控制: [...prev.感染控制, newInfectionControl.trim()]
+      }));
+      setNewInfectionControl('');
+    }
+  };
+
+  const removeInfectionControl = (index: number) => {
+    setFormData(prev => ({
+      ...prev,
+      感染控制: prev.感染控制.filter((_, i) => i !== index)
     }));
   };
   const handlePhotoUpload = async (file: File) => {
@@ -422,6 +441,48 @@ const PatientModal: React.FC<PatientModalProps> = ({ patient, onClose }) => {
             </div>
           </div>
 
+          <div>
+            <label className="form-label">感染控制</label>
+            <div className="space-y-2">
+              <div className="flex space-x-2">
+                <input
+                  type="text"
+                  value={newInfectionControl}
+                  onChange={(e) => setNewInfectionControl(e.target.value)}
+                  className="form-input flex-1"
+                  placeholder="輸入感染控制項目"
+                  onKeyPress={(e) => e.key === 'Enter' && addInfectionControl()}
+                />
+                <button
+                  type="button"
+                  onClick={addInfectionControl}
+                  className="btn-secondary"
+                >
+                  新增
+                </button>
+              </div>
+              <div className="flex flex-wrap gap-2">
+                {formData.感染控制.map((control, index) => (
+                  <span
+                    key={index}
+                    className="inline-flex items-center px-3 py-1 rounded-full text-sm bg-purple-100 text-purple-800"
+                  >
+                    {control}
+                    <button
+                      type="button"
+                      onClick={() => removeInfectionControl(index)}
+                      className="ml-2 text-purple-600 hover:text-purple-800"
+                    >
+                      ×
+                    </button>
+                  </span>
+                ))}
+                {formData.感染控制.length === 0 && (
+                  <span className="text-sm text-gray-500">無感染控制項目</span>
+                )}
+              </div>
+            </div>
+          </div>
           <div className="flex space-x-3 pt-4">
             <button
               type="submit"

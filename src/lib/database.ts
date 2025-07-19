@@ -24,6 +24,7 @@ export interface Patient {
   身份證號碼: string;
   藥物敏感?: string[];
   不良藥物反應?: string[];
+  感染控制?: string[];
   出生日期: string;
   院友相片?: string;
 }
@@ -238,6 +239,7 @@ export async function updatePatient(patient: Patient): Promise<Patient | null> {
         身份證號碼: patient.身份證號碼,
         藥物敏感: patient.藥物敏感,
         不良藥物反應: patient.不良藥物反應,
+        感染控制: patient.感染控制,
         出生日期: patient.出生日期,
         院友相片: patient.院友相片
       })
