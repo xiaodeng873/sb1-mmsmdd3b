@@ -24,18 +24,40 @@ import PatientTooltip from '../components/PatientTooltip';
 type SortField = '覆診日期' | '覆診時間' | '院友姓名' | '覆診地點' | '覆診專科' | '狀態' | '交通安排' | '陪診人員';
 type SortDirection = 'asc' | 'desc';
 
+interface AdvancedFilters {
+  床號: string;
+  中文姓名: string;
+  覆診地點: string;
+  覆診專科: string;
+  交通安排: string;
+  陪診人員: string;
+  狀態: string;
+  備註: string;
+  startDate: string;
+  endDate: string;
+}
+
 const FollowUpManagement: React.FC = () => {
   const { followUpAppointments, patients, deleteFollowUpAppointment, loading } = usePatients();
   const [showModal, setShowModal] = useState(false);
   const [selectedAppointment, setSelectedAppointment] = useState<FollowUpAppointment | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
-  const [filterStatus, setFilterStatus] = useState('');
-  const [filterLocation, setFilterLocation] = useState('');
   const [selectedRows, setSelectedRows] = useState<Set<string>>(new Set());
   const [sortField, setSortField] = useState<SortField>('覆診日期');
   const [sortDirection, setSortDirection] = useState<SortDirection>('asc');
-  const [dateFilter, setDateFilter] = useState('');
   const [showAdvancedFilters, setShowAdvancedFilters] = useState(false);
+  const [advancedFilters, setAdvancedFilters] = useState<AdvancedFilters>({
+    床號: '',
+    中文姓名: '',
+    覆診地點: '',
+    覆診專科: '',
+    交通安排: '',
+    陪診人員: '',
+    狀態: '',
+    備註: '',
+    startDate: '',
+    endDate: ''
+  });
 
   if (loading) {
     return (
@@ -51,11 +73,44 @@ const FollowUpManagement: React.FC = () => {
   const filteredAppointments = followUpAppointments.filter(appointment => {
     const patient = patients.find(p => p.院友id === appointment.院友id);
     
-    // 日期篩選
-    if (dateFilter && appointment.覆診日期 !== dateFilter) {
+    // 日期區間篩選
+    if (advancedFilters.startDate || advancedFilters.endDate) {
+      const appointmentDate = new Date(appointment.覆診日期);
+      if (advancedFilters.startDate && appointmentDate < new Date(advancedFilters.startDate)) {
+        return false;
+      }
+      if (advancedFilters.endDate && appointmentDate > new Date(advancedFilters.endDate)) {
+        return false;
+      }
+    }
+    
+    // 進階篩選
+    if (advancedFilters.床號 && !patient?.床號.toLowerCase().includes(advancedFilters.床號.toLowerCase())) {
+      return false;
+    }
+    if (advancedFilters.中文姓名 && !patient?.中文姓名.toLowerCase().includes(advancedFilters.中文姓名.toLowerCase())) {
+      return false;
+    }
+    if (advancedFilters.覆診地點 && !appointment.覆診地點?.toLowerCase().includes(advancedFilters.覆診地點.toLowerCase())) {
+      return false;
+    }
+    if (advancedFilters.覆診專科 && !appointment.覆診專科?.toLowerCase().includes(advancedFilters.覆診專科.toLowerCase())) {
+      return false;
+    }
+    if (advancedFilters.交通安排 && !appointment.交通安排?.toLowerCase().includes(advancedFilters.交通安排.toLowerCase())) {
+      return false;
+    }
+    if (advancedFilters.陪診人員 && !appointment.陪診人員?.toLowerCase().includes(advancedFilters.陪診人員.toLowerCase())) {
+      return false;
+    }
+    if (advancedFilters.狀態 && appointment.狀態 !== advancedFilters.狀態) {
+      return false;
+    }
+    if (advancedFilters.備註 && !appointment.備註?.toLowerCase().includes(advancedFilters.備註.toLowerCase())) {
       return false;
     }
     
+    // 基本搜索條件
     const matchesSearch = patient?.中文姓名.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          patient?.床號.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          appointment.覆診地點?.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -63,10 +118,65 @@ const FollowUpManagement: React.FC = () => {
                          appointment.備註?.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          new Date(appointment.覆診日期).toLocaleDateString('zh-TW').includes(searchTerm.toLowerCase()) ||
                          false;
-    const matchesStatus = filterStatus === '' || appointment.狀態 === filterStatus;
-    const matchesLocation = filterLocation === '' || appointment.覆診地點 === filterLocation;
-    return matchesSearch && matchesStatus && matchesLocation;
+    
+    return matchesSearch;
   });
+
+  // 檢查是否有進階篩選條件
+  const hasAdvancedFilters = () => {
+    return Object.values(advancedFilters).some(value => value !== '');
+  };
+
+  const updateAdvancedFilter = (field: keyof AdvancedFilters, value: string) => {
+    setAdvancedFilters(prev => ({
+      ...prev,
+      [field]: value
+    }));
+  };
+
+  const clearFilters = () => {
+    setSearchTerm('');
+    setAdvancedFilters({
+      床號: '',
+      中文姓名: '',
+      覆診地點: '',
+      覆診專科: '',
+      交通安排: '',
+      陪診人員: '',
+      狀態: '',
+      備註: '',
+      startDate: '',
+      endDate: ''
+    });
+  };
+
+  // 獲取所有唯一值的選項
+  const getUniqueOptions = (field: string) => {
+    const values = new Set<string>();
+    followUpAppointments.forEach(appointment => {
+      let value = '';
+      
+      switch (field) {
+        case '覆診地點':
+          value = appointment.覆診地點 || '';
+          break;
+        case '覆診專科':
+          value = appointment.覆診專科 || '';
+          break;
+        case '交通安排':
+          value = appointment.交通安排 || '';
+          break;
+        case '陪診人員':
+          value = appointment.陪診人員 || '';
+          break;
+        default:
+          return;
+      }
+      
+      if (value && value !== '尚未安排') values.add(value);
+    });
+    return Array.from(values).sort();
+  };
 
   const sortedAppointments = [...filteredAppointments].sort((a, b) => {
     const patientA = patients.find(p => p.院友id === a.院友id);
@@ -213,13 +323,6 @@ const FollowUpManagement: React.FC = () => {
     URL.revokeObjectURL(url);
   };
 
-  const clearFilters = () => {
-    setSearchTerm('');
-    setFilterStatus('');
-    setFilterLocation('');
-    setDateFilter('');
-  };
-
   const generateNotificationMessage = (appointment: FollowUpAppointment) => {
     const patient = patients.find(p => p.院友id === appointment.院友id);
     if (!patient || !appointment.覆診日期 || !appointment.覆診時間 || !appointment.覆診地點 || !appointment.覆診專科) {
@@ -266,9 +369,6 @@ const FollowUpManagement: React.FC = () => {
     </th>
   );
 
-  // 獲取唯一的覆診地點列表
-  const uniqueLocations = Array.from(new Set(followUpAppointments.map(a => a.覆診地點).filter(Boolean)));
-
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
@@ -312,23 +412,22 @@ const FollowUpManagement: React.FC = () => {
             </div>
             
             <div className="flex space-x-2">
-              <input
-                type="date"
-                value={dateFilter}
-                onChange={(e) => setDateFilter(e.target.value)}
-                className="form-input lg:w-40"
-                title="按覆診日期篩選"
-              />
-              
               <button
                 onClick={() => setShowAdvancedFilters(!showAdvancedFilters)}
-                className={`btn-secondary flex items-center space-x-2 ${showAdvancedFilters ? 'bg-blue-50 text-blue-700' : ''}`}
+                className={`btn-secondary flex items-center space-x-2 ${
+                  showAdvancedFilters ? 'bg-blue-50 text-blue-700' : ''
+                } ${hasAdvancedFilters() ? 'border-blue-300' : ''}`}
               >
                 <Filter className="h-4 w-4" />
                 <span>進階篩選</span>
+                {hasAdvancedFilters() && (
+                  <span className="bg-blue-600 text-white text-xs px-2 py-1 rounded-full">
+                    已套用
+                  </span>
+                )}
               </button>
               
-              {(searchTerm || filterStatus || filterLocation || dateFilter) && (
+              {(searchTerm || hasAdvancedFilters()) && (
                 <button
                   onClick={clearFilters}
                   className="btn-secondary flex items-center space-x-2 text-red-600 hover:text-red-700"
@@ -343,12 +442,123 @@ const FollowUpManagement: React.FC = () => {
           {/* 進階篩選面板 */}
           {showAdvancedFilters && (
             <div className="border-t border-gray-200 pt-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <h3 className="text-sm font-medium text-gray-900 mb-3">進階篩選</h3>
+              
+              {/* 日期區間篩選 */}
+              <div className="mb-4">
+                <label className="form-label">覆診日期區間</label>
+                <div className="flex items-center space-x-2">
+                  <input
+                    type="date"
+                    value={advancedFilters.startDate}
+                    onChange={(e) => updateAdvancedFilter('startDate', e.target.value)}
+                    className="form-input"
+                    placeholder="開始日期"
+                  />
+                  <span className="text-gray-500">至</span>
+                  <input
+                    type="date"
+                    value={advancedFilters.endDate}
+                    onChange={(e) => updateAdvancedFilter('endDate', e.target.value)}
+                    className="form-input"
+                    placeholder="結束日期"
+                  />
+                </div>
+              </div>
+              
+              {/* 其他篩選條件 */}
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                <div>
+                  <label className="form-label">床號</label>
+                  <input
+                    type="text"
+                    value={advancedFilters.床號}
+                    onChange={(e) => updateAdvancedFilter('床號', e.target.value)}
+                    className="form-input"
+                    placeholder="搜索床號..."
+                  />
+                </div>
+                
+                <div>
+                  <label className="form-label">中文姓名</label>
+                  <input
+                    type="text"
+                    value={advancedFilters.中文姓名}
+                    onChange={(e) => updateAdvancedFilter('中文姓名', e.target.value)}
+                    className="form-input"
+                    placeholder="搜索姓名..."
+                  />
+                </div>
+                
+                <div>
+                  <label className="form-label">覆診地點</label>
+                  <input
+                    list="location-options"
+                    value={advancedFilters.覆診地點}
+                    onChange={(e) => updateAdvancedFilter('覆診地點', e.target.value)}
+                    className="form-input"
+                    placeholder="選擇或輸入地點..."
+                  />
+                  <datalist id="location-options">
+                    {getUniqueOptions('覆診地點').map(option => (
+                      <option key={option} value={option} />
+                    ))}
+                  </datalist>
+                </div>
+                
+                <div>
+                  <label className="form-label">覆診專科</label>
+                  <input
+                    list="specialty-options"
+                    value={advancedFilters.覆診專科}
+                    onChange={(e) => updateAdvancedFilter('覆診專科', e.target.value)}
+                    className="form-input"
+                    placeholder="選擇或輸入專科..."
+                  />
+                  <datalist id="specialty-options">
+                    {getUniqueOptions('覆診專科').map(option => (
+                      <option key={option} value={option} />
+                    ))}
+                  </datalist>
+                </div>
+                
+                <div>
+                  <label className="form-label">交通安排</label>
+                  <input
+                    list="transport-options"
+                    value={advancedFilters.交通安排}
+                    onChange={(e) => updateAdvancedFilter('交通安排', e.target.value)}
+                    className="form-input"
+                    placeholder="選擇或輸入交通安排..."
+                  />
+                  <datalist id="transport-options">
+                    {getUniqueOptions('交通安排').map(option => (
+                      <option key={option} value={option} />
+                    ))}
+                  </datalist>
+                </div>
+                
+                <div>
+                  <label className="form-label">陪診人員</label>
+                  <input
+                    list="companion-options"
+                    value={advancedFilters.陪診人員}
+                    onChange={(e) => updateAdvancedFilter('陪診人員', e.target.value)}
+                    className="form-input"
+                    placeholder="選擇或輸入陪診人員..."
+                  />
+                  <datalist id="companion-options">
+                    {getUniqueOptions('陪診人員').map(option => (
+                      <option key={option} value={option} />
+                    ))}
+                  </datalist>
+                </div>
+                
                 <div>
                   <label className="form-label">狀態</label>
                   <select
-                    value={filterStatus}
-                    onChange={(e) => setFilterStatus(e.target.value)}
+                    value={advancedFilters.狀態}
+                    onChange={(e) => updateAdvancedFilter('狀態', e.target.value)}
                     className="form-input"
                   >
                     <option value="">所有狀態</option>
@@ -361,17 +571,14 @@ const FollowUpManagement: React.FC = () => {
                 </div>
                 
                 <div>
-                  <label className="form-label">覆診地點</label>
-                  <select
-                    value={filterLocation}
-                    onChange={(e) => setFilterLocation(e.target.value)}
+                  <label className="form-label">備註</label>
+                  <input
+                    type="text"
+                    value={advancedFilters.備註}
+                    onChange={(e) => updateAdvancedFilter('備註', e.target.value)}
                     className="form-input"
-                  >
-                    <option value="">所有地點</option>
-                    {uniqueLocations.map(location => (
-                      <option key={location} value={location}>{location}</option>
-                    ))}
-                  </select>
+                    placeholder="搜索備註內容..."
+                  />
                 </div>
               </div>
             </div>
@@ -380,7 +587,7 @@ const FollowUpManagement: React.FC = () => {
           {/* 搜索結果統計 */}
           <div className="flex items-center justify-between text-sm text-gray-600">
             <span>顯示 {sortedAppointments.length} / {followUpAppointments.length} 筆覆診安排</span>
-            {(searchTerm || filterStatus || filterLocation || dateFilter) && (
+            {(searchTerm || hasAdvancedFilters()) && (
               <span className="text-blue-600">已套用篩選條件</span>
             )}
           </div>
@@ -571,12 +778,12 @@ const FollowUpManagement: React.FC = () => {
           <div className="text-center py-12">
             <CalendarCheck className="h-24 w-24 mx-auto mb-4 text-gray-300" />
             <h3 className="text-lg font-medium text-gray-900 mb-2">
-              {searchTerm || filterStatus || filterLocation || dateFilter ? '找不到符合條件的覆診安排' : '暫無覆診安排'}
+              {searchTerm || hasAdvancedFilters() ? '找不到符合條件的覆診安排' : '暫無覆診安排'}
             </h3>
             <p className="text-gray-600 mb-4">
-              {searchTerm || filterStatus || filterLocation || dateFilter ? '請嘗試調整搜索條件' : '開始新增院友的覆診安排'}
+              {searchTerm || hasAdvancedFilters() ? '請嘗試調整搜索條件' : '開始新增院友的覆診安排'}
             </p>
-            {!searchTerm && !filterStatus && !filterLocation && !dateFilter ? (
+            {!searchTerm && !hasAdvancedFilters() ? (
               <button
                 onClick={() => setShowModal(true)}
                 className="btn-primary"

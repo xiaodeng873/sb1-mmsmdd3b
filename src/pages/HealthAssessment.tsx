@@ -31,19 +31,36 @@ type RecordType = '生命表徵' | '血糖控制' | '體重控制' | 'all';
 type SortField = '記錄日期' | '記錄時間' | '院友姓名' | '記錄類型' | '體重' | '血糖值' | '血壓';
 type SortDirection = 'asc' | 'desc';
 
+interface AdvancedFilters {
+  床號: string;
+  中文姓名: string;
+  記錄類型: string;
+  記錄人員: string;
+  備註: string;
+  startDate: string;
+  endDate: string;
+}
+
 const HealthAssessment: React.FC = () => {
   const { healthRecords, patients, loading, deleteHealthRecord } = usePatients();
   const [showModal, setShowModal] = useState(false);
   const [selectedRecord, setSelectedRecord] = useState<any>(null);
-  const [selectedType, setSelectedType] = useState<RecordType>('all');
   const [searchTerm, setSearchTerm] = useState('');
   const [sortField, setSortField] = useState<SortField>('記錄日期');
   const [sortDirection, setSortDirection] = useState<SortDirection>('desc');
   const [selectedRows, setSelectedRows] = useState<Set<number>>(new Set());
   const [showBatchModal, setShowBatchModal] = useState(false);
   const [batchRecordType, setBatchRecordType] = useState<'生命表徵' | '血糖控制' | '體重控制'>('生命表徵');
-  const [dateFilter, setDateFilter] = useState('');
   const [showAdvancedFilters, setShowAdvancedFilters] = useState(false);
+  const [advancedFilters, setAdvancedFilters] = useState<AdvancedFilters>({
+    床號: '',
+    中文姓名: '',
+    記錄類型: '',
+    記錄人員: '',
+    備註: '',
+    startDate: '',
+    endDate: ''
+  });
 
   if (loading) {
     return (
@@ -59,19 +76,87 @@ const HealthAssessment: React.FC = () => {
   const filteredRecords = healthRecords.filter(record => {
     const patient = patients.find(p => p.院友id === record.院友id);
     
-    // 日期篩選
-    if (dateFilter && record.記錄日期 !== dateFilter) {
+    // 日期區間篩選
+    if (advancedFilters.startDate || advancedFilters.endDate) {
+      const recordDate = new Date(record.記錄日期);
+      if (advancedFilters.startDate && recordDate < new Date(advancedFilters.startDate)) {
+        return false;
+      }
+      if (advancedFilters.endDate && recordDate > new Date(advancedFilters.endDate)) {
+        return false;
+      }
+    }
+    
+    // 進階篩選
+    if (advancedFilters.床號 && !patient?.床號.toLowerCase().includes(advancedFilters.床號.toLowerCase())) {
+      return false;
+    }
+    if (advancedFilters.中文姓名 && !patient?.中文姓名.toLowerCase().includes(advancedFilters.中文姓名.toLowerCase())) {
+      return false;
+    }
+    if (advancedFilters.記錄類型 && record.記錄類型 !== advancedFilters.記錄類型) {
+      return false;
+    }
+    if (advancedFilters.記錄人員 && !record.記錄人員?.toLowerCase().includes(advancedFilters.記錄人員.toLowerCase())) {
+      return false;
+    }
+    if (advancedFilters.備註 && !record.備註?.toLowerCase().includes(advancedFilters.備註.toLowerCase())) {
       return false;
     }
     
+    // 基本搜索條件
     const matchesSearch = patient?.中文姓名.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          patient?.床號.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          record.備註?.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          new Date(record.記錄日期).toLocaleDateString('zh-TW').includes(searchTerm.toLowerCase()) ||
                          false;
-    const matchesType = selectedType === 'all' || record.記錄類型 === selectedType;
-    return matchesSearch && matchesType;
+    
+    return matchesSearch;
   });
+
+  // 檢查是否有進階篩選條件
+  const hasAdvancedFilters = () => {
+    return Object.values(advancedFilters).some(value => value !== '');
+  };
+
+  const updateAdvancedFilter = (field: keyof AdvancedFilters, value: string) => {
+    setAdvancedFilters(prev => ({
+      ...prev,
+      [field]: value
+    }));
+  };
+
+  const clearFilters = () => {
+    setSearchTerm('');
+    setAdvancedFilters({
+      床號: '',
+      中文姓名: '',
+      記錄類型: '',
+      記錄人員: '',
+      備註: '',
+      startDate: '',
+      endDate: ''
+    });
+  };
+
+  // 獲取所有唯一值的選項
+  const getUniqueOptions = (field: string) => {
+    const values = new Set<string>();
+    healthRecords.forEach(record => {
+      let value = '';
+      
+      switch (field) {
+        case '記錄人員':
+          value = record.記錄人員 || '';
+          break;
+        default:
+          return;
+      }
+      
+      if (value) values.add(value);
+    });
+    return Array.from(values).sort();
+  };
 
   const sortedRecords = [...filteredRecords].sort((a, b) => {
     const patientA = patients.find(p => p.院友id === a.院友id);
@@ -213,12 +298,6 @@ const HealthAssessment: React.FC = () => {
   const handleBatchUpload = (recordType: '生命表徵' | '血糖控制' | '體重控制') => {
     setBatchRecordType(recordType);
     setShowBatchModal(true);
-  };
-
-  const clearFilters = () => {
-    setSearchTerm('');
-    setSelectedType('all');
-    setDateFilter('');
   };
 
   // --------- 新邏輯：首次體重記錄與變化顏色 ----------
@@ -386,23 +465,22 @@ const HealthAssessment: React.FC = () => {
             </div>
             
             <div className="flex space-x-2">
-              <input
-                type="date"
-                value={dateFilter}
-                onChange={(e) => setDateFilter(e.target.value)}
-                className="form-input lg:w-40"
-                title="按記錄日期篩選"
-              />
-              
               <button
                 onClick={() => setShowAdvancedFilters(!showAdvancedFilters)}
-                className={`btn-secondary flex items-center space-x-2 ${showAdvancedFilters ? 'bg-blue-50 text-blue-700' : ''}`}
+                className={`btn-secondary flex items-center space-x-2 ${
+                  showAdvancedFilters ? 'bg-blue-50 text-blue-700' : ''
+                } ${hasAdvancedFilters() ? 'border-blue-300' : ''}`}
               >
                 <Filter className="h-4 w-4" />
                 <span>進階篩選</span>
+                {hasAdvancedFilters() && (
+                  <span className="bg-blue-600 text-white text-xs px-2 py-1 rounded-full">
+                    已套用
+                  </span>
+                )}
               </button>
               
-              {(searchTerm || selectedType !== 'all' || dateFilter) && (
+              {(searchTerm || hasAdvancedFilters()) && (
                 <button
                   onClick={clearFilters}
                   className="btn-secondary flex items-center space-x-2 text-red-600 hover:text-red-700"
@@ -417,19 +495,93 @@ const HealthAssessment: React.FC = () => {
           {/* 進階篩選面板 */}
           {showAdvancedFilters && (
             <div className="border-t border-gray-200 pt-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <h3 className="text-sm font-medium text-gray-900 mb-3">進階篩選</h3>
+              
+              {/* 日期區間篩選 */}
+              <div className="mb-4">
+                <label className="form-label">記錄日期區間</label>
+                <div className="flex items-center space-x-2">
+                  <input
+                    type="date"
+                    value={advancedFilters.startDate}
+                    onChange={(e) => updateAdvancedFilter('startDate', e.target.value)}
+                    className="form-input"
+                    placeholder="開始日期"
+                  />
+                  <span className="text-gray-500">至</span>
+                  <input
+                    type="date"
+                    value={advancedFilters.endDate}
+                    onChange={(e) => updateAdvancedFilter('endDate', e.target.value)}
+                    className="form-input"
+                    placeholder="結束日期"
+                  />
+                </div>
+              </div>
+              
+              {/* 其他篩選條件 */}
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                <div>
+                  <label className="form-label">床號</label>
+                  <input
+                    type="text"
+                    value={advancedFilters.床號}
+                    onChange={(e) => updateAdvancedFilter('床號', e.target.value)}
+                    className="form-input"
+                    placeholder="搜索床號..."
+                  />
+                </div>
+                
+                <div>
+                  <label className="form-label">中文姓名</label>
+                  <input
+                    type="text"
+                    value={advancedFilters.中文姓名}
+                    onChange={(e) => updateAdvancedFilter('中文姓名', e.target.value)}
+                    className="form-input"
+                    placeholder="搜索姓名..."
+                  />
+                </div>
+                
                 <div>
                   <label className="form-label">記錄類型</label>
                   <select
-                    value={selectedType}
-                    onChange={(e) => setSelectedType(e.target.value as RecordType)}
+                    value={advancedFilters.記錄類型}
+                    onChange={(e) => updateAdvancedFilter('記錄類型', e.target.value)}
                     className="form-input"
                   >
-                    <option value="all">所有類型</option>
+                    <option value="">所有類型</option>
                     <option value="生命表徵">生命表徵</option>
                     <option value="血糖控制">血糖控制</option>
                     <option value="體重控制">體重控制</option>
                   </select>
+                </div>
+                
+                <div>
+                  <label className="form-label">記錄人員</label>
+                  <input
+                    list="recorder-options"
+                    value={advancedFilters.記錄人員}
+                    onChange={(e) => updateAdvancedFilter('記錄人員', e.target.value)}
+                    className="form-input"
+                    placeholder="選擇或輸入記錄人員..."
+                  />
+                  <datalist id="recorder-options">
+                    {getUniqueOptions('記錄人員').map(option => (
+                      <option key={option} value={option} />
+                    ))}
+                  </datalist>
+                </div>
+                
+                <div>
+                  <label className="form-label">備註</label>
+                  <input
+                    type="text"
+                    value={advancedFilters.備註}
+                    onChange={(e) => updateAdvancedFilter('備註', e.target.value)}
+                    className="form-input"
+                    placeholder="搜索備註內容..."
+                  />
                 </div>
               </div>
             </div>
@@ -438,7 +590,7 @@ const HealthAssessment: React.FC = () => {
           {/* 搜索結果統計 */}
           <div className="flex items-center justify-between text-sm text-gray-600">
             <span>顯示 {sortedRecords.length} / {healthRecords.length} 筆健康記錄</span>
-            {(searchTerm || selectedType !== 'all' || dateFilter) && (
+            {(searchTerm || hasAdvancedFilters()) && (
               <span className="text-blue-600">已套用篩選條件</span>
             )}
           </div>
@@ -642,12 +794,12 @@ const HealthAssessment: React.FC = () => {
           <div className="text-center py-12">
             <Heart className="h-24 w-24 mx-auto mb-4 text-gray-300" />
             <h3 className="text-lg font-medium text-gray-900 mb-2">
-              {searchTerm || selectedType !== 'all' || dateFilter ? '找不到符合條件的記錄' : '暫無健康記錄'}
+              {searchTerm || hasAdvancedFilters() ? '找不到符合條件的記錄' : '暫無健康記錄'}
             </h3>
             <p className="text-gray-600 mb-4">
-              {searchTerm || selectedType !== 'all' || dateFilter ? '請嘗試調整搜索條件' : '開始記錄院友的健康狀況'}
+              {searchTerm || hasAdvancedFilters() ? '請嘗試調整搜索條件' : '開始記錄院友的健康狀況'}
             </p>
-            {!searchTerm && selectedType === 'all' && !dateFilter ? (
+            {!searchTerm && !hasAdvancedFilters() ? (
               <button
                 onClick={() => setShowModal(true)}
                 className="btn-primary"
