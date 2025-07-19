@@ -769,7 +769,7 @@ const PatientRecords: React.FC = () => {
                         <div className="flex space-x-1">
                           {patient.藥物敏感?.length > 0 && (
                             <span className="inline-flex items-center px-2 py-1 rounded-full text-xs bg-orange-100 text-orange-800">
-                              <Shield className="h-3 w-3 mr-1" />
+                              <Pill className="h-3 w-3 mr-1" />
                               敏感
                             </span>
                           )}
@@ -781,13 +781,13 @@ const PatientRecords: React.FC = () => {
                           )}
                           {(!patient.藥物敏感?.length && !patient.不良藥物反應?.length) && (
                             <span className="inline-flex items-center px-2 py-1 rounded-full text-xs bg-green-100 text-green-800">
-                              <Shield className="h-3 w-3 mr-1" />
+                              <Pill className="h-3 w-3 mr-1" />
                               無藥物警示
                             </span>
                           )}
                           {patient.感染控制?.length > 0 && (
                             <span className="inline-flex items-center px-2 py-1 rounded-full text-xs bg-purple-100 text-purple-800">
-                              <Shield className="h-3 w-3 mr-1" />
+                              <AlertTriangle className="h-3 w-3 mr-1" />
                               感染控制
                             </span>
                           )}
