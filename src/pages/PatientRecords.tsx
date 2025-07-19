@@ -788,7 +788,8 @@ const PatientRecords: React.FC = () => {
                           {patient.感染控制?.length > 0 && (
                             <span className="inline-flex items-center px-2 py-1 rounded-full text-xs bg-purple-100 text-purple-800">
                               <AlertTriangle className="h-3 w-3 mr-1" />
-                              IC
+                              {/* 顯示所有感染控制內容，以逗號分隔，例如 MRSA, VRE */}
+                              {patient.感染控制.join(', ')}
                             </span>
                           )}
                         </div>
