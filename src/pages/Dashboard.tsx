@@ -126,7 +126,7 @@ const Dashboard: React.FC = () => {
       value: overdueTasks.length,
       icon: AlertTriangle,
       color: 'bg-red-500',
-      change: `${pendingTasks.length} 今日未完成`
+      change: `${pendingTasks.length} 未完成`
     }
   ];
 
