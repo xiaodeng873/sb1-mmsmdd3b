@@ -753,13 +753,13 @@ const FollowUpManagement: React.FC = () => {
                           {appointment.出發時間 && (
                             <div className="flex items-center text-xs text-gray-600">
                               <Clock className="h-3 w-3 mr-1" />
-                              出發: {appointment.出發時間}
+                              出發: {appointment.出發時間.slice(0, 5)}
                             </div>
                           )}
                           {appointment.覆診時間 && (
                             <div className="flex items-center text-xs text-gray-600">
                               <CalendarCheck className="h-3 w-3 mr-1" />
-                              覆診: {appointment.覆診時間}
+                              覆診: {appointment.覆診時間.slice(0, 5)}
                             </div>
                           )}
                         </div>

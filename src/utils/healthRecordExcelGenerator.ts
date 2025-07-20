@@ -229,7 +229,7 @@ export const applyHealthRecordTemplateFormat = (
     worksheet.getCell(`D${rowIndex}`).value = new Date(record.記錄日期).toLocaleDateString('zh-TW');
     
     // E: 記錄時間
-    worksheet.getCell(`E${rowIndex}`).value = record.記錄時間;
+    worksheet.getCell(`E${rowIndex}`).value = record.記錄時間.slice(0, 5);
     
     // 根據記錄類型填入不同欄位
     if (recordType === '生命表徵') {
@@ -424,7 +424,7 @@ const exportHealthRecordsToExcelSimple = async (
       record.床號,
       record.中文姓名,
       new Date(record.記錄日期).toLocaleDateString('zh-TW'),
-      record.記錄時間
+      record.記錄時間.slice(0, 5)
     ];
     
     if (recordType === '生命表徵') {

@@ -754,7 +754,7 @@ const HealthAssessment: React.FC = () => {
                             <div>{new Date(record.記錄日期).toLocaleDateString('zh-TW')}</div>
                             <div className="text-xs text-gray-500 flex items-center">
                               <Clock className="h-3 w-3 mr-1" />
-                              {record.記錄時間}
+                              {record.記錄時間.slice(0, 5)}
                             </div>
                           </div>
                         </div>
