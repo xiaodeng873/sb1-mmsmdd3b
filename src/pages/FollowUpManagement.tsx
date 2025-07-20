@@ -169,7 +169,7 @@ const FollowUpManagement: React.FC = () => {
           return;
       }
       
-      if (value && value !== '尚未安排') values.add(value);
+      if (value) values.add(value);
     });
     return Array.from(values).sort();
   };
@@ -390,7 +390,7 @@ const FollowUpManagement: React.FC = () => {
 
   const getStatusBadgeClass = (status: string) => {
     switch (status) {
-      case '尚未安排': return 'bg-gray-100 text-gray-800';
+      case '尚未安排': return 'bg-gray-100 text-red-600';
       case '已安排': return 'bg-blue-100 text-blue-800';
       case '已完成': return 'bg-green-100 text-green-800';
       case '改期': return 'bg-orange-100 text-orange-800';
@@ -543,7 +543,7 @@ const FollowUpManagement: React.FC = () => {
                   />
                   <datalist id="location-options">
                     {getUniqueOptions('覆診地點').map(option => (
-                      <option key={option} value={option} />
+                      <option key={option} value={option} className={option === '尚未安排' ? 'text-red-600' : ''} />
                     ))}
                   </datalist>
                 </div>
@@ -559,7 +559,7 @@ const FollowUpManagement: React.FC = () => {
                   />
                   <datalist id="specialty-options">
                     {getUniqueOptions('覆診專科').map(option => (
-                      <option key={option} value={option} />
+                      <option key={option} value={option} className={option === '尚未安排' ? 'text-red-600' : ''} />
                     ))}
                   </datalist>
                 </div>
@@ -575,7 +575,7 @@ const FollowUpManagement: React.FC = () => {
                   />
                   <datalist id="transport-options">
                     {getUniqueOptions('交通安排').map(option => (
-                      <option key={option} value={option} />
+                      <option key={option} value={option} className={option === '尚未安排' ? 'text-red-600' : ''} />
                     ))}
                   </datalist>
                 </div>
@@ -591,7 +591,7 @@ const FollowUpManagement: React.FC = () => {
                   />
                   <datalist id="companion-options">
                     {getUniqueOptions('陪診人員').map(option => (
-                      <option key={option} value={option} />
+                      <option key={option} value={option} className={option === '尚未安排' ? 'text-red-600' : ''} />
                     ))}
                   </datalist>
                 </div>
@@ -604,7 +604,7 @@ const FollowUpManagement: React.FC = () => {
                     className="form-input"
                   >
                     <option value="">所有狀態</option>
-                    <option value="尚未安排">尚未安排</option>
+                    <option value="尚未安排" className="text-red-600">尚未安排</option>
                     <option value="已安排">已安排</option>
                     <option value="已完成">已完成</option>
                     <option value="改期">改期</option>
@@ -706,7 +706,7 @@ const FollowUpManagement: React.FC = () => {
                     <tr 
                       key={appointment.覆診id} 
                       className={`hover:bg-gray-50 ${selectedRows.has(appointment.覆診id) ? 'bg-blue-50' : ''}`}
-                     onDoubleClick={() => handleEdit(appointment)}
+                      onDoubleClick={() => handleEdit(appointment)}
                     >
                       <td className="px-4 py-4 whitespace-nowrap">
                         <input
@@ -773,16 +773,20 @@ const FollowUpManagement: React.FC = () => {
                       <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900">
                         {appointment.覆診專科 || '-'}
                       </td>
-                      <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900">
+                      <td className="px-4 py-4 whitespace-nowrap text-sm">
                         <div className="flex items-center">
                           <Car className="h-4 w-4 mr-1 text-gray-400" />
-                          {appointment.交通安排 || '-'}
+                          <span className={appointment.交通安排 === '尚未安排' ? 'text-red-600' : 'text-gray-900'}>
+                            {appointment.交通安排 || '-'}
+                          </span>
                         </div>
                       </td>
-                      <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900">
+                      <td className="px-4 py-4 whitespace-nowrap text-sm">
                         <div className="flex items-center">
                           <UserCheck className="h-4 w-4 mr-1 text-gray-400" />
-                          {appointment.陪診人員 || '-'}
+                          <span className={appointment.陪診人員 === '尚未安排' ? 'text-red-600' : 'text-gray-900'}>
+                            {appointment.陪診人員 || '-'}
+                          </span>
                         </div>
                       </td>
                       <td className="px-4 py-4 whitespace-nowrap">
