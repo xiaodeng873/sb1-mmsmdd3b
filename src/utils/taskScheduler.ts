@@ -1,4 +1,4 @@
-import type { PatientHealthTask, FrequencyUnit } from '../lib/database';
+import type { PatientHealthTask, FrequencyUnit } from '../lib/database'; 
 
 // 計算下一個到期時間
 export function calculateNextDueDate(task: PatientHealthTask, fromDate?: Date): Date {
@@ -103,64 +103,23 @@ export function calculateNextDueDate(task: PatientHealthTask, fromDate?: Date): 
 export function isTaskOverdue(task: PatientHealthTask): boolean {
   const now = new Date();
   const dueDate = new Date(task.next_due_at);
-  
-  // 只有當到期日期是昨天或更早才算逾期
-  // 當日未完成不算逾期
-  const today = new Date();
-  today.setHours(0, 0, 0, 0); // 設定為今日午夜
-  
-  const dueDateOnly = new Date(dueDate);
-  dueDateOnly.setHours(0, 0, 0, 0); // 設定為到期日午夜
-  
-  return dueDateOnly < today;
+  return dueDate < now;
 }
 
 // 檢查任務是否即將到期（24小時內）
 export function isTaskDueSoon(task: PatientHealthTask): boolean {
   const now = new Date();
   const dueDate = new Date(task.next_due_at);
-  
-  // 檢查是否為今日到期但尚未完成
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-  const tomorrow = new Date(today);
-  tomorrow.setDate(tomorrow.getDate() + 1);
-  
-  const dueDateOnly = new Date(dueDate);
-  dueDateOnly.setHours(0, 0, 0, 0);
-  
-  // 如果是今日到期，算作即將到期
-  if (dueDateOnly.getTime() === today.getTime()) {
-    return true;
-  }
-  
-  // 原有邏輯：24小時內到期
   const timeDiff = dueDate.getTime() - now.getTime();
   const hoursDiff = timeDiff / (1000 * 60 * 60);
   return hoursDiff <= 24 && hoursDiff > 0;
 }
 
 // 獲取任務狀態
-export function getTaskStatus(task: PatientHealthTask): 'overdue' | 'due_soon' | 'pending' | 'upcoming' {
+export function getTaskStatus(task: PatientHealthTask): 'overdue' | 'due_soon' | 'upcoming' {
   if (isTaskOverdue(task)) {
     return 'overdue';
   } else if (isTaskDueSoon(task)) {
-    // 進一步區分今日到期和即將到期
-    const now = new Date();
-    const dueDate = new Date(task.next_due_at);
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    const tomorrow = new Date(today);
-    tomorrow.setDate(tomorrow.getDate() + 1);
-    
-    const dueDateOnly = new Date(dueDate);
-    dueDateOnly.setHours(0, 0, 0, 0);
-    
-    // 如果是今日到期，返回 pending (未完成)
-    if (dueDateOnly.getTime() === today.getTime()) {
-      return 'pending';
-    }
-    
     return 'due_soon';
   } else {
     return 'upcoming';
@@ -200,7 +159,38 @@ export function formatFrequencyDescription(task: PatientHealthTask): string {
       return '未知頻率';
   }
 }
-    // 每月一次體重（每月1號中午12點）
+
+// 建立預設任務
+export function createDefaultTasks(patientId: number): Omit<PatientHealthTask, 'id' | 'created_at' | 'updated_at'>[] {
+  const now = new Date();
+  
+  return [
+    // 每週一次生命表徵（週一上午8點）
+    {
+      patient_id: patientId,
+      health_record_type: '生命表徵',
+      frequency_unit: 'weekly',
+      frequency_value: 1,
+      specific_times: ['08:00'],
+      specific_days_of_week: [1], // 週一
+      specific_days_of_month: [],
+      last_completed_at: undefined,
+      next_due_at: calculateNextDueDate({
+        patient_id: patientId,
+        health_record_type: '生命表徵',
+        frequency_unit: 'weekly',
+        frequency_value: 1,
+        specific_times: ['08:00'],
+        specific_days_of_week: [1],
+        specific_days_of_month: [],
+        last_completed_at: undefined,
+        next_due_at: '',
+        id: '',
+        created_at: '',
+        updated_at: ''
+      }, now).toISOString()
+    },
+    // 每月一次體重（每月1號上午9點）
     {
       patient_id: patientId,
       health_record_type: '體重控制',
@@ -215,7 +205,7 @@ export function formatFrequencyDescription(task: PatientHealthTask): string {
         health_record_type: '體重控制',
         frequency_unit: 'monthly',
         frequency_value: 1,
-        specific_times: ['12:00'],
+        specific_times: ['09:00'],
         specific_days_of_week: [],
         specific_days_of_month: [1],
         last_completed_at: undefined,
