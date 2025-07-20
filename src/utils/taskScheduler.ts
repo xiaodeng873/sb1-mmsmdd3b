@@ -113,7 +113,7 @@ export function isTaskOverdue(task: PatientHealthTask): boolean {
   return dueDate < todayStart;
 }
 
-// 檢查任務是否為今日未完成
+// 檢查任務是否為未完成
 export function isTaskPendingToday(task: PatientHealthTask): boolean {
   const now = new Date();
   const dueDate = new Date(task.next_due_at);
