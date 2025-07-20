@@ -54,6 +54,7 @@ export const PatientProvider: React.FC<{ children: React.ReactNode }> = ({ child
   const [serviceReasons, setServiceReasons] = useState<db.ServiceReason[]>([]);
   const [healthRecords, setHealthRecords] = useState<db.HealthRecord[]>([]);
   const [followUpAppointments, setFollowUpAppointments] = useState<db.FollowUpAppointment[]>([]);
+  const [patientHealthTasks, setPatientHealthTasks] = useState<db.PatientHealthTask[]>([]);
   const [loading, setLoading] = useState(true);
   const [dataLoaded, setDataLoaded] = useState(false);
 
@@ -73,6 +74,7 @@ export const PatientProvider: React.FC<{ children: React.ReactNode }> = ({ child
       setServiceReasons([]);
       setHealthRecords([]);
       setFollowUpAppointments([]);
+      setPatientHealthTasks([]);
       setLoading(false);
       setDataLoaded(false);
       return;
@@ -120,13 +122,14 @@ export const PatientProvider: React.FC<{ children: React.ReactNode }> = ({ child
   const refreshData = async () => {
     try {
       console.log('Refreshing all data...');
-      const [patientsData, schedulesData, prescriptionsData, serviceReasonsData, healthRecordsData, followUpAppointmentsData] = await Promise.all([
+      const [patientsData, schedulesData, prescriptionsData, serviceReasonsData, healthRecordsData, followUpAppointmentsData, patientHealthTasksData] = await Promise.all([
         db.getPatients(),
         db.getSchedules(),
         db.getPrescriptions(),
         db.getServiceReasons(),
         db.getHealthRecords(),
-        db.getFollowUpAppointments()
+        db.getFollowUpAppointments(),
+        db.getPatientHealthTasks()
       ]);
 
       console.log('Data loaded:', {
@@ -135,13 +138,15 @@ export const PatientProvider: React.FC<{ children: React.ReactNode }> = ({ child
         prescriptions: prescriptionsData.length,
         serviceReasons: serviceReasonsData.length,
         healthRecords: healthRecordsData.length,
-        followUpAppointments: followUpAppointmentsData.length
+        followUpAppointments: followUpAppointmentsData.length,
+        patientHealthTasks: patientHealthTasksData.length
       });
       setPatients(patientsData);
       setPrescriptions(prescriptionsData);
       setServiceReasons(serviceReasonsData);
       setHealthRecords(healthRecordsData);
       setFollowUpAppointments(followUpAppointmentsData);
+      setPatientHealthTasks(patientHealthTasksData);
 
       // Load schedule details for each schedule
       const schedulesWithDetails: ScheduleWithDetails[] = await Promise.all(
