@@ -5,9 +5,9 @@ import { usePatients } from '../context/PatientContext';
 interface HealthRecordModalProps {
   record?: any;
   onClose: () => void;
+  onTaskCompleted?: () => void;
 }
-
-const HealthRecordModal: React.FC<HealthRecordModalProps> = ({ record, onClose }) => {
+const HealthRecordModal: React.FC<HealthRecordModalProps> = ({ record, onClose, onTaskCompleted }) => {
   const { patients, addHealthRecord, updateHealthRecord, healthRecords } = usePatients();
   const [formData, setFormData] = useState({
     院友id: record?.院友id || '',
@@ -127,6 +127,11 @@ const HealthRecordModal: React.FC<HealthRecordModalProps> = ({ record, onClose }
         });
       } else {
         await addHealthRecord(recordData);
+      }
+      
+      // 如果是從任務完成的，呼叫回調函數
+      if (onTaskCompleted) {
+        onTaskCompleted();
       }
       
       onClose();

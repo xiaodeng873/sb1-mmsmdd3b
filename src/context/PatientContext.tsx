@@ -361,6 +361,45 @@ export const PatientProvider: React.FC<{ children: React.ReactNode }> = ({ child
     }
   };
 
+  const addPatientHealthTask = async (task: Omit<db.PatientHealthTask, 'id' | 'created_at' | 'updated_at'>) => {
+    try {
+      console.log('Adding patient health task:', task);
+      await db.createPatientHealthTask(task);
+      console.log('Patient health task added successfully, refreshing data...');
+      await refreshData();
+      console.log('Data refreshed successfully');
+    } catch (error) {
+      console.error('Error adding patient health task:', error);
+      throw error;
+    }
+  };
+
+  const updatePatientHealthTask = async (task: db.PatientHealthTask) => {
+    try {
+      console.log('Updating patient health task:', task);
+      await db.updatePatientHealthTask(task);
+      console.log('Patient health task updated successfully, refreshing data...');
+      await refreshData();
+      console.log('Data refreshed successfully');
+    } catch (error) {
+      console.error('Error updating patient health task:', error);
+      throw error;
+    }
+  };
+
+  const deletePatientHealthTask = async (id: string) => {
+    try {
+      console.log('Deleting patient health task:', id);
+      await db.deletePatientHealthTask(id);
+      console.log('Patient health task deleted successfully, refreshing data...');
+      await refreshData();
+      console.log('Data refreshed successfully');
+    } catch (error) {
+      console.error('Error deleting patient health task:', error);
+      throw error;
+    }
+  };
+
   return (
     <PatientContext.Provider value={{
       patients,
@@ -369,6 +408,7 @@ export const PatientProvider: React.FC<{ children: React.ReactNode }> = ({ child
       prescriptions,
       healthRecords,
       followUpAppointments,
+      patientHealthTasks,
       loading,
       addPatient,
       updatePatient,
@@ -388,6 +428,9 @@ export const PatientProvider: React.FC<{ children: React.ReactNode }> = ({ child
       addFollowUpAppointment,
       updateFollowUpAppointment,
       deleteFollowUpAppointment,
+      addPatientHealthTask,
+      updatePatientHealthTask,
+      deletePatientHealthTask,
       refreshData
     }}>
       {children}

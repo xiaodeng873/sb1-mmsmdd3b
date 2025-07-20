@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { X, User, Upload, Camera, Trash2 } from 'lucide-react';
 import { usePatients } from '../context/PatientContext';
+import { createDefaultTasks } from '../utils/taskScheduler';
 
 interface PatientModalProps {
   patient?: any;
@@ -8,7 +9,6 @@ interface PatientModalProps {
 }
 
 const PatientModal: React.FC<PatientModalProps> = ({ patient, onClose }) => {
-  const { addPatient, updatePatient } = usePatients();
   const [formData, setFormData] = useState({
     床號: patient?.床號 || '',
     中文姓名: patient?.中文姓名 || '',

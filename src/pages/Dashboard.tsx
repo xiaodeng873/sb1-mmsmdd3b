@@ -1,10 +1,14 @@
 import React from 'react';
-import { Calendar, Users, Pill, FileText, TrendingUp, Clock, CalendarCheck } from 'lucide-react';
+import { Calendar, Users, Pill, FileText, TrendingUp, Clock, CalendarCheck, CheckSquare, AlertTriangle, Activity, Droplets, Scale } from 'lucide-react';
 import { usePatients } from '../context/PatientContext';
 import { Link } from 'react-router-dom';
+import { isTaskOverdue, isTaskDueSoon, getTaskStatus } from '../utils/taskScheduler';
+import HealthRecordModal from '../components/HealthRecordModal';
 
 const Dashboard: React.FC = () => {
-  const { patients, schedules, prescriptions, followUpAppointments, loading } = usePatients();
+  const { patients, schedules, prescriptions, followUpAppointments, patientHealthTasks, loading, updatePatientHealthTask } = usePatients();
+  const [showHealthModal, setShowHealthModal] = React.useState(false);
+  const [selectedTaskForRecord, setSelectedTaskForRecord] = React.useState<any>(null);
 
   if (loading) {
     return (
@@ -36,6 +40,49 @@ const Dashboard: React.FC = () => {
     .filter(a => (a.狀態 === '已安排' || a.狀態 === '尚未安排') && new Date(a.覆診日期) >= new Date())
     .sort((a, b) => new Date(a.覆診日期).getTime() - new Date(b.覆診日期).getTime())
     .slice(0, 5);
+
+  // 任務統計
+  const overdueTasks = patientHealthTasks.filter(task => isTaskOverdue(task));
+  const dueSoonTasks = patientHealthTasks.filter(task => isTaskDueSoon(task));
+  const urgentTasks = [...overdueTasks, ...dueSoonTasks].slice(0, 5);
+
+  const handleTaskClick = (task: any) => {
+    const patient = patients.find(p => p.院友id === task.patient_id);
+    if (patient) {
+      setSelectedTaskForRecord({
+        task,
+        patient,
+        預設記錄類型: task.health_record_type
+      });
+      setShowHealthModal(true);
+    }
+  };
+
+  const handleTaskCompleted = async (taskId: string) => {
+    const task = patientHealthTasks.find(t => t.id === taskId);
+    if (task) {
+      const now = new Date();
+      const { calculateNextDueDate } = await import('../utils/taskScheduler');
+      const nextDueAt = calculateNextDueDate(task, now);
+      
+      await updatePatientHealthTask({
+        ...task,
+        last_completed_at: now.toISOString(),
+        next_due_at: nextDueAt.toISOString()
+      });
+    }
+    setShowHealthModal(false);
+    setSelectedTaskForRecord(null);
+  };
+
+  const getTaskTypeIcon = (type: string) => {
+    switch (type) {
+      case '生命表徵': return <Activity className="h-4 w-4" />;
+      case '血糖控制': return <Droplets className="h-4 w-4" />;
+      case '體重控制': return <Scale className="h-4 w-4" />;
+      default: return <CheckSquare className="h-4 w-4" />;
+    }
+  };
 
   const stats = [
     {
@@ -72,6 +119,13 @@ const Dashboard: React.FC = () => {
       icon: CalendarCheck,
       color: 'bg-indigo-500',
       change: `${followUpAppointments.filter(a => a.狀態 === '已安排' || a.狀態 === '尚未安排').length} 已安排`
+    },
+    {
+      title: '逾期任務',
+      value: overdueTasks.length,
+      icon: AlertTriangle,
+      color: 'bg-red-500',
+      change: `${dueSoonTasks.length} 即將到期`
     }
   ];
 
@@ -85,7 +139,7 @@ const Dashboard: React.FC = () => {
       </div>
 
       {/* Stats Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-6">
         {stats.map((stat, index) => {
           const Icon = stat.icon;
           return (
@@ -106,7 +160,7 @@ const Dashboard: React.FC = () => {
       </div>
 
       {/* Recent Activity */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
         {/* Today's Schedule */}
         <div className="card p-6">
           <div className="flex items-center justify-between mb-4">
@@ -138,6 +192,57 @@ const Dashboard: React.FC = () => {
               <div className="text-center py-8 text-gray-500">
                 <Calendar className="h-12 w-12 mx-auto mb-2 text-gray-300" />
                 <p>今日無排程</p>
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* 緊急任務 */}
+        <div className="card p-6">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-lg font-semibold text-gray-900">緊急任務</h2>
+            <Link 
+              to="/tasks" 
+              className="text-sm text-blue-600 hover:text-blue-700 font-medium"
+            >
+              查看全部
+            </Link>
+          </div>
+          <div className="space-y-3">
+            {urgentTasks.length > 0 ? (
+              urgentTasks.map(task => {
+                const patient = patients.find(p => p.院友id === task.patient_id);
+                const status = getTaskStatus(task);
+                return (
+                  <div 
+                    key={task.id} 
+                    className="flex items-center space-x-3 p-3 bg-gray-50 rounded-lg cursor-pointer hover:bg-gray-100 transition-colors"
+                    onClick={() => handleTaskClick(task)}
+                  >
+                    <div className={`p-2 rounded-full ${
+                      status === 'overdue' ? 'bg-red-100' : 'bg-orange-100'
+                    }`}>
+                      {getTaskTypeIcon(task.health_record_type)}
+                    </div>
+                    <div className="flex-1">
+                      <p className="font-medium text-gray-900">{patient?.中文姓名}</p>
+                      <p className="text-sm text-gray-600">{task.health_record_type}</p>
+                      <p className="text-xs text-gray-500">
+                        {new Date(task.next_due_at).toLocaleString('zh-TW')}
+                      </p>
+                    </div>
+                    <span className={`status-badge ${
+                      status === 'overdue' ? 'bg-red-100 text-red-800' : 'bg-orange-100 text-orange-800'
+                    }`}>
+                      {status === 'overdue' ? '逾期' : '即將到期'}
+                    </span>
+                  </div>
+                );
+              })
+            ) : (
+              <div className="text-center py-8 text-gray-500">
+                <CheckSquare className="h-12 w-12 mx-auto mb-2 text-gray-300" />
+                <p>無緊急任務</p>
               </div>
             )}
           </div>
@@ -225,7 +330,7 @@ const Dashboard: React.FC = () => {
       {/* Quick Actions */}
       <div className="card p-6">
         <h2 className="text-lg font-semibold text-gray-900 mb-4">快速操作</h2>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
           <Link 
             to="/scheduling" 
             className="flex items-center space-x-3 p-4 bg-blue-50 rounded-lg hover:bg-blue-100 transition-colors"
@@ -256,8 +361,33 @@ const Dashboard: React.FC = () => {
               <p className="text-sm text-gray-600">掃描藥物標籤</p>
             </div>
           </Link>
+          <Link 
+            to="/tasks" 
+            className="flex items-center space-x-3 p-4 bg-purple-50 rounded-lg hover:bg-purple-100 transition-colors"
+          >
+            <CheckSquare className="h-8 w-8 text-purple-600" />
+            <div>
+              <p className="font-medium text-gray-900">任務管理</p>
+              <p className="text-sm text-gray-600">設定健康檢查任務</p>
+            </div>
+          </Link>
         </div>
       </div>
+
+      {/* 健康記錄模態框 */}
+      {showHealthModal && selectedTaskForRecord && (
+        <HealthRecordModal
+          record={{
+            院友id: selectedTaskForRecord.patient.院友id,
+            記錄類型: selectedTaskForRecord.預設記錄類型
+          }}
+          onClose={() => {
+            setShowHealthModal(false);
+            setSelectedTaskForRecord(null);
+          }}
+          onTaskCompleted={() => handleTaskCompleted(selectedTaskForRecord.task.id)}
+        />
+      )}
     </div>
   );
 };

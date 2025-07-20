@@ -99,6 +99,24 @@ export interface FollowUpAppointment {
   更新時間: string;
 }
 
+export type HealthTaskType = '生命表徵' | '血糖控制' | '體重控制';
+export type FrequencyUnit = 'hourly' | 'daily' | 'weekly' | 'monthly';
+
+export interface PatientHealthTask {
+  id: string;
+  patient_id: number;
+  health_record_type: HealthTaskType;
+  frequency_unit: FrequencyUnit;
+  frequency_value: number;
+  specific_times: string[];
+  specific_days_of_week: number[];
+  specific_days_of_month: number[];
+  last_completed_at?: string;
+  next_due_at: string;
+  created_at: string;
+  updated_at: string;
+}
+
 // Patient operations
 export async function getPatients(): Promise<Patient[]> {
   try {
@@ -782,6 +800,91 @@ export async function deleteFollowUpAppointment(id: string): Promise<boolean> {
     return true;
   } catch (error) {
     console.error('Error deleting follow-up appointment:', error);
+    return false;
+  }
+}
+
+// Patient Health Tasks operations
+export async function getPatientHealthTasks(): Promise<PatientHealthTask[]> {
+  try {
+    console.log('Fetching patient health tasks...');
+    const { data, error } = await supabase
+      .from('patient_health_tasks')
+      .select('*')
+      .order('next_due_at', { ascending: true });
+    
+    if (error) throw error;
+    console.log('Patient health tasks fetched:', data.length, 'records');
+    return data as PatientHealthTask[];
+  } catch (error) {
+    console.error('Error fetching patient health tasks:', error);
+    return [];
+  }
+}
+
+export async function createPatientHealthTask(task: Omit<PatientHealthTask, 'id' | 'created_at' | 'updated_at'>): Promise<PatientHealthTask | null> {
+  try {
+    console.log('Creating patient health task:', task);
+    
+    const { data, error } = await supabase
+      .from('patient_health_tasks')
+      .insert(task)
+      .select()
+      .single();
+    
+    if (error) throw error;
+    console.log('Patient health task created successfully:', data);
+    return data as PatientHealthTask;
+  } catch (error) {
+    console.error('Error creating patient health task:', error);
+    return null;
+  }
+}
+
+export async function updatePatientHealthTask(task: PatientHealthTask): Promise<PatientHealthTask | null> {
+  try {
+    console.log('Updating patient health task:', task);
+    
+    const { data, error } = await supabase
+      .from('patient_health_tasks')
+      .update({
+        patient_id: task.patient_id,
+        health_record_type: task.health_record_type,
+        frequency_unit: task.frequency_unit,
+        frequency_value: task.frequency_value,
+        specific_times: task.specific_times,
+        specific_days_of_week: task.specific_days_of_week,
+        specific_days_of_month: task.specific_days_of_month,
+        last_completed_at: task.last_completed_at,
+        next_due_at: task.next_due_at
+      })
+      .eq('id', task.id)
+      .select()
+      .single();
+    
+    if (error) throw error;
+    console.log('Patient health task updated successfully:', data);
+    return data as PatientHealthTask;
+  } catch (error) {
+    console.error('Error updating patient health task:', error);
+    return null;
+  }
+}
+
+export async function deletePatientHealthTask(id: string): Promise<boolean> {
+  try {
+    console.log('Deleting patient health task:', id);
+    
+    const { error } = await supabase
+      .from('patient_health_tasks')
+      .delete()
+      .eq('id', id);
+    
+    if (error) throw error;
+    console.log('Patient health task deleted successfully');
+    return true;
+  } catch (error) {
+    console.error('Error deleting patient health task:', error);
     return false;
   }
 }

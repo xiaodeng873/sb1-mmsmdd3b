@@ -1,0 +1,369 @@
+import React, { useState } from 'react';
+import { X, CheckSquare, User, Calendar, Clock, Activity, Droplets, Scale } from 'lucide-react';
+import { usePatients, type PatientHealthTask, type HealthTaskType, type FrequencyUnit } from '../context/PatientContext';
+import { calculateNextDueDate } from '../utils/taskScheduler';
+
+interface TaskModalProps {
+  task?: PatientHealthTask;
+  onClose: () => void;
+}
+
+const TaskModal: React.FC<TaskModalProps> = ({ task, onClose }) => {
+  const { patients, addPatientHealthTask, updatePatientHealthTask } = usePatients();
+  const [formData, setFormData] = useState({
+    patient_id: task?.patient_id || '',
+    health_record_type: task?.health_record_type || '生命表徵' as HealthTaskType,
+    frequency_unit: task?.frequency_unit || 'weekly' as FrequencyUnit,
+    frequency_value: task?.frequency_value || 1,
+    specific_times: task?.specific_times || [],
+    specific_days_of_week: task?.specific_days_of_week || [],
+    specific_days_of_month: task?.specific_days_of_month || []
+  });
+  const [newTime, setNewTime] = useState('');
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+    const { name, value, type } = e.target;
+    
+    if (type === 'number') {
+      setFormData(prev => ({
+        ...prev,
+        [name]: parseInt(value) || 1
+      }));
+    } else {
+      setFormData(prev => ({
+        ...prev,
+        [name]: value
+      }));
+    }
+  };
+
+  const addTime = () => {
+    if (newTime && !formData.specific_times.includes(newTime)) {
+      setFormData(prev => ({
+        ...prev,
+        specific_times: [...prev.specific_times, newTime].sort()
+      }));
+      setNewTime('');
+    }
+  };
+
+  const removeTime = (timeToRemove: string) => {
+    setFormData(prev => ({
+      ...prev,
+      specific_times: prev.specific_times.filter(time => time !== timeToRemove)
+    }));
+  };
+
+  const handleDayOfWeekChange = (day: number, checked: boolean) => {
+    setFormData(prev => ({
+      ...prev,
+      specific_days_of_week: checked
+        ? [...prev.specific_days_of_week, day].sort()
+        : prev.specific_days_of_week.filter(d => d !== day)
+    }));
+  };
+
+  const handleDayOfMonthChange = (day: number, checked: boolean) => {
+    setFormData(prev => ({
+      ...prev,
+      specific_days_of_month: checked
+        ? [...prev.specific_days_of_month, day].sort()
+        : prev.specific_days_of_month.filter(d => d !== day)
+    }));
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!formData.patient_id) {
+      alert('請選擇院友');
+      return;
+    }
+
+    try {
+      // 計算下次到期時間
+      const mockTask: PatientHealthTask = {
+        id: '',
+        patient_id: parseInt(formData.patient_id),
+        health_record_type: formData.health_record_type,
+        frequency_unit: formData.frequency_unit,
+        frequency_value: formData.frequency_value,
+        specific_times: formData.specific_times,
+        specific_days_of_week: formData.specific_days_of_week,
+        specific_days_of_month: formData.specific_days_of_month,
+        last_completed_at: task?.last_completed_at,
+        next_due_at: '',
+        created_at: '',
+        updated_at: ''
+      };
+
+      const nextDueAt = calculateNextDueDate(mockTask);
+
+      const taskData = {
+        patient_id: parseInt(formData.patient_id),
+        health_record_type: formData.health_record_type,
+        frequency_unit: formData.frequency_unit,
+        frequency_value: formData.frequency_value,
+        specific_times: formData.specific_times,
+        specific_days_of_week: formData.specific_days_of_week,
+        specific_days_of_month: formData.specific_days_of_month,
+        last_completed_at: task?.last_completed_at,
+        next_due_at: nextDueAt.toISOString()
+      };
+
+      if (task) {
+        await updatePatientHealthTask({
+          ...task,
+          ...taskData
+        });
+      } else {
+        await addPatientHealthTask(taskData);
+      }
+      
+      onClose();
+    } catch (error) {
+      console.error('儲存任務失敗:', error);
+      alert('儲存任務失敗，請重試');
+    }
+  };
+
+  const getTypeIcon = (type: HealthTaskType) => {
+    switch (type) {
+      case '生命表徵': return <Activity className="h-5 w-5" />;
+      case '血糖控制': return <Droplets className="h-5 w-5" />;
+      case '體重控制': return <Scale className="h-5 w-5" />;
+      default: return <CheckSquare className="h-5 w-5" />;
+    }
+  };
+
+  const getTypeColor = (type: HealthTaskType) => {
+    switch (type) {
+      case '生命表徵': return 'text-blue-600';
+      case '血糖控制': return 'text-red-600';
+      case '體重控制': return 'text-green-600';
+      default: return 'text-purple-600';
+    }
+  };
+
+  const dayNames = ['週一', '週二', '週三', '週四', '週五', '週六', '週日'];
+
+  return (
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+      <div className="bg-white rounded-lg max-w-4xl w-full max-h-[90vh] overflow-y-auto">
+        <div className="sticky top-0 bg-white border-b border-gray-200 px-6 py-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-3">
+              <div className={`p-2 rounded-lg ${getTypeColor(formData.health_record_type)} bg-opacity-10`}>
+                {getTypeIcon(formData.health_record_type)}
+              </div>
+              <h2 className="text-xl font-semibold text-gray-900">
+                {task ? '編輯健康任務' : '新增健康任務'}
+              </h2>
+            </div>
+            <button
+              onClick={onClose}
+              className="text-gray-400 hover:text-gray-600"
+            >
+              <X className="h-6 w-6" />
+            </button>
+          </div>
+        </div>
+
+        <form onSubmit={handleSubmit} className="p-6 space-y-6">
+          {/* 基本設定 */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label className="form-label">
+                <User className="h-4 w-4 inline mr-1" />
+                院友 *
+              </label>
+              <select
+                name="patient_id"
+                value={formData.patient_id}
+                onChange={handleChange}
+                className="form-input"
+                required
+              >
+                <option value="">請選擇院友</option>
+                {patients.map(patient => (
+                  <option key={patient.院友id} value={patient.院友id}>
+                    {patient.床號} - {patient.中文姓名}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div>
+              <label className="form-label">任務類型 *</label>
+              <select
+                name="health_record_type"
+                value={formData.health_record_type}
+                onChange={handleChange}
+                className="form-input"
+                required
+              >
+                <option value="生命表徵">生命表徵</option>
+                <option value="血糖控制">血糖控制</option>
+                <option value="體重控制">體重控制</option>
+              </select>
+            </div>
+          </div>
+
+          {/* 頻率設定 */}
+          <div className="space-y-4">
+            <h3 className="text-lg font-medium text-gray-900">頻率設定</h3>
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className="form-label">頻率單位 *</label>
+                <select
+                  name="frequency_unit"
+                  value={formData.frequency_unit}
+                  onChange={handleChange}
+                  className="form-input"
+                  required
+                >
+                  <option value="hourly">每小時</option>
+                  <option value="daily">每天</option>
+                  <option value="weekly">每週</option>
+                  <option value="monthly">每月</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="form-label">頻率數值 *</label>
+                <input
+                  type="number"
+                  name="frequency_value"
+                  value={formData.frequency_value}
+                  onChange={handleChange}
+                  className="form-input"
+                  min="1"
+                  required
+                />
+                <p className="text-xs text-gray-500 mt-1">
+                  例如：每 {formData.frequency_value} {
+                    formData.frequency_unit === 'hourly' ? '小時' :
+                    formData.frequency_unit === 'daily' ? '天' :
+                    formData.frequency_unit === 'weekly' ? '週' : '月'
+                  }
+                </p>
+              </div>
+            </div>
+
+            {/* 特定時間設定 */}
+            {(formData.frequency_unit === 'daily' || formData.frequency_unit === 'weekly' || formData.frequency_unit === 'monthly') && (
+              <div>
+                <label className="form-label">
+                  <Clock className="h-4 w-4 inline mr-1" />
+                  特定時間
+                </label>
+                <div className="space-y-2">
+                  <div className="flex space-x-2">
+                    <input
+                      type="time"
+                      value={newTime}
+                      onChange={(e) => setNewTime(e.target.value)}
+                      className="form-input flex-1"
+                    />
+                    <button
+                      type="button"
+                      onClick={addTime}
+                      className="btn-secondary"
+                      disabled={!newTime || formData.specific_times.includes(newTime)}
+                    >
+                      新增
+                    </button>
+                  </div>
+                  
+                  <div className="flex flex-wrap gap-2">
+                    {formData.specific_times.map(time => (
+                      <span
+                        key={time}
+                        className="inline-flex items-center px-3 py-1 rounded-full text-sm bg-blue-100 text-blue-800"
+                      >
+                        {time}
+                        <button
+                          type="button"
+                          onClick={() => removeTime(time)}
+                          className="ml-2 text-blue-600 hover:text-blue-800"
+                        >
+                          ×
+                        </button>
+                      </span>
+                    ))}
+                    {formData.specific_times.length === 0 && (
+                      <span className="text-sm text-gray-500">尚未設定特定時間</span>
+                    )}
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* 特定星期幾設定 */}
+            {formData.frequency_unit === 'weekly' && (
+              <div>
+                <label className="form-label">特定星期幾</label>
+                <div className="grid grid-cols-7 gap-2">
+                  {dayNames.map((dayName, index) => {
+                    const dayValue = index + 1; // 1=週一, 7=週日
+                    return (
+                      <label key={dayValue} className="flex items-center space-x-2">
+                        <input
+                          type="checkbox"
+                          checked={formData.specific_days_of_week.includes(dayValue)}
+                          onChange={(e) => handleDayOfWeekChange(dayValue, e.target.checked)}
+                          className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                        />
+                        <span className="text-sm text-gray-700">{dayName}</span>
+                      </label>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+
+            {/* 特定日期設定 */}
+            {formData.frequency_unit === 'monthly' && (
+              <div>
+                <label className="form-label">特定日期</label>
+                <div className="grid grid-cols-7 gap-2">
+                  {Array.from({ length: 31 }, (_, i) => i + 1).map(day => (
+                    <label key={day} className="flex items-center space-x-2">
+                      <input
+                        type="checkbox"
+                        checked={formData.specific_days_of_month.includes(day)}
+                        onChange={(e) => handleDayOfMonthChange(day, e.target.checked)}
+                        className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                      />
+                      <span className="text-sm text-gray-700">{day}號</span>
+                    </label>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* 提交按鈕 */}
+          <div className="flex space-x-3 pt-4 border-t border-gray-200">
+            <button
+              type="submit"
+              className="btn-primary flex-1"
+            >
+              {task ? '更新任務' : '建立任務'}
+            </button>
+            <button
+              type="button"
+              onClick={onClose}
+              className="btn-secondary flex-1"
+            >
+              取消
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+};
+
+export default TaskModal;
