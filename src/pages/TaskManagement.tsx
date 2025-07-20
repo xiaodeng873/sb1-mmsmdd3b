@@ -262,7 +262,7 @@ const TaskManagement: React.FC = () => {
             >
               <option value="all">所有狀態</option>
               <option value="overdue">逾期</option>
-              <option value="pending">今日未完成</option>
+              <option value="pending">未完成</option>
               <option value="due_soon">即將到期</option>
               <option value="upcoming">排程中</option>
             </select>
