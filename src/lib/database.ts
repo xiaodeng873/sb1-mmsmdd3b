@@ -845,20 +845,13 @@ export async function updatePatientHealthTask(task: PatientHealthTask): Promise<
   try {
     console.log('Updating patient health task:', task);
     
+    // Exclude automatically managed fields from update payload
+    const { id, created_at, updated_at, ...updateData } = task;
+    
     const { data, error } = await supabase
       .from('patient_health_tasks')
-      .update({
-        patient_id: task.patient_id,
-        health_record_type: task.health_record_type,
-        frequency_unit: task.frequency_unit,
-        frequency_value: task.frequency_value,
-        specific_times: task.specific_times,
-        specific_days_of_week: task.specific_days_of_week,
-        specific_days_of_month: task.specific_days_of_month,
-        last_completed_at: task.last_completed_at,
-        next_due_at: task.next_due_at
-      })
-      .eq('id', task.id)
+      .update(updateData)
+      .eq('id', id)
       .select()
       .single();
     
