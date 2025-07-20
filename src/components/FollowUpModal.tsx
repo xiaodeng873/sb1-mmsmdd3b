@@ -16,10 +16,10 @@ export default function FollowUpModal({ appointment, onClose }: FollowUpModalPro
     覆診時間: appointment?.覆診時間 || '',
     覆診地點: appointment?.覆診地點 || '',
     覆診專科: appointment?.覆診專科 || '',
-    交通安排: appointment?.交通安排 || '尚未安排',
-    陪診人員: appointment?.陪診人員 || '尚未安排',
+    交通安排: appointment?.交通安排 || '',
+    陪診人員: appointment?.陪診人員 || '',
     備註: appointment?.備註 || '',
-    狀態: appointment?.狀態 || '尚未安排' as '尚未安排' | '已安排' | '已完成' | '改期' | '取消'
+    狀態: appointment?.狀態 || '' as '' | '已安排' | '已完成' | '改期' | '取消'
   });
 
   const [notificationMessage, setNotificationMessage] = useState('');
@@ -38,7 +38,7 @@ export default function FollowUpModal({ appointment, onClose }: FollowUpModalPro
 
   // 交通安排選項
   const transportOptions = [
-    '尚未安排',
+    '',
     '輪椅的士',
     '普通的士',
     '非緊急車',
@@ -47,7 +47,7 @@ export default function FollowUpModal({ appointment, onClose }: FollowUpModalPro
 
   // 陪診人員選項
   const companionOptions = [
-    '尚未安排',
+    '',
     '家人',
     '陪診員',
     '無需陪診'
@@ -97,10 +97,10 @@ export default function FollowUpModal({ appointment, onClose }: FollowUpModalPro
         覆診時間: formData.覆診時間 || null,
         覆診地點: formData.覆診地點 || null,
         覆診專科: formData.覆診專科 || null,
-        交通安排: formData.交通安排,
-        陪診人員: formData.陪診人員,
+        交通安排: formData.交通安排 || null,
+        陪診人員: formData.陪診人員 || null,
         備註: formData.備註 || null,
-        狀態: formData.狀態
+        狀態: formData.狀態 || null
       };
 
       if (appointment) {
@@ -130,6 +130,7 @@ export default function FollowUpModal({ appointment, onClose }: FollowUpModalPro
 
   const getStatusColor = (status: string) => {
     switch (status) {
+      case '尚未安排': return 'text-red-600';
       case '已安排': return 'text-blue-600';
       case '已完成': return 'text-green-600';
       case '改期': return 'text-orange-600';
@@ -248,7 +249,7 @@ export default function FollowUpModal({ appointment, onClose }: FollowUpModalPro
               />
               <datalist id="hospital-options">
                 {hospitalOptions.map(hospital => (
-                  <option key={hospital} value={hospital} />
+                  <option key={hospital} value={hospital} className={hospital === '尚未安排' ? 'text-red-600' : ''} />
                 ))}
               </datalist>
             </div>
@@ -282,7 +283,7 @@ export default function FollowUpModal({ appointment, onClose }: FollowUpModalPro
               />
               <datalist id="transport-options">
                 {transportOptions.map(option => (
-                  <option key={option} value={option} />
+                  <option key={option} value={option} className={option === '尚未安排' ? 'text-red-600' : ''} />
                 ))}
               </datalist>
             </div>
@@ -301,7 +302,7 @@ export default function FollowUpModal({ appointment, onClose }: FollowUpModalPro
               />
               <datalist id="companion-options">
                 {companionOptions.map(option => (
-                  <option key={option} value={option} />
+                  <option key={option} value={option} className={option === '尚未安排' ? 'text-red-600' : ''} />
                 ))}
               </datalist>
             </div>
@@ -316,7 +317,8 @@ export default function FollowUpModal({ appointment, onClose }: FollowUpModalPro
               onChange={handleChange}
               className="form-input"
             >
-              <option value="尚未安排">尚未安排</option>
+              <option value="">請選擇狀態</option>
+              <option value="尚未安排" className="text-red-600">尚未安排</option>
               <option value="已安排">已安排</option>
               <option value="已完成">已完成</option>
               <option value="改期">改期</option>
@@ -353,7 +355,7 @@ export default function FollowUpModal({ appointment, onClose }: FollowUpModalPro
                 <button
                   type="button"
                   onClick={copyNotificationMessage}
-                  className="text-blue-600 hover:text-blue-700 text-sm flex items-center space-x-1"
+                  className="text-600 hover:text-blue-700 text-sm flex items-center space-x-1"
                 >
                   <Copy className="h-4 w-4" />
                   <span>複製</span>
