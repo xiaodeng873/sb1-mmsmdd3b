@@ -110,7 +110,7 @@ const TaskManagement: React.FC = () => {
         return (
           <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
             <Clock className="h-3 w-3 mr-1" />
-            今日未完成
+            未完成
           </span>
         );
       case 'due_soon':
