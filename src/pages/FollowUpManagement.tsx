@@ -15,8 +15,7 @@ import {
   ChevronUp,
   ChevronDown,
   Copy,
-  MessageSquare,
-  X
+  MessageSquare
 } from 'lucide-react';
 import { usePatients, type FollowUpAppointment } from '../context/PatientContext';
 import FollowUpModal from '../components/FollowUpModal';
@@ -75,7 +74,6 @@ const FollowUpManagement: React.FC = () => {
   const filteredAppointments = followUpAppointments.filter(appointment => {
     const patient = patients.find(p => p.院友id === appointment.院友id);
     
-    // 日期區間篩選
     if (advancedFilters.startDate || advancedFilters.endDate) {
       const appointmentDate = new Date(appointment.覆診日期);
       if (advancedFilters.startDate && appointmentDate < new Date(advancedFilters.startDate)) {
@@ -86,7 +84,6 @@ const FollowUpManagement: React.FC = () => {
       }
     }
     
-    // 進階篩選
     if (advancedFilters.床號 && !patient?.床號.toLowerCase().includes(advancedFilters.床號.toLowerCase())) {
       return false;
     }
@@ -112,7 +109,6 @@ const FollowUpManagement: React.FC = () => {
       return false;
     }
     
-    // 基本搜索條件
     const matchesSearch = patient?.中文姓名.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          patient?.床號.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          appointment.覆診地點?.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -124,7 +120,6 @@ const FollowUpManagement: React.FC = () => {
     return matchesSearch;
   });
 
-  // 檢查是否有進階篩選條件
   const hasAdvancedFilters = () => {
     return Object.values(advancedFilters).some(value => value !== '');
   };
@@ -152,7 +147,6 @@ const FollowUpManagement: React.FC = () => {
     });
   };
 
-  // 獲取所有唯一值的選項
   const getUniqueOptions = (field: string) => {
     const values = new Set<string>();
     followUpAppointments.forEach(appointment => {
@@ -253,8 +247,8 @@ const FollowUpManagement: React.FC = () => {
     const patient = patients.find(p => p.院友id === appointment?.院友id);
     
     if (confirm(`確定要刪除 ${patient?.中文姓名} 在 ${appointment?.覆診日期} 的覆診安排嗎？`)) {
-      setDeletingIds(prev => new Set(prev).add(id));
       try {
+        setDeletingIds(prev => new Set(prev).add(id));
         await deleteFollowUpAppointment(id);
         setSelectedRows(prev => {
           const newSet = new Set(prev);
@@ -270,6 +264,36 @@ const FollowUpManagement: React.FC = () => {
           return newSet;
         });
       }
+    }
+  };
+
+  const handleBatchDelete = async () => {
+    if (selectedRows.size === 0) {
+      alert('請先選擇要刪除的記錄');
+      return;
+    }
+
+    const selectedAppointments = sortedAppointments.filter(a => selectedRows.has(a.覆診id));
+    const confirmMessage = `確定要刪除 ${selectedRows.size} 筆覆診安排嗎？\n\n此操作無法復原。`;
+    
+    if (!confirm(confirmMessage)) {
+      return;
+    }
+
+    const deletingArray = Array.from(selectedRows);
+    setDeletingIds(new Set(deletingArray));
+    
+    try {
+      for (const appointmentId of deletingArray) {
+        await deleteFollowUpAppointment(appointmentId);
+      }
+      setSelectedRows(new Set());
+      alert(`成功刪除 ${deletingArray.length} 筆覆診安排`);
+    } catch (error) {
+      console.error('批量刪除覆診安排失敗:', error);
+      alert('批量刪除覆診安排失敗，請重試');
+    } finally {
+      setDeletingIds(new Set());
     }
   };
 
@@ -299,36 +323,6 @@ const FollowUpManagement: React.FC = () => {
       }
     });
     setSelectedRows(newSelected);
-  };
-
-  const handleBatchDelete = async () => {
-    if (selectedRows.size === 0) {
-      alert('請先選擇要刪除的記錄');
-      return;
-    }
-
-    const confirmMessage = `確定要刪除 ${selectedRows.size} 筆覆診安排嗎？\n\n此操作無法復原。`;
-    
-    if (!confirm(confirmMessage)) {
-      return;
-    }
-
-    const deletingArray = Array.from(selectedRows);
-    setDeletingIds(new Set(deletingArray));
-    
-    try {
-      for (const appointmentId of deletingArray) {
-        await deleteFollowUpAppointment(appointmentId);
-      }
-      
-      setSelectedRows(new Set());
-      alert(`成功刪除 ${deletingArray.length} 筆覆診安排`);
-    } catch (error) {
-      console.error('批量刪除覆診安排失敗:', error);
-      alert('批量刪除覆診安排失敗，請重試');
-    } finally {
-      setDeletingIds(new Set());
-    }
   };
 
   const handleExportSelected = () => {
@@ -427,23 +421,13 @@ const FollowUpManagement: React.FC = () => {
         <h1 className="text-2xl font-bold text-gray-900">覆診管理</h1>
         <div className="flex items-center space-x-2">
           {selectedRows.size > 0 && (
-            <>
-              <button
-                onClick={handleExportSelected}
-                className="btn-secondary flex items-center space-x-2"
-              >
-                <Download className="h-4 w-4" />
-                <span>匯出選定記錄</span>
-              </button>
-              <button
-                onClick={handleBatchDelete}
-                className="btn-secondary flex items-center space-x-2 text-red-600 hover:text-red-700"
-                disabled={deletingIds.size > 0}
-              >
-                <Trash2 className="h-4 w-4" />
-                <span>刪除選定記錄 ({selectedRows.size})</span>
-              </button>
-            </>
+            <button
+              onClick={handleExportSelected}
+              className="btn-secondary flex items-center space-x-2"
+            >
+              <Download className="h-4 w-4" />
+              <span>匯出選定記錄</span>
+            </button>
           )}
           <button
             onClick={() => {
@@ -458,7 +442,6 @@ const FollowUpManagement: React.FC = () => {
         </div>
       </div>
 
-      {/* 搜索和篩選 */}
       <div className="card p-4">
         <div className="space-y-4">
           <div className="flex flex-col lg:flex-row space-y-2 lg:space-y-0 lg:space-x-4 lg:items-center">
@@ -501,12 +484,10 @@ const FollowUpManagement: React.FC = () => {
             </div>
           </div>
           
-          {/* 進階篩選面板 */}
           {showAdvancedFilters && (
             <div className="border-t border-gray-200 pt-4">
               <h3 className="text-sm font-medium text-gray-900 mb-3">進階篩選</h3>
               
-              {/* 日期區間篩選 */}
               <div className="mb-4">
                 <label className="form-label">覆診日期區間</label>
                 <div className="flex items-center space-x-2">
@@ -528,7 +509,6 @@ const FollowUpManagement: React.FC = () => {
                 </div>
               </div>
               
-              {/* 其他篩選條件 */}
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 <div>
                   <label className="form-label">床號</label>
@@ -646,7 +626,6 @@ const FollowUpManagement: React.FC = () => {
             </div>
           )}
           
-          {/* 搜索結果統計 */}
           <div className="flex items-center justify-between text-sm text-gray-600">
             <span>顯示 {sortedAppointments.length} / {followUpAppointments.length} 筆覆診安排</span>
             {(searchTerm || hasAdvancedFilters()) && (
@@ -656,7 +635,6 @@ const FollowUpManagement: React.FC = () => {
         </div>
       </div>
 
-      {/* 選擇控制 */}
       {sortedAppointments.length > 0 && (
         <div className="card p-4">
           <div className="flex items-center justify-between">
@@ -673,6 +651,15 @@ const FollowUpManagement: React.FC = () => {
               >
                 反選
               </button>
+              {selectedRows.size > 0 && (
+                <button
+                  onClick={handleBatchDelete}
+                  className="text-sm text-red-600 hover:text-red-700 font-medium"
+                  disabled={deletingIds.size > 0}
+                >
+                  刪除選定記錄 ({selectedRows.size})
+                </button>
+              )}
             </div>
             <div className="text-sm text-gray-600">
               已選擇 {selectedRows.size} / {sortedAppointments.length} 筆記錄
@@ -681,7 +668,6 @@ const FollowUpManagement: React.FC = () => {
         </div>
       )}
 
-      {/* 覆診安排表格 */}
       <div className="card overflow-hidden">
         {sortedAppointments.length > 0 ? (
           <div className="overflow-x-auto">
@@ -720,7 +706,7 @@ const FollowUpManagement: React.FC = () => {
                     <tr 
                       key={appointment.覆診id} 
                       className={`hover:bg-gray-50 ${selectedRows.has(appointment.覆診id) ? 'bg-blue-50' : ''}`}
-                      onDoubleClick={() => handleEdit(appointment)}
+                     onDoubleClick={() => handleEdit(appointment)}
                     >
                       <td className="px-4 py-4 whitespace-nowrap">
                         <input
@@ -817,7 +803,6 @@ const FollowUpManagement: React.FC = () => {
                               onClick={() => copyNotificationMessage(appointment)}
                               className="text-green-600 hover:text-green-900"
                               title="複製通知訊息"
-                              disabled={deletingIds.has(appointment.覆診id)}
                             >
                               <Copy className="h-4 w-4" />
                             </button>
@@ -878,7 +863,6 @@ const FollowUpManagement: React.FC = () => {
         )}
       </div>
 
-      {/* 模態框 */}
       {showModal && (
         <FollowUpModal
           appointment={selectedAppointment}
@@ -892,4 +876,4 @@ const FollowUpManagement: React.FC = () => {
   );
 };
 
-export default FollowUpManagement;  
+export default FollowUpManagement;
