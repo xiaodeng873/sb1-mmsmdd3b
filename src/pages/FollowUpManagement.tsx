@@ -15,8 +15,7 @@ import {
   ChevronUp,
   ChevronDown,
   Copy,
-  MessageSquare,
-  X
+  MessageSquare
 } from 'lucide-react';
 import { usePatients, type FollowUpAppointment } from '../context/PatientContext';
 import FollowUpModal from '../components/FollowUpModal';
@@ -47,6 +46,7 @@ const FollowUpManagement: React.FC = () => {
   const [sortField, setSortField] = useState<SortField>('覆診日期');
   const [sortDirection, setSortDirection] = useState<SortDirection>('asc');
   const [showAdvancedFilters, setShowAdvancedFilters] = useState(false);
+  const [deletingIds, setDeletingIds] = useState<Set<string>>(new Set());
   const [advancedFilters, setAdvancedFilters] = useState<AdvancedFilters>({
     床號: '',
     中文姓名: '',
@@ -59,7 +59,6 @@ const FollowUpManagement: React.FC = () => {
     startDate: '',
     endDate: ''
   });
-  const [deletingIds, setDeletingIds] = useState<Set<string>>(new Set());
 
   if (loading) {
     return (
@@ -252,24 +251,63 @@ const FollowUpManagement: React.FC = () => {
     const appointment = followUpAppointments.find(a => a.覆診id === id);
     const patient = patients.find(p => p.院友id === appointment?.院友id);
     
-    if (confirm(`確定要刪除 ${patient?.中文姓名} 在 ${appointment?.覆診日期} 的覆診安排嗎？`)) {
-      setDeletingIds(prev => new Set(prev).add(id));
-      try {
-        await deleteFollowUpAppointment(id);
-        setSelectedRows(prev => {
-          const newSet = new Set(prev);
-          newSet.delete(id);
-          return newSet;
-        });
-      } catch (error) {
-        alert('刪除覆診安排失敗，請重試');
-      } finally {
-        setDeletingIds(prev => {
-          const newSet = new Set(prev);
-          newSet.delete(id);
-          return newSet;
-        });
+    const confirmMessage = `確定要刪除 ${patient?.中文姓名} 在 ${appointment?.覆診日期} 的覆診安排嗎？`;
+    
+    if (!confirm(confirmMessage)) {
+      return;
+    }
+
+    setDeletingIds(prev => new Set(prev).add(id));
+    
+    try {
+      await deleteFollowUpAppointment(id);
+      // 如果刪除的項目在選中列表中，也要移除
+      setSelectedRows(prev => {
+        const newSet = new Set(prev);
+        newSet.delete(id);
+        return newSet;
+      });
+    } catch (error) {
+      alert('刪除覆診安排失敗，請重試');
+    } finally {
+      setDeletingIds(prev => {
+        const newSet = new Set(prev);
+        newSet.delete(id);
+        return newSet;
+      });
+    }
+  };
+
+  const handleBatchDelete = async () => {
+    if (selectedRows.size === 0) {
+      alert('請先選擇要刪除的記錄');
+      return;
+    }
+
+    const selectedAppointments = sortedAppointments.filter(a => selectedRows.has(a.覆診id));
+    const confirmMessage = `確定要刪除 ${selectedRows.size} 筆覆診記錄嗎？\n\n此操作無法復原。`;
+    
+    if (!confirm(confirmMessage)) {
+      return;
+    }
+
+    const deletingArray = Array.from(selectedRows);
+    setDeletingIds(new Set(deletingArray));
+    
+    try {
+      // 逐一刪除選中的覆診記錄
+      for (const appointmentId of deletingArray) {
+        await deleteFollowUpAppointment(appointmentId);
       }
+      
+      // 清空選中狀態
+      setSelectedRows(new Set());
+      alert(`成功刪除 ${deletingArray.length} 筆覆診記錄`);
+    } catch (error) {
+      console.error('批量刪除覆診記錄失敗:', error);
+      alert('批量刪除覆診記錄失敗，請重試');
+    } finally {
+      setDeletingIds(new Set());
     }
   };
 
@@ -301,36 +339,6 @@ const FollowUpManagement: React.FC = () => {
     setSelectedRows(newSelected);
   };
 
-  const handleBatchDelete = async () => {
-    if (selectedRows.size === 0) {
-      alert('請先選擇要刪除的記錄');
-      return;
-    }
-
-    const confirmMessage = `確定要刪除 ${selectedRows.size} 筆覆診安排嗎？\n\n此操作無法復原。`;
-    
-    if (!confirm(confirmMessage)) {
-      return;
-    }
-
-    const deletingArray = Array.from(selectedRows);
-    setDeletingIds(new Set(deletingArray));
-    
-    try {
-      for (const appointmentId of deletingArray) {
-        await deleteFollowUpAppointment(appointmentId);
-      }
-      
-      setSelectedRows(new Set());
-      alert(`成功刪除 ${deletingArray.length} 筆覆診安排`);
-    } catch (error) {
-      console.error('批量刪除覆診安排失敗:', error);
-      alert('批量刪除覆診安排失敗，請重試');
-    } finally {
-      setDeletingIds(new Set());
-    }
-  };
-
   const handleExportSelected = () => {
     const selectedAppointments = sortedAppointments.filter(a => selectedRows.has(a.覆診id));
     
@@ -356,16 +364,18 @@ const FollowUpManagement: React.FC = () => {
       };
     });
 
+    // Create CSV content
     const headers = ['床號', '中文姓名', '覆診日期', '出發時間', '覆診時間', '覆診地點', '覆診專科', '交通安排', '陪診人員', '狀態', '備註'];
     const csvContent = [
       `"院友覆診表"`,
-      `"生成日期: ${new Date().toLocaleDateString('zh-TW')}"`,
+      `"生成日期: ${new Date().toLocaleDateString('zh-TW')"`,
       `"總記錄數: ${exportData.length}"`,
       '',
       headers.join(','),
       ...exportData.map(row => headers.map(header => `"${row[header as keyof typeof row]}"`).join(','))
     ].join('\n');
 
+    // Download CSV file
     const blob = new Blob(['\uFEFF' + csvContent], { type: 'text/csv;charset=utf-8;' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
@@ -396,7 +406,7 @@ const FollowUpManagement: React.FC = () => {
 
   const getStatusBadgeClass = (status: string) => {
     switch (status) {
-      case '尚未安排': return 'bg-gray-100 text-gray-800';
+      case '尚未安排': return '2768 bg-gray-100 text-gray-800';
       case '已安排': return 'bg-blue-100 text-blue-800';
       case '已完成': return 'bg-green-100 text-green-800';
       case '改期': return 'bg-orange-100 text-orange-800';
@@ -427,23 +437,13 @@ const FollowUpManagement: React.FC = () => {
         <h1 className="text-2xl font-bold text-gray-900">覆診管理</h1>
         <div className="flex items-center space-x-2">
           {selectedRows.size > 0 && (
-            <>
-              <button
-                onClick={handleExportSelected}
-                className="btn-secondary flex items-center space-x-2"
-              >
-                <Download className="h-4 w-4" />
-                <span>匯出選定記錄</span>
-              </button>
-              <button
-                onClick={handleBatchDelete}
-                className="btn-secondary flex items-center space-x-2 text-red-600 hover:text-red-700"
-                disabled={deletingIds.size > 0}
-              >
-                <Trash2 className="h-4 w-4" />
-                <span>刪除選定記錄 ({selectedRows.size})</span>
-              </button>
-            </>
+            <button
+              onClick={handleExportSelected}
+              className="btn-secondary flex items-center space-x-2"
+            >
+              <Download className="h-4 w-4" />
+              <span>匯出選定記錄</span>
+            </button>
           )}
           <button
             onClick={() => {
@@ -673,6 +673,15 @@ const FollowUpManagement: React.FC = () => {
               >
                 反選
               </button>
+              {selectedRows.size > 0 && (
+                <button
+                  onClick={handleBatchDelete}
+                  className="text-sm text-red-600 hover:text-red-700 font-medium"
+                  disabled={deletingIds.size > 0}
+                >
+                  刪除選定記錄 ({selectedRows.size})
+                </button>
+              )}
             </div>
             <div className="text-sm text-gray-600">
               已選擇 {selectedRows.size} / {sortedAppointments.length} 筆記錄
@@ -702,7 +711,7 @@ const FollowUpManagement: React.FC = () => {
                   <SortableHeader field="覆診日期">覆診日期</SortableHeader>
                   <SortableHeader field="覆診時間">時間安排</SortableHeader>
                   <SortableHeader field="覆診地點">覆診地點</SortableHeader>
-                  <SortableHeader field="覆診專科">覆診專科</SortableHeader>
+                  <SortableHeader field="覆診專科">覆診專特</SortableHeader>
                   <SortableHeader field="交通安排">交通安排</SortableHeader>
                   <SortableHeader field="陪診人員">陪診人員</SortableHeader>
                   <SortableHeader field="狀態">狀態</SortableHeader>
@@ -720,7 +729,7 @@ const FollowUpManagement: React.FC = () => {
                     <tr 
                       key={appointment.覆診id} 
                       className={`hover:bg-gray-50 ${selectedRows.has(appointment.覆診id) ? 'bg-blue-50' : ''}`}
-                      onDoubleClick={() => handleEdit(appointment)}
+                     onDoubleClick={() => handleEdit(appointment)}
                     >
                       <td className="px-4 py-4 whitespace-nowrap">
                         <input
@@ -817,7 +826,6 @@ const FollowUpManagement: React.FC = () => {
                               onClick={() => copyNotificationMessage(appointment)}
                               className="text-green-600 hover:text-green-900"
                               title="複製通知訊息"
-                              disabled={deletingIds.has(appointment.覆診id)}
                             >
                               <Copy className="h-4 w-4" />
                             </button>
