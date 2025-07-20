@@ -18,7 +18,7 @@ import {
 } from 'lucide-react';
 import { usePatients, type PatientHealthTask, type HealthTaskType, type FrequencyUnit } from '../context/PatientContext';
 import TaskModal from '../components/TaskModal';
-import { formatFrequencyDescription, getTaskStatus, isTaskOverdue, isTaskDueSoon } from '../utils/taskScheduler';
+import { formatFrequencyDescription, getTaskStatus, isTaskOverdue, isTaskDueSoon, isTaskPendingToday } from '../utils/taskScheduler';
 import PatientTooltip from '../components/PatientTooltip';
 
 const TaskManagement: React.FC = () => {
