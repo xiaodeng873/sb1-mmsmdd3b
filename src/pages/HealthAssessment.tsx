@@ -61,6 +61,7 @@ const HealthAssessment: React.FC = () => {
     startDate: '',
     endDate: ''
   });
+  const [deletingIds, setDeletingIds] = useState<Set<number>>(new Set());
 
   if (loading) {
     return (
@@ -228,10 +229,52 @@ const HealthAssessment: React.FC = () => {
     
     if (confirm(`確定要刪除 ${patient?.中文姓名} 在 ${record?.記錄日期} ${record?.記錄時間} 的${record?.記錄類型}記錄嗎？`)) {
       try {
+        setDeletingIds(prev => new Set(prev).add(id));
         await deleteHealthRecord(id);
+        setSelectedRows(prev => {
+          const newSet = new Set(prev);
+          newSet.delete(id);
+          return newSet;
+        });
       } catch (error) {
         alert('刪除記錄失敗，請重試');
+      } finally {
+        setDeletingIds(prev => {
+          const newSet = new Set(prev);
+          newSet.delete(id);
+          return newSet;
+        });
       }
+    }
+  };
+
+  const handleBatchDelete = async () => {
+    if (selectedRows.size === 0) {
+      alert('請先選擇要刪除的記錄');
+      return;
+    }
+
+    const selectedRecords = sortedRecords.filter(r => selectedRows.has(r.記錄id));
+    const confirmMessage = `確定要刪除 ${selectedRows.size} 筆健康記錄嗎？\n\n此操作無法復原。`;
+    
+    if (!confirm(confirmMessage)) {
+      return;
+    }
+
+    const deletingArray = Array.from(selectedRows);
+    setDeletingIds(new Set(deletingArray));
+    
+    try {
+      for (const recordId of deletingArray) {
+        await deleteHealthRecord(recordId);
+      }
+      setSelectedRows(new Set());
+      alert(`成功刪除 ${deletingArray.length} 筆健康記錄`);
+    } catch (error) {
+      console.error('批量刪除健康記錄失敗:', error);
+      alert('批量刪除健康記錄失敗，請重試');
+    } finally {
+      setDeletingIds(new Set());
     }
   };
 
@@ -251,6 +294,16 @@ const HealthAssessment: React.FC = () => {
     } else {
       setSelectedRows(new Set(sortedRecords.map(r => r.記錄id)));
     }
+  };
+
+  const handleInvertSelection = () => {
+    const newSelected = new Set<number>();
+    sortedRecords.forEach(record => {
+      if (!selectedRows.has(record.記錄id)) {
+        newSelected.add(record.記錄id);
+      }
+    });
+    setSelectedRows(newSelected);
   };
 
   const handleExportSelected = async (recordType: '生命表徵' | '血糖控制' | '體重控制') => {
@@ -300,19 +353,15 @@ const HealthAssessment: React.FC = () => {
     setShowBatchModal(true);
   };
 
-  // --------- 新邏輯：首次體重記錄與變化顏色 ----------
   const calculateWeightChange = (currentWeight: number, patientId: number, currentDate: string): string => {
-    // 找到同一院友的所有體重記錄（排除當前日期）
     const patientWeightRecords = healthRecords
       .filter(r => r.院友id === patientId && r.體重 && r.記錄日期 !== currentDate)
-      // 將體重記錄按日期時間從早到晚排序
       .sort((a, b) => new Date(`${a.記錄日期} ${a.記錄時間}`).getTime() - new Date(`${b.記錄日期} ${b.記錄時間}`).getTime());
 
     if (patientWeightRecords.length === 0) {
       return '首次記錄';
     }
 
-    // 取最早的體重記錄作為基準
     const firstWeight = patientWeightRecords[0].體重!;
     const difference = currentWeight - firstWeight;
     const percentage = (difference / firstWeight) * 100;
@@ -324,7 +373,6 @@ const HealthAssessment: React.FC = () => {
     const sign = difference > 0 ? '+' : '';
     return `${sign}${difference.toFixed(1)}kg (${sign}${percentage.toFixed(1)}%)`;
   };
-  // --------------------------------------------------
 
   const getRecordTypeIcon = (type: string) => {
     switch (type) {
@@ -360,7 +408,6 @@ const HealthAssessment: React.FC = () => {
     </th>
   );
 
-  // 統計數據
   const stats = {
     total: healthRecords.length,
     vitalSigns: healthRecords.filter(r => r.記錄類型 === '生命表徵').length,
@@ -447,9 +494,6 @@ const HealthAssessment: React.FC = () => {
         </div>
       </div>
 
-
-
-      {/* 搜索和篩選 */}
       <div className="card p-4">
         <div className="space-y-4">
           <div className="flex flex-col lg:flex-row space-y-2 lg:space-y-0 lg:space-x-4 lg:items-center">
@@ -492,12 +536,10 @@ const HealthAssessment: React.FC = () => {
             </div>
           </div>
           
-          {/* 進階篩選面板 */}
           {showAdvancedFilters && (
             <div className="border-t border-gray-200 pt-4">
               <h3 className="text-sm font-medium text-gray-900 mb-3">進階篩選</h3>
               
-              {/* 日期區間篩選 */}
               <div className="mb-4">
                 <label className="form-label">記錄日期區間</label>
                 <div className="flex items-center space-x-2">
@@ -519,7 +561,6 @@ const HealthAssessment: React.FC = () => {
                 </div>
               </div>
               
-              {/* 其他篩選條件 */}
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 <div>
                   <label className="form-label">床號</label>
@@ -587,7 +628,6 @@ const HealthAssessment: React.FC = () => {
             </div>
           )}
           
-          {/* 搜索結果統計 */}
           <div className="flex items-center justify-between text-sm text-gray-600">
             <span>顯示 {sortedRecords.length} / {healthRecords.length} 筆健康記錄</span>
             {(searchTerm || hasAdvancedFilters()) && (
@@ -597,7 +637,6 @@ const HealthAssessment: React.FC = () => {
         </div>
       </div>
 
-      {/* 選擇控制 */}
       {sortedRecords.length > 0 && (
         <div className="card p-4">
           <div className="flex items-center justify-between">
@@ -608,6 +647,21 @@ const HealthAssessment: React.FC = () => {
               >
                 {selectedRows.size === sortedRecords.length ? '取消全選' : '全選'}
               </button>
+              <button
+                onClick={handleInvertSelection}
+                className="text-sm text-blue-600 hover:text-blue-700 font-medium"
+              >
+                反選
+              </button>
+              {selectedRows.size > 0 && (
+                <button
+                  onClick={handleBatchDelete}
+                  className="text-sm text-red-600 hover:text-red-700 font-medium"
+                  disabled={deletingIds.size > 0}
+                >
+                  刪除選定記錄 ({selectedRows.size})
+                </button>
+              )}
             </div>
             <div className="text-sm text-gray-600">
               已選擇 {selectedRows.size} / {sortedRecords.length} 筆記錄
@@ -616,7 +670,6 @@ const HealthAssessment: React.FC = () => {
         </div>
       )}
 
-      {/* 記錄表格 */}
       <div className="card overflow-hidden">
         {sortedRecords.length > 0 ? (
           <div className="overflow-x-auto">
@@ -633,7 +686,6 @@ const HealthAssessment: React.FC = () => {
                   </th>
                   <SortableHeader field="院友姓名">院友姓名</SortableHeader>
                   <SortableHeader field="記錄日期">日期時間</SortableHeader>
-                 
                   <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     生命表徵
                   </th>
@@ -707,7 +759,6 @@ const HealthAssessment: React.FC = () => {
                           </div>
                         </div>
                       </td>
-                   
                       <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900">
                         <div className="space-y-1">
                           {record.血壓收縮壓 && record.血壓舒張壓 && (
@@ -768,6 +819,7 @@ const HealthAssessment: React.FC = () => {
                             onClick={() => handleEdit(record)}
                             className="text-blue-600 hover:text-blue-900"
                             title="編輯"
+                            disabled={deletingIds.has(record.記錄id)}
                           >
                             <Edit3 className="h-4 w-4" />
                           </button>
@@ -775,8 +827,13 @@ const HealthAssessment: React.FC = () => {
                             onClick={() => handleDelete(record.記錄id)}
                             className="text-red-600 hover:text-red-900"
                             title="刪除"
+                            disabled={deletingIds.has(record.記錄id)}
                           >
-                            <Trash2 className="h-4 w-4" />
+                            {deletingIds.has(record.記錄id) ? (
+                              <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-red-600"></div>
+                            ) : (
+                              <Trash2 className="h-4 w-4" />
+                            )}
                           </button>
                         </div>
                       </td>
@@ -814,7 +871,6 @@ const HealthAssessment: React.FC = () => {
         )}
       </div>
 
-      {/* 模態框 */}
       {showModal && (
         <HealthRecordModal
           record={selectedRecord}
@@ -825,7 +881,6 @@ const HealthAssessment: React.FC = () => {
         />
       )}
 
-      {/* 批量上傳模態框 */}
       {showBatchModal && (
         <BatchHealthRecordModal
           recordType={batchRecordType}
