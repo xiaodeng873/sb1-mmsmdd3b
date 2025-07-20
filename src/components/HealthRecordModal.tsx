@@ -36,17 +36,23 @@ const HealthRecordModal: React.FC<HealthRecordModalProps> = ({ record, onClose, 
   }, [formData.體重, formData.院友id, formData.記錄類型]);
 
   const calculateWeightChange = () => {
-    if (!formData.體重 || !formData.院友id) return;
+    if (!formData.體重 || !formData.院友id) {
+      setWeightChange('');
+      return;
+    }
 
     const currentWeight = parseFloat(formData.體重);
-    if (isNaN(currentWeight)) return;
+    if (isNaN(currentWeight)) {
+      setWeightChange('');
+      return;
+    }
 
-    // 找到同一院友的上一次體重記錄
+    // Filter weight records for the same patient, excluding the current record if editing
     const patientWeightRecords = healthRecords
       .filter(r => 
         r.院友id === parseInt(formData.院友id) && 
         r.體重 && 
-        (record ? r.記錄id !== record.記錄id : true) // 編輯時排除當前記錄
+        (record ? r.記錄id !== record.記錄id : true)
       )
       .sort((a, b) => new Date(`${b.記錄日期} ${b.記錄時間}`).getTime() - new Date(`${a.記錄日期} ${a.記錄時間}`).getTime());
     
@@ -55,9 +61,9 @@ const HealthRecordModal: React.FC<HealthRecordModalProps> = ({ record, onClose, 
       return;
     }
     
-    const lastWeight = patientWeightRecords[0].體重!;
+    const lastWeight = parseFloat(patientWeightRecords[0].體重);
     const difference = currentWeight - lastWeight;
-    const percentage = ((difference / lastWeight) * 100);
+    const percentage = (difference / lastWeight) * 100;
     
     if (Math.abs(percentage) < 0.1) {
       setWeightChange('無變化');
@@ -79,13 +85,13 @@ const HealthRecordModal: React.FC<HealthRecordModalProps> = ({ record, onClose, 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    // 驗證必填欄位
+    // Validate required fields
     if (!formData.院友id || !formData.記錄日期 || !formData.記錄時間 || !formData.記錄類型) {
       alert('請填寫所有必填欄位');
       return;
     }
 
-    // 根據記錄類型驗證相關欄位
+    // Validate fields based on record type
     if (formData.記錄類型 === '生命表徵') {
       if (!formData.血壓收縮壓 && !formData.血壓舒張壓 && !formData.脈搏 && !formData.體溫 && !formData.血含氧量 && !formData.呼吸頻率) {
         alert('生命表徵記錄至少需要填寫一項數值');
@@ -118,18 +124,17 @@ const HealthRecordModal: React.FC<HealthRecordModalProps> = ({ record, onClose, 
         血糖值: formData.血糖值 ? parseFloat(formData.血糖值) : null,
         體重: formData.體重 ? parseFloat(formData.體重) : null,
         備註: formData.備註 || null,
-        記錄人員: formData.記錄人員 || null
+        記錄人員: formData.記錄人員 || null,
+        ...(record && { 記錄id: parseInt(record.記錄id) }) // Ensure record ID is included for updates
       };
 
-      if (record) {
-        await updateHealthRecord({
-          記錄id: record.記錄id,
-          ...recordData
-        });
+      if (record && record.記錄id) {
+        await updateHealthRecord(recordData);
       } else {
         await addHealthRecord(recordData);
       }
       
+      if (onTaskCompleted) onTaskCompleted();
       onClose();
     } catch (error) {
       console.error('儲存健康記錄失敗:', error);
@@ -178,7 +183,7 @@ const HealthRecordModal: React.FC<HealthRecordModalProps> = ({ record, onClose, 
         </div>
 
         <form onSubmit={handleSubmit} className="p-6 space-y-6">
-          {/* 基本資訊 */}
+          {/* Basic Information */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
             <div>
               <label className="form-label">
@@ -247,7 +252,7 @@ const HealthRecordModal: React.FC<HealthRecordModalProps> = ({ record, onClose, 
             </div>
           </div>
 
-          {/* 生命表徵 */}
+          {/* Vital Signs */}
           {formData.記錄類型 === '生命表徵' && (
             <div className="space-y-4">
               <h3 className="text-lg font-medium text-blue-600 flex items-center">
@@ -256,7 +261,7 @@ const HealthRecordModal: React.FC<HealthRecordModalProps> = ({ record, onClose, 
               </h3>
               
               <div className="space-y-4">
-                {/* 第一行：收縮壓/舒張壓、脈搏、體溫 */}
+                {/* First Row: Blood Pressure, Pulse, Temperature */}
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   <div>
                     <label className="form-label">血壓 (mmHg)</label>
@@ -313,7 +318,7 @@ const HealthRecordModal: React.FC<HealthRecordModalProps> = ({ record, onClose, 
                   </div>
                 </div>
                 
-                {/* 第二行：血含氧量、呼吸頻率、備註 */}
+                {/* Second Row: Oxygen Saturation, Respiratory Rate, Notes */}
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   <div>
                     <label className="form-label">血含氧量 (%)</label>
@@ -357,7 +362,7 @@ const HealthRecordModal: React.FC<HealthRecordModalProps> = ({ record, onClose, 
             </div>
           )}
 
-          {/* 血糖控制 */}
+          {/* Blood Glucose */}
           {formData.記錄類型 === '血糖控制' && (
             <div className="space-y-4">
               <h3 className="text-lg font-medium text-red-600 flex items-center">
@@ -388,7 +393,7 @@ const HealthRecordModal: React.FC<HealthRecordModalProps> = ({ record, onClose, 
             </div>
           )}
 
-          {/* 體重控制 */}
+          {/* Weight Control */}
           {formData.記錄類型 === '體重控制' && (
             <div className="space-y-4">
               <h3 className="text-lg font-medium text-green-600 flex items-center">
@@ -429,7 +434,7 @@ const HealthRecordModal: React.FC<HealthRecordModalProps> = ({ record, onClose, 
             </div>
           )}
 
-          {/* 提交按鈕 */}
+          {/* Submit Buttons */}
           <div className="flex space-x-3 pt-4 border-t border-gray-200">
             <button
               type="submit"
