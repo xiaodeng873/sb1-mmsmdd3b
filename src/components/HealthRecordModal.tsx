@@ -7,6 +7,7 @@ interface HealthRecordModalProps {
   onClose: () => void;
   onTaskCompleted?: () => void;
 }
+
 const HealthRecordModal: React.FC<HealthRecordModalProps> = ({ record, onClose, onTaskCompleted }) => {
   const { patients, addHealthRecord, updateHealthRecord, healthRecords } = usePatients();
   const [formData, setFormData] = useState({
@@ -127,11 +128,6 @@ const HealthRecordModal: React.FC<HealthRecordModalProps> = ({ record, onClose, 
         });
       } else {
         await addHealthRecord(recordData);
-      }
-      
-      // 如果是從任務完成的，呼叫回調函數
-      if (onTaskCompleted) {
-        onTaskCompleted();
       }
       
       onClose();
