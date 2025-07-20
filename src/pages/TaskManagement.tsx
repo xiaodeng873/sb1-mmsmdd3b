@@ -181,7 +181,7 @@ const TaskManagement: React.FC = () => {
         <div className="card p-4">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm text-gray-600">今日未完成</p>
+              <p className="text-sm text-gray-600">未完成</p>
               <p className="text-2xl font-bold text-green-600">{stats.pending}</p>
             </div>
             <Clock className="h-8 w-8 text-green-600" />
