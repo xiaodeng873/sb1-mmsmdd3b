@@ -388,3 +388,4 @@ export default function FollowUpModal({ appointment, onClose }: FollowUpModalPro
       </div>
     </div>
   );
+}
