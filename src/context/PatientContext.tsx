@@ -2,6 +2,7 @@ import React, { createContext, useContext, useState, useEffect } from 'react';
 import { ReactNode } from 'react';
 import * as db from '../lib/database';
 import { useAuth } from './AuthContext';
+import { createDefaultTasks } from '../utils/taskScheduler';
 
 // Re-export types from database module
 export type { Patient, Schedule, ScheduleDetail, ServiceReason, Prescription, HealthRecord } from '../lib/database';
