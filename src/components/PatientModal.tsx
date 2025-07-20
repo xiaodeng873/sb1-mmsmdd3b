@@ -27,6 +27,8 @@ const PatientModal: React.FC<PatientModalProps> = ({ patient, onClose }) => {
   const [newAdverseReaction, setNewAdverseReaction] = useState('');
   const [newInfectionControl, setNewInfectionControl] = useState('');
 
+  const { addPatient, updatePatient } = usePatients();
+
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
     setFormData(prev => ({
