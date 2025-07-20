@@ -43,8 +43,9 @@ const Dashboard: React.FC = () => {
 
   // 任務統計
   const overdueTasks = patientHealthTasks.filter(task => isTaskOverdue(task));
-  const dueSoonTasks = patientHealthTasks.filter(task => isTaskDueSoon(task));
-  const urgentTasks = [...overdueTasks, ...dueSoonTasks].slice(0, 5);
+  const pendingTasks = patientHealthTasks.filter(task => getTaskStatus(task) === 'pending');
+  const dueSoonTasks = patientHealthTasks.filter(task => getTaskStatus(task) === 'due_soon');
+  const urgentTasks = [...overdueTasks, ...pendingTasks, ...dueSoonTasks].slice(0, 5);
 
   const handleTaskClick = (task: any) => {
     const patient = patients.find(p => p.院友id === task.patient_id);
@@ -125,7 +126,7 @@ const Dashboard: React.FC = () => {
       value: overdueTasks.length,
       icon: AlertTriangle,
       color: 'bg-red-500',
-      change: `${dueSoonTasks.length} 即將到期`
+      change: `${pendingTasks.length} 今日未完成`
     }
   ];
 
@@ -232,9 +233,13 @@ const Dashboard: React.FC = () => {
                       </p>
                     </div>
                     <span className={`status-badge ${
-                      status === 'overdue' ? 'bg-red-100 text-red-800' : 'bg-orange-100 text-orange-800'
+                      status === 'overdue' ? 'bg-red-100 text-red-800' : 
+                      status === 'pending' ? 'bg-green-100 text-green-800' : 
+                      'bg-orange-100 text-orange-800'
                     }`}>
-                      {status === 'overdue' ? '逾期' : '即將到期'}
+                      {status === 'overdue' ? '逾期' : 
+                       status === 'pending' ? '今日未完成' : 
+                       '即將到期'}
                     </span>
                   </div>
                 );
@@ -242,7 +247,7 @@ const Dashboard: React.FC = () => {
             ) : (
               <div className="text-center py-8 text-gray-500">
                 <CheckSquare className="h-12 w-12 mx-auto mb-2 text-gray-300" />
-                <p>無緊急任務</p>
+                <p>無待處理任務</p>
               </div>
             )}
           </div>

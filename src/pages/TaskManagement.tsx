@@ -27,7 +27,7 @@ const TaskManagement: React.FC = () => {
   const [selectedTask, setSelectedTask] = useState<PatientHealthTask | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [filterType, setFilterType] = useState<'all' | HealthTaskType>('all');
-  const [filterStatus, setFilterStatus] = useState<'all' | 'overdue' | 'due_soon' | 'upcoming'>('all');
+  const [filterStatus, setFilterStatus] = useState<'all' | 'overdue' | 'due_soon' | 'pending' | 'upcoming'>('all');
 
   if (loading) {
     return (
@@ -106,6 +106,13 @@ const TaskManagement: React.FC = () => {
             逾期
           </span>
         );
+      case 'pending':
+        return (
+          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+            <Clock className="h-3 w-3 mr-1" />
+            今日未完成
+          </span>
+        );
       case 'due_soon':
         return (
           <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-orange-100 text-orange-800">
@@ -126,7 +133,8 @@ const TaskManagement: React.FC = () => {
   const stats = {
     total: patientHealthTasks.length,
     overdue: patientHealthTasks.filter(task => isTaskOverdue(task)).length,
-    dueSoon: patientHealthTasks.filter(task => isTaskDueSoon(task)).length,
+    pending: patientHealthTasks.filter(task => getTaskStatus(task) === 'pending').length,
+    dueSoon: patientHealthTasks.filter(task => getTaskStatus(task) === 'due_soon').length,
     vitalSigns: patientHealthTasks.filter(task => task.health_record_type === '生命表徵').length,
     bloodSugar: patientHealthTasks.filter(task => task.health_record_type === '血糖控制').length,
     weight: patientHealthTasks.filter(task => task.health_record_type === '體重控制').length
@@ -167,6 +175,16 @@ const TaskManagement: React.FC = () => {
               <p className="text-2xl font-bold text-red-600">{stats.overdue}</p>
             </div>
             <AlertTriangle className="h-8 w-8 text-red-600" />
+          </div>
+        </div>
+        
+        <div className="card p-4">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm text-gray-600">今日未完成</p>
+              <p className="text-2xl font-bold text-green-600">{stats.pending}</p>
+            </div>
+            <Clock className="h-8 w-8 text-green-600" />
           </div>
         </div>
         
@@ -239,11 +257,12 @@ const TaskManagement: React.FC = () => {
             
             <select
               value={filterStatus}
-              onChange={(e) => setFilterStatus(e.target.value as any)}
+              onChange={(e) => setFilterStatus(e.target.value as 'all' | 'overdue' | 'due_soon' | 'pending' | 'upcoming')}
               className="form-input lg:w-40"
             >
               <option value="all">所有狀態</option>
               <option value="overdue">逾期</option>
+              <option value="pending">今日未完成</option>
               <option value="due_soon">即將到期</option>
               <option value="upcoming">正常</option>
             </select>
