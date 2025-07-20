@@ -9,6 +9,7 @@ import TemplateManagement from './pages/TemplateManagement';
 import HealthAssessment from './pages/HealthAssessment';
 import Reports from './pages/Reports';
 import FollowUpManagement from './pages/FollowUpManagement';
+import TaskManagement from './pages/TaskManagement';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { AuthModal } from './components/AuthModal';
 import { PatientProvider } from './context/PatientContext';
