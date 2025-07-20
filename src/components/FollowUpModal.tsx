@@ -7,7 +7,7 @@ interface FollowUpModalProps {
   onClose: () => void;
 }
 
-const FollowUpModal: React.FC<FollowUpModalProps> = ({ appointment, onClose }) => {
+export default function FollowUpModal({ appointment, onClose }: FollowUpModalProps) {
   const { patients, addFollowUpAppointment, updateFollowUpAppointment } = usePatients();
   const [formData, setFormData] = useState({
     院友id: appointment?.院友id || '',
@@ -388,6 +388,3 @@ const FollowUpModal: React.FC<FollowUpModalProps> = ({ appointment, onClose }) =
       </div>
     </div>
   );
-};
-
-export default FollowUpModal;
