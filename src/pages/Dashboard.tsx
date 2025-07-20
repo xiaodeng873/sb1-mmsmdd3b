@@ -2,7 +2,7 @@ import React from 'react';
 import { Calendar, Users, Pill, FileText, TrendingUp, Clock, CalendarCheck, CheckSquare, AlertTriangle, Activity, Droplets, Scale } from 'lucide-react';
 import { usePatients } from '../context/PatientContext';
 import { Link } from 'react-router-dom';
-import { isTaskOverdue, isTaskDueSoon, getTaskStatus } from '../utils/taskScheduler';
+import { isTaskOverdue, isTaskDueSoon, isTaskPendingToday, getTaskStatus } from '../utils/taskScheduler';
 import HealthRecordModal from '../components/HealthRecordModal';
 
 const Dashboard: React.FC = () => {
@@ -43,7 +43,7 @@ const Dashboard: React.FC = () => {
 
   // 任務統計
   const overdueTasks = patientHealthTasks.filter(task => isTaskOverdue(task));
-  const pendingTasks = patientHealthTasks.filter(task => getTaskStatus(task) === 'pending');
+  const pendingTasks = patientHealthTasks.filter(task => isTaskPendingToday(task));
   const dueSoonTasks = patientHealthTasks.filter(task => getTaskStatus(task) === 'due_soon');
   const urgentTasks = [...overdueTasks, ...pendingTasks, ...dueSoonTasks].slice(0, 5);
 
@@ -126,7 +126,7 @@ const Dashboard: React.FC = () => {
       value: overdueTasks.length,
       icon: AlertTriangle,
       color: 'bg-red-500',
-      change: `${pendingTasks.length} 未完成`
+      change: `${pendingTasks.length} 今日未完成`
     }
   ];
 
@@ -234,11 +234,11 @@ const Dashboard: React.FC = () => {
                     </div>
                     <span className={`status-badge ${
                       status === 'overdue' ? 'bg-red-100 text-red-800' : 
-                      status === 'pending' ? 'bg-green-100 text-green-800' : 
+                      status === 'pending' ? 'bg-green-100 text-green-800' :
                       'bg-orange-100 text-orange-800'
                     }`}>
                       {status === 'overdue' ? '逾期' : 
-                       status === 'pending' ? '未完成' : 
+                       status === 'pending' ? '今日未完成' :
                        '即將到期'}
                     </span>
                   </div>

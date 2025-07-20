@@ -103,22 +103,57 @@ export function calculateNextDueDate(task: PatientHealthTask, fromDate?: Date): 
 export function isTaskOverdue(task: PatientHealthTask): boolean {
   const now = new Date();
   const dueDate = new Date(task.next_due_at);
-  return dueDate < now;
+  
+  // 獲取今日的開始時間 (00:00:00)
+  const todayStart = new Date(now);
+  todayStart.setHours(0, 0, 0, 0);
+  
+  // 只有到期日期在今日之前才算逾期
+  // 例如：21/7的任務，需要踏入22/7的00:00才算逾期
+  return dueDate < todayStart;
 }
 
-// 檢查任務是否即將到期（24小時內）
+// 檢查任務是否為今日未完成
+export function isTaskPendingToday(task: PatientHealthTask): boolean {
+  const now = new Date();
+  const dueDate = new Date(task.next_due_at);
+  
+  // 獲取今日的開始和結束時間
+  const todayStart = new Date(now);
+  todayStart.setHours(0, 0, 0, 0);
+  
+  const todayEnd = new Date(now);
+  todayEnd.setHours(23, 59, 59, 999);
+  
+  // 到期日期在今日範圍內
+  return dueDate >= todayStart && dueDate <= todayEnd;
+}
+
+// 檢查任務是否即將到期（未來24小時內，不包括今日）
 export function isTaskDueSoon(task: PatientHealthTask): boolean {
   const now = new Date();
   const dueDate = new Date(task.next_due_at);
-  const timeDiff = dueDate.getTime() - now.getTime();
-  const hoursDiff = timeDiff / (1000 * 60 * 60);
-  return hoursDiff <= 24 && hoursDiff > 0;
+  
+  // 獲取明日的開始時間
+  const tomorrowStart = new Date(now);
+  tomorrowStart.setDate(tomorrowStart.getDate() + 1);
+  tomorrowStart.setHours(0, 0, 0, 0);
+  
+  // 獲取後天的開始時間
+  const dayAfterTomorrowStart = new Date(now);
+  dayAfterTomorrowStart.setDate(dayAfterTomorrowStart.getDate() + 2);
+  dayAfterTomorrowStart.setHours(0, 0, 0, 0);
+  
+  // 到期日期在明日範圍內
+  return dueDate >= tomorrowStart && dueDate < dayAfterTomorrowStart;
 }
 
 // 獲取任務狀態
-export function getTaskStatus(task: PatientHealthTask): 'overdue' | 'due_soon' | 'upcoming' {
+export function getTaskStatus(task: PatientHealthTask): 'overdue' | 'pending' | 'due_soon' | 'upcoming' {
   if (isTaskOverdue(task)) {
     return 'overdue';
+  } else if (isTaskPendingToday(task)) {
+    return 'pending';
   } else if (isTaskDueSoon(task)) {
     return 'due_soon';
   } else {

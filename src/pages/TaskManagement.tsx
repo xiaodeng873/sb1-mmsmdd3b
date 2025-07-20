@@ -109,8 +109,8 @@ const TaskManagement: React.FC = () => {
       case 'pending':
         return (
           <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
-            <Clock className="h-3 w-3 mr-1" />
-            未完成
+            <CheckCircle className="h-3 w-3 mr-1" />
+            今日未完成
           </span>
         );
       case 'due_soon':
@@ -133,7 +133,7 @@ const TaskManagement: React.FC = () => {
   const stats = {
     total: patientHealthTasks.length,
     overdue: patientHealthTasks.filter(task => isTaskOverdue(task)).length,
-    pending: patientHealthTasks.filter(task => getTaskStatus(task) === 'pending').length,
+    pending: patientHealthTasks.filter(task => isTaskPendingToday(task)).length,
     dueSoon: patientHealthTasks.filter(task => getTaskStatus(task) === 'due_soon').length,
     vitalSigns: patientHealthTasks.filter(task => task.health_record_type === '生命表徵').length,
     bloodSugar: patientHealthTasks.filter(task => task.health_record_type === '血糖控制').length,
@@ -181,10 +181,10 @@ const TaskManagement: React.FC = () => {
         <div className="card p-4">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm text-gray-600">未完成</p>
+              <p className="text-sm text-gray-600">今日未完成</p>
               <p className="text-2xl font-bold text-green-600">{stats.pending}</p>
             </div>
-            <Clock className="h-8 w-8 text-green-600" />
+            <CheckCircle className="h-8 w-8 text-green-600" />
           </div>
         </div>
         
@@ -262,7 +262,7 @@ const TaskManagement: React.FC = () => {
             >
               <option value="all">所有狀態</option>
               <option value="overdue">逾期</option>
-              <option value="pending">未完成</option>
+              <option value="pending">今日未完成</option>
               <option value="due_soon">即將到期</option>
               <option value="upcoming">排程中</option>
             </select>
