@@ -200,38 +200,7 @@ export function formatFrequencyDescription(task: PatientHealthTask): string {
       return '未知頻率';
   }
 }
-
-// 建立預設任務
-export function createDefaultTasks(patientId: number): Omit<PatientHealthTask, 'id' | 'created_at' | 'updated_at'>[] {
-  const now = new Date();
-  
-  return [
-    // 每週一次生命表徵（週一上午8點）
-    {
-      patient_id: patientId,
-      health_record_type: '生命表徵',
-      frequency_unit: 'weekly',
-      frequency_value: 1,
-      specific_times: ['08:00'],
-      specific_days_of_week: [1], // 週一
-      specific_days_of_month: [],
-      last_completed_at: undefined,
-      next_due_at: calculateNextDueDate({
-        patient_id: patientId,
-        health_record_type: '生命表徵',
-        frequency_unit: 'weekly',
-        frequency_value: 1,
-        specific_times: ['08:00'],
-        specific_days_of_week: [1],
-        specific_days_of_month: [],
-        last_completed_at: undefined,
-        next_due_at: '',
-        id: '',
-        created_at: '',
-        updated_at: ''
-      }, now).toISOString()
-    },
-    // 每月一次體重（每月1號上午9點）
+    // 每月一次體重（每月1號中午12點）
     {
       patient_id: patientId,
       health_record_type: '體重控制',
@@ -246,7 +215,7 @@ export function createDefaultTasks(patientId: number): Omit<PatientHealthTask, '
         health_record_type: '體重控制',
         frequency_unit: 'monthly',
         frequency_value: 1,
-        specific_times: ['09:00'],
+        specific_times: ['12:00'],
         specific_days_of_week: [],
         specific_days_of_month: [1],
         last_completed_at: undefined,
