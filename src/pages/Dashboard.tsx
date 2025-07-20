@@ -238,7 +238,7 @@ const Dashboard: React.FC = () => {
                       'bg-orange-100 text-orange-800'
                     }`}>
                       {status === 'overdue' ? '逾期' : 
-                       status === 'pending' ? '今日未完成' :
+                       status === 'pending' ? '未完成' :
                        '即將到期'}
                     </span>
                   </div>
