@@ -160,3 +160,9 @@ export function formatFrequencyDescription(task: PatientHealthTask): string {
   }
 }
 
+// 建立預設任務
+export function createDefaultTasks(patientId: number): Omit<PatientHealthTask, 'id' | 'created_at' | 'updated_at'>[] {
+  const now = new Date();
+  
+
+}
