@@ -13,7 +13,8 @@ import {
   Heart,
   LogOut,
   User,
-  CalendarCheck
+  CalendarCheck,
+  CheckSquare
 } from 'lucide-react';
 import type { User as SupabaseUser } from '@supabase/supabase-js';
 
