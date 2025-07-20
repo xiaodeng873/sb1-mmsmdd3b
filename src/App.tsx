@@ -58,6 +58,7 @@ function AppContent() {
         <Route path="/" element={<Dashboard />} />
         <Route path="/scheduling" element={<Scheduling />} />
         <Route path="/follow-up" element={<FollowUpManagement />} />
+        <Route path="/tasks" element={<TaskManagement />} />
         <Route path="/patients" element={<PatientRecords />} />
         <Route path="/medication" element={<MedicationRegistration />} />
         <Route path="/templates" element={<TemplateManagement />} />
