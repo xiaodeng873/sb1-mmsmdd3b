@@ -1,4 +1,3 @@
-```typescript
 import React, { useState, useEffect } from 'react';
 import { X, Heart, Activity, Droplets, Scale, User, Calendar, Clock } from 'lucide-react';
 import { usePatients } from '../context/PatientContext';
@@ -48,6 +47,7 @@ const HealthRecordModal: React.FC<HealthRecordModalProps> = ({ record, onClose, 
       return;
     }
 
+    // Filter weight records for the same patient, excluding the current record if editing
     const patientWeightRecords = healthRecords
       .filter(r => 
         r.院友id === parseInt(formData.院友id) && 
@@ -85,13 +85,13 @@ const HealthRecordModal: React.FC<HealthRecordModalProps> = ({ record, onClose, 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    // 驗證必填欄位
+    // Validate required fields
     if (!formData.院友id || !formData.記錄日期 || !formData.記錄時間 || !formData.記錄類型) {
       alert('請填寫所有必填欄位');
       return;
     }
 
-    // 根據記錄類型驗證相關欄位
+    // Validate fields based on record type
     if (formData.記錄類型 === '生命表徵') {
       if (!formData.血壓收縮壓 && !formData.血壓舒張壓 && !formData.脈搏 && !formData.體溫 && !formData.血含氧量 && !formData.呼吸頻率) {
         alert('生命表徵記錄至少需要填寫一項數值');
@@ -124,28 +124,21 @@ const HealthRecordModal: React.FC<HealthRecordModalProps> = ({ record, onClose, 
         血糖值: formData.血糖值 ? parseFloat(formData.血糖值) : null,
         體重: formData.體重 ? parseFloat(formData.體重) : null,
         備註: formData.備註 || null,
-        記錄人員: formData.記錄人員 || null
+        記錄人員: formData.記錄人員 || null,
+        ...(record && { 記錄id: parseInt(record.記錄id) }) // Ensure record ID is included for updates
       };
 
       if (record && record.記錄id) {
-        // 更新記錄，確保記錄id有效
-        if (isNaN(parseInt(record.記錄id))) {
-          throw new Error('無效的記錄ID');
-        }
-        await updateHealthRecord({
-          ...recordData,
-          記錄id: parseInt(record.記錄id)
-        });
+        await updateHealthRecord(recordData);
       } else {
-        // 創建新記錄，不包含記錄id
         await addHealthRecord(recordData);
       }
       
       if (onTaskCompleted) onTaskCompleted();
       onClose();
-    } catch (error: any) {
+    } catch (error) {
       console.error('儲存健康記錄失敗:', error);
-      alert(`儲存健康記錄失敗：${error.message || '請重試'}`);
+      alert('儲存健康記錄失敗，請重試');
     }
   };
 
@@ -190,6 +183,7 @@ const HealthRecordModal: React.FC<HealthRecordModalProps> = ({ record, onClose, 
         </div>
 
         <form onSubmit={handleSubmit} className="p-6 space-y-6">
+          {/* Basic Information */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
             <div>
               <label className="form-label">
@@ -258,6 +252,7 @@ const HealthRecordModal: React.FC<HealthRecordModalProps> = ({ record, onClose, 
             </div>
           </div>
 
+          {/* Vital Signs */}
           {formData.記錄類型 === '生命表徵' && (
             <div className="space-y-4">
               <h3 className="text-lg font-medium text-blue-600 flex items-center">
@@ -266,6 +261,7 @@ const HealthRecordModal: React.FC<HealthRecordModalProps> = ({ record, onClose, 
               </h3>
               
               <div className="space-y-4">
+                {/* First Row: Blood Pressure, Pulse, Temperature */}
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   <div>
                     <label className="form-label">血壓 (mmHg)</label>
@@ -287,7 +283,6 @@ const HealthRecordModal: React.FC<HealthRecordModalProps> = ({ record, onClose, 
                         value={formData.血壓舒張壓}
                         onChange={handleChange}
                         className="form-input"
-                       -clas
                         placeholder="80"
                         min="0"
                         max="200"
@@ -323,6 +318,7 @@ const HealthRecordModal: React.FC<HealthRecordModalProps> = ({ record, onClose, 
                   </div>
                 </div>
                 
+                {/* Second Row: Oxygen Saturation, Respiratory Rate, Notes */}
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   <div>
                     <label className="form-label">血含氧量 (%)</label>
@@ -366,6 +362,7 @@ const HealthRecordModal: React.FC<HealthRecordModalProps> = ({ record, onClose, 
             </div>
           )}
 
+          {/* Blood Glucose */}
           {formData.記錄類型 === '血糖控制' && (
             <div className="space-y-4">
               <h3 className="text-lg font-medium text-red-600 flex items-center">
@@ -396,6 +393,7 @@ const HealthRecordModal: React.FC<HealthRecordModalProps> = ({ record, onClose, 
             </div>
           )}
 
+          {/* Weight Control */}
           {formData.記錄類型 === '體重控制' && (
             <div className="space-y-4">
               <h3 className="text-lg font-medium text-green-600 flex items-center">
@@ -436,6 +434,7 @@ const HealthRecordModal: React.FC<HealthRecordModalProps> = ({ record, onClose, 
             </div>
           )}
 
+          {/* Submit Buttons */}
           <div className="flex space-x-3 pt-4 border-t border-gray-200">
             <button
               type="submit"
@@ -458,54 +457,3 @@ const HealthRecordModal: React.FC<HealthRecordModalProps> = ({ record, onClose, 
 };
 
 export default HealthRecordModal;
-```
-
-### Changes Made
-- **Fixed Missing Semicolon**: Added a semicolon after the `.sort` method call in the `calculateWeightChange` function at line 57 to resolve the syntax error.
-- **Preserved Previous Fixes**: Maintained the logic to handle `記錄id` correctly, ensuring it is not included when creating new records and validated when updating existing records.
-- **Error Handling**: Kept the enhanced error handling in `handleSubmit` to provide user-friendly error messages.
-- **Code Consistency**: Ensured the code aligns with the `PatientProvider.tsx` provided earlier, maintaining compatibility with the Supabase database and the `usePatients` context.
-
-### Additional Notes
-- **Database Assumption**: The code assumes that the `健康記錄主表` table in Supabase has `記錄id` set as an auto-incrementing primary key (`SERIAL` or `GENERATED ALWAYS AS IDENTITY`). If this is not the case, you must update the table schema in Supabase to ensure `記錄id` is auto-generated.
-- **Parent Component**: Ensure that when passing the `record` prop to `HealthRecordModal` for editing, it includes a valid `記錄id`. For example:
-  ```typescript
-  <HealthRecordModal
-    record={selectedRecord ? { ...selectedRecord, 記錄id: selectedRecord.記錄id } : undefined}
-    onClose={() => setShowModal(false)}
-    onTaskCompleted={refreshData}
-  />
-  ```
-- **Database Layer**: Verify that `lib/database.ts` handles `createHealthRecord` and `updateHealthRecord` correctly. For example:
-  ```typescript
-  export async function createHealthRecord(record: Omit<HealthRecord, '記錄id'>) {
-    const { data, error } = await supabase
-      .from('健康記錄主表')
-      .insert([record])
-      .select()
-      .single();
-    if (error) throw error;
-    return data;
-  }
-
-  export async function updateHealthRecord(record: HealthRecord) {
-    if (!record.記錄id) throw new Error('缺少記錄ID');
-    const { data, error } = await supabase
-      .from('健康記錄主表')
-      .update(record)
-      .eq('記錄id', record.記錄id)
-      .select()
-      .single();
-    if (error) throw error;
-    return data;
-  }
-  ```
-
-### Verification
-To confirm the fix:
-1. Run the application with `npm run dev` or your Vite build command.
-2. Test creating a new health record to ensure no `null value in column "記錄id"` error occurs.
-3. Test updating an existing health record to ensure no `invalid input syntax for type integer: "undefined"` error occurs.
-4. Check the console for any additional errors and verify that the modal functions as expected.
-
-If you encounter further issues, please provide the `lib/database.ts` file or additional error details for deeper analysis.
