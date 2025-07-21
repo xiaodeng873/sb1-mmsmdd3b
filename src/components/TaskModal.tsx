@@ -145,7 +145,7 @@ const TaskModal: React.FC<TaskModalProps> = ({ task, onClose }) => {
       case '生命表徵': return 'text-blue-600';
       case '血糖控制': return 'text-red-600';
       case '體重控制': return 'text-green-600';
-      case '約束物品同意書': return 'text-orange-600';
+      case '約束物品同意書': return 'text-white-600';
       case '年度體檢': return 'text-purple-600';
       default: return 'text-purple-600';
     }
