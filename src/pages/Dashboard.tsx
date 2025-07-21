@@ -1,5 +1,5 @@
 import React from 'react';
-import { Calendar, Users, Pill, FileText, TrendingUp, Clock, CalendarCheck, CheckSquare, AlertTriangle, Activity, Droplets, Scale, User, Stethoscope } from 'lucide-react';
+import { Calendar, Users, Pill, FileText, TrendingUp, Clock, CalendarCheck, CheckSquare, AlertTriangle, Activity, Droplets, Scale, User, Stethoscope, X } from 'lucide-react';
 import { usePatients } from '../context/PatientContext';
 import { Link } from 'react-router-dom';
 import { isTaskOverdue, isTaskDueSoon, isTaskPendingToday, getTaskStatus, isDocumentTask, isMonitoringTask } from '../utils/taskScheduler';
@@ -80,6 +80,7 @@ const Dashboard: React.FC = () => {
       setShowDocumentTaskModal(true);
     }
   };
+
   const handleTaskCompleted = async (taskId: string) => {
     const task = patientHealthTasks.find(t => t.id === taskId);
     if (task) {
@@ -115,6 +116,7 @@ const Dashboard: React.FC = () => {
     setShowDocumentTaskModal(false);
     setSelectedDocumentTask(null);
   };
+
   const getTaskTypeIcon = (type: string) => {
     switch (type) {
       case '生命表徵': return <Activity className="h-4 w-4" />;
@@ -134,8 +136,8 @@ const Dashboard: React.FC = () => {
       default: return <CheckSquare className="h-4 w-4 text-gray-600" />;
     }
   };
-  const stats = [
-  ]; 
+
+  const stats = [];
 
   const getHealthRecordData = (record: any) => {
     switch (record.記錄類型) {
@@ -221,14 +223,26 @@ const Dashboard: React.FC = () => {
                     className="flex items-center space-x-3 p-3 bg-gray-50 rounded-lg cursor-pointer hover:bg-gray-100 transition-colors"
                     onClick={() => handleTaskClick(task)}
                   >
-                    <div className={`p-2 rounded-full ${
-                      status === 'overdue' ? 'bg-red-100' : 'bg-orange-100'
-                    }`}>
-                      {getTaskTypeIcon(task.health_record_type)}
+                    <div className="w-10 h-10 bg-blue-100 rounded-full overflow-hidden flex items-center justify-center">
+                      {patient?.院友相片 ? (
+                        <img 
+                          src={patient.院友相片} 
+                          alt={patient.中文姓名} 
+                          className="w-full h-full object-cover"
+                        />
+                      ) : (
+                        <User className="h-5 w-5 text-blue-600" />
+                      )}
                     </div>
                     <div className="flex-1">
-                      <p className="font-medium text-gray-900">{patient?.中文姓名}</p>
-                      <p className="text-sm text-gray-600">{task.health_record_type}</p>
+                      <div className="flex items-center space-x-2">
+                        <p className="font-medium text-gray-900">{patient?.中文姓名}</p>
+                        <span className="text-xs text-gray-500">({patient?.床號})</span>
+                      </div>
+                      <div className="flex items-center space-x-2 mt-1">
+                        {getTaskTypeIcon(task.health_record_type)}
+                        <p className="text-sm text-gray-600">{task.health_record_type}</p>
+                      </div>
                       {task.notes && (
                         <p className="text-xs text-gray-500 mt-1">{task.notes}</p>
                       )}
@@ -258,7 +272,7 @@ const Dashboard: React.FC = () => {
             )}
           </div>
         </div>
-               {/* Upcoming Follow-ups */}
+
         {/* 文件任務 */}
         <div className="card p-6">
           <div className="flex items-center justify-between mb-4">
@@ -281,14 +295,26 @@ const Dashboard: React.FC = () => {
                     className="flex items-center space-x-3 p-3 bg-gray-50 rounded-lg cursor-pointer hover:bg-gray-100 transition-colors"
                     onClick={() => handleDocumentTaskClick(task)}
                   >
-                    <div className={`p-2 rounded-full ${
-                      status === 'overdue' ? 'bg-red-100' : 'bg-orange-100'
-                    }`}>
-                      {getTaskTypeIcon(task.health_record_type)}
+                    <div className="w-10 h-10 bg-blue-100 rounded-full overflow-hidden flex items-center justify-center">
+                      {patient?.院友相片 ? (
+                        <img 
+                          src={patient.院友相片} 
+                          alt={patient.中文姓名} 
+                          className="w-full h-full object-cover"
+                        />
+                      ) : (
+                        <User className="h-5 w-5 text-blue-600" />
+                      )}
                     </div>
                     <div className="flex-1">
-                      <p className="font-medium text-gray-900">{patient?.中文姓名}</p>
-                      <p className="text-sm text-gray-600">{task.health_record_type}</p>
+                      <div className="flex items-center space-x-2">
+                        <p className="font-medium text-gray-900">{patient?.中文姓名}</p>
+                        <span className="text-xs text-gray-500">({patient?.床號})</span>
+                      </div>
+                      <div className="flex items-center space-x-2 mt-1">
+                        {getTaskTypeIcon(task.health_record_type)}
+                        <p className="text-sm text-gray-600">{task.health_record_type}</p>
+                      </div>
                       {task.notes && (
                         <p className="text-xs text-gray-500 mt-1">{task.notes}</p>
                       )}
@@ -590,8 +616,5 @@ const DocumentTaskModal: React.FC<{
     </div>
   );
 };
-
-// 添加必要的 import
-import { X } from 'lucide-react';
 
 export default Dashboard;
