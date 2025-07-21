@@ -212,11 +212,14 @@ export function formatFrequencyDescription(task: PatientHealthTask): string {
 
   switch (frequency_unit) {
     case 'hourly':
+      if (specific_times.length > 0) {
+        return `每 ${frequency_value} 小時於 ${specific_times[0]}`;
+      }
       return `每 ${frequency_value} 小時`;
 
     case 'daily':
       if (specific_times.length > 0) {
-        return `每日 ${specific_times.join(', ')}`;
+        return `每日 ${specific_times[0]}`;
       }
       return frequency_value === 1 ? '每日' : `每 ${frequency_value} 天`;
 
@@ -224,16 +227,23 @@ export function formatFrequencyDescription(task: PatientHealthTask): string {
       if (specific_days_of_week.length > 0) {
         const dayNames = ['週日', '週一', '週二', '週三', '週四', '週五', '週六'];
         const days = specific_days_of_week.map(day => dayNames[day === 7 ? 0 : day]).join(', ');
-        return frequency_value === 1 ? `每週 ${days}` : `每 ${frequency_value} 週 ${days}`;
+        return frequency_value === 1 ? `每週 ${days}${specific_times[0] ? ' ' + specific_times[0] : ''}` : `每 ${frequency_value} 週 ${days}${specific_times[0] ? ' ' + specific_times[0] : ''}`;
       }
       return frequency_value === 1 ? '每週' : `每 ${frequency_value} 週`;
 
     case 'monthly':
       if (specific_days_of_month.length > 0) {
         const dates = specific_days_of_month.join(', ');
-        return frequency_value === 1 ? `每月 ${dates} 號` : `每 ${frequency_value} 個月 ${dates} 號`;
+        return frequency_value === 1 ? `每月 ${dates} 號${specific_times[0] ? ' ' + specific_times[0] : ''}` : `每 ${frequency_value} 個月 ${dates} 號${specific_times[0] ? ' ' + specific_times[0] : ''}`;
       }
       return frequency_value === 1 ? '每月' : `每 ${frequency_value} 個月`;
+
+    case 'yearly':
+      if (specific_days_of_month.length > 0) {
+        const dates = specific_days_of_month.join(', ');
+        return frequency_value === 1 ? `每年 ${nextDue.getMonth() + 1} 月 ${dates} 號${specific_times[0] ? ' ' + specific_times[0] : ''}` : `每 ${frequency_value} 年 ${nextDue.getMonth() + 1} 月 ${dates} 號${specific_times[0] ? ' ' + specific_times[0] : ''}`;
+      }
+      return frequency_value === 1 ? '每年' : `每 ${frequency_value} 年`;
 
     default:
       return '未知頻率';
