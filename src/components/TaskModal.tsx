@@ -227,6 +227,7 @@ const TaskModal: React.FC<TaskModalProps> = ({ task, onClose }) => {
                   <option value="daily">每天</option>
                   <option value="weekly">每週</option>
                   <option value="monthly">每月</option>
+                  <option value="yearly">每年</option>
                 </select>
               </div>
 
