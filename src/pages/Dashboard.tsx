@@ -85,10 +85,7 @@ const Dashboard: React.FC = () => {
     }
   };
 
-  const stats = [
 
-    
-  ];
 
   return (
     <div className="space-y-6">
