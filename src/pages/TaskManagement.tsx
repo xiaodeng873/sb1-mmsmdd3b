@@ -27,7 +27,7 @@ const TaskManagement: React.FC = () => {
   const [selectedTask, setSelectedTask] = useState<PatientHealthTask | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [filterType, setFilterType] = useState<'all' | HealthTaskType>('all');
-  const [filterStatus, setFilterStatus] = useState<'all' | 'overdue' | 'due_soon' | 'pending' | 'upcoming'>('all');
+  const [filterStatus, setFilterStatus] = useState<'all' | 'overdue' | 'due_soon' | 'pending' | 'scheduled'>('all');
 
   if (loading) {
     return (
@@ -120,15 +120,17 @@ const TaskManagement: React.FC = () => {
             即將到期
           </span>
         );
-      case 'upcoming':
+      case 'scheduled':
         return (
-          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
-            <CheckCircle className="h-3 w-3 mr-1" />
-            正常
+          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-800">
+            <CheckSquare className="h-3 w-3 mr-1" />
+            排程中
           </span>
         );
     }
   };
+
+  const scheduledTasks = patientHealthTasks.filter(task => getTaskStatus(task) === 'scheduled');
 
   const stats = {
     total: patientHealthTasks.length,
@@ -137,7 +139,8 @@ const TaskManagement: React.FC = () => {
     dueSoon: patientHealthTasks.filter(task => getTaskStatus(task) === 'due_soon').length,
     vitalSigns: patientHealthTasks.filter(task => task.health_record_type === '生命表徵').length,
     bloodSugar: patientHealthTasks.filter(task => task.health_record_type === '血糖控制').length,
-    weight: patientHealthTasks.filter(task => task.health_record_type === '體重控制').length
+    weight: patientHealthTasks.filter(task => task.health_record_type === '體重控制').length,
+    scheduled: scheduledTasks.length
   };
 
   return (
@@ -221,10 +224,10 @@ const TaskManagement: React.FC = () => {
         <div className="card p-4">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm text-gray-600">體重控制</p>
-              <p className="text-2xl font-bold text-green-600">{stats.weight}</p>
+              <p className="text-sm text-gray-600">排程中</p>
+              <p className="text-2xl font-bold text-purple-600">{stats.scheduled}</p>
             </div>
-            <Scale className="h-8 w-8 text-green-600" />
+            <CheckSquare className="h-8 w-8 text-purple-600" />
           </div>
         </div>
       </div>
@@ -257,14 +260,14 @@ const TaskManagement: React.FC = () => {
             
             <select
               value={filterStatus}
-              onChange={(e) => setFilterStatus(e.target.value as 'all' | 'overdue' | 'due_soon' | 'pending' | 'upcoming')}
+              onChange={(e) => setFilterStatus(e.target.value as 'all' | 'overdue' | 'due_soon' | 'pending' | 'scheduled')}
               className="form-input lg:w-40"
             >
               <option value="all">所有狀態</option>
               <option value="overdue">逾期</option>
               <option value="pending">未完成</option>
               <option value="due_soon">即將到期</option>
-              <option value="upcoming">排程中</option>
+              <option value="scheduled">排程中</option>
             </select>
           </div>
         </div>

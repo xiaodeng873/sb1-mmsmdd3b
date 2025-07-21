@@ -44,7 +44,7 @@ const Dashboard: React.FC = () => {
   // 任務統計
   const overdueTasks = patientHealthTasks.filter(task => isTaskOverdue(task));
   const pendingTasks = patientHealthTasks.filter(task => isTaskPendingToday(task));
-  const dueSoonTasks = patientHealthTasks.filter(task => getTaskStatus(task) === 'due_soon');
+  const dueSoonTasks = patientHealthTasks.filter(task => isTaskDueSoon(task));
   const urgentTasks = [...overdueTasks, ...pendingTasks, ...dueSoonTasks].slice(0, 5);
 
   const handleTaskClick = (task: any) => {
@@ -235,11 +235,13 @@ const Dashboard: React.FC = () => {
                     <span className={`status-badge ${
                       status === 'overdue' ? 'bg-red-100 text-red-800' : 
                       status === 'pending' ? 'bg-green-100 text-green-800' :
-                      'bg-orange-100 text-orange-800'
+                      status === 'due_soon' ? 'bg-orange-100 text-orange-800' :
+                      'bg-purple-100 text-purple-800'
                     }`}>
                       {status === 'overdue' ? '逾期' : 
                        status === 'pending' ? '未完成' :
-                       '即將到期'}
+                       status === 'due_soon' ? '即將到期' :
+                       '排程中'}
                     </span>
                   </div>
                 );
