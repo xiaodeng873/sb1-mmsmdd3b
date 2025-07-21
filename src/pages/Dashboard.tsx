@@ -282,52 +282,7 @@ const Dashboard: React.FC = () => {
         </div>
       </div>
 
-      {/* Quick Actions */}
-      <div className="card p-6">
-        <h2 className="text-lg font-semibold text-gray-900 mb-4">快速操作</h2>
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-          <Link 
-            to="/scheduling" 
-            className="flex items-center space-x-3 p-4 bg-blue-50 rounded-lg hover:bg-blue-100 transition-colors"
-          >
-            <Calendar className="h-8 w-8 text-blue-600" />
-            <div>
-              <p className="font-medium text-gray-900">新增排程</p>
-              <p className="text-sm text-gray-600">安排醫生到診</p>
-            </div>
-          </Link>
-          <Link 
-            to="/follow-up" 
-            className="flex items-center space-x-3 p-4 bg-indigo-50 rounded-lg hover:bg-indigo-100 transition-colors"
-          >
-            <CalendarCheck className="h-8 w-8 text-indigo-600" />
-            <div>
-              <p className="font-medium text-gray-900">覆診管理</p>
-              <p className="text-sm text-gray-600">安排院友覆診</p>
-            </div>
-          </Link>
-          <Link 
-            to="/medication" 
-            className="flex items-center space-x-3 p-4 bg-green-50 rounded-lg hover:bg-green-100 transition-colors"
-          >
-            <Pill className="h-8 w-8 text-green-600" />
-            <div>
-              <p className="font-medium text-gray-900">藥物登記</p>
-              <p className="text-sm text-gray-600">掃描藥物標籤</p>
-            </div>
-          </Link>
-          <Link 
-            to="/tasks" 
-            className="flex items-center space-x-3 p-4 bg-purple-50 rounded-lg hover:bg-purple-100 transition-colors"
-          >
-            <CheckSquare className="h-8 w-8 text-purple-600" />
-            <div>
-              <p className="font-medium text-gray-900">任務管理</p>
-              <p className="text-sm text-gray-600">設定健康檢查任務</p>
-            </div>
-          </Link>
-        </div>
-      </div>
+  
 
       {/* 健康記錄模態框 */}
       {showHealthModal && selectedTaskForRecord && (
