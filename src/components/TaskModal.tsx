@@ -17,7 +17,9 @@ const TaskModal: React.FC<TaskModalProps> = ({ task, onClose }) => {
     frequency_value: task?.frequency_value || 1,
     specific_times: task?.specific_times || [],
     specific_days_of_week: task?.specific_days_of_week || [],
-    specific_days_of_month: task?.specific_days_of_month || []
+    specific_days_of_month: task?.specific_days_of_month || [],
+    notes: task?.notes || '',
+    last_completed_at: task?.last_completed_at || ''
   });
   const [newTime, setNewTime] = useState('');
 
@@ -107,7 +109,7 @@ const TaskModal: React.FC<TaskModalProps> = ({ task, onClose }) => {
         specific_times: formData.specific_times,
         specific_days_of_week: formData.specific_days_of_week,
         specific_days_of_month: formData.specific_days_of_month,
-        last_completed_at: formData.last_completed_at || task?.last_completed_at,
+        last_completed_at: formData.last_completed_at || task?.last_completed_at || null,
         next_due_at: nextDueAt.toISOString()
       };
 
@@ -228,10 +230,11 @@ const TaskModal: React.FC<TaskModalProps> = ({ task, onClose }) => {
               </label>
               <input
                 type="date"
-                value={task?.last_completed_at ? new Date(task.last_completed_at).toISOString().split('T')[0] : ''}
+                name="last_completed_at"
+                value={formData.last_completed_at ? new Date(formData.last_completed_at).toISOString().split('T')[0] : ''}
                 onChange={(e) => setFormData(prev => ({ 
                   ...prev, 
-                  last_completed_at: e.target.value ? new Date(e.target.value).toISOString() : undefined 
+                  last_completed_at: e.target.value ? new Date(e.target.value).toISOString() : ''
                 }))}
                 className="form-input"
               />
@@ -383,8 +386,8 @@ const TaskModal: React.FC<TaskModalProps> = ({ task, onClose }) => {
             <label className="form-label">備註</label>
             <textarea
               name="notes"
-              value={formData.notes}
-              onChange={(e) => setFormData(prev => ({ ...prev, notes: e.target.value }))}
+              value={formData.notes || ''}
+              onChange={handleChange}
               className="form-input"
               rows={3}
               placeholder="任務的特殊說明或注意事項..."
