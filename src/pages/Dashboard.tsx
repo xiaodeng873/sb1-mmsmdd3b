@@ -442,8 +442,19 @@ const Dashboard: React.FC = () => {
             setSelectedTaskForRecord(null);
           }}
           onTaskCompleted={() => handleTaskCompleted(selectedTaskForRecord.task.id)}
-          defaultRecordDate={new Date(selectedTaskForRecord.task.next_due_at).toISOString().split('T')[0]}
-          defaultRecordTime={new Date(selectedTaskForRecord.task.next_due_at).toTimeString().slice(0, 5)}
+          defaultRecordDate={(() => {
+            const dateObj = new Date(selectedTaskForRecord.task.next_due_at);
+            const year = dateObj.getFullYear();
+            const month = (dateObj.getMonth() + 1).toString().padStart(2, '0');
+            const day = dateObj.getDate().toString().padStart(2, '0');
+            return `${year}-${month}-${day}`;
+          })()}
+          defaultRecordTime={(() => {
+            const dateObj = new Date(selectedTaskForRecord.task.next_due_at);
+            const hours = dateObj.getHours().toString().padStart(2, '0');
+            const minutes = dateObj.getMinutes().toString().padStart(2, '0');
+            return `${hours}:${minutes}`;
+          })()}
         />
       )}
 
