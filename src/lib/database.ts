@@ -113,6 +113,7 @@ export interface PatientHealthTask {
   specific_days_of_month: number[];
   last_completed_at?: string;
   next_due_at: string;
+  notes?: string;
   created_at: string;
   updated_at: string;
 }

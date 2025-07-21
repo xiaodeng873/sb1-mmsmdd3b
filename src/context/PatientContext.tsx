@@ -4,7 +4,7 @@ import * as db from '../lib/database';
 import { useAuth } from './AuthContext';
 
 // Re-export types from database module
-export type { Patient, Schedule, ScheduleDetail, ServiceReason, Prescription, HealthRecord } from '../lib/database';
+export type { Patient, Schedule, ScheduleDetail, ServiceReason, Prescription, HealthRecord, PatientHealthTask, HealthTaskType, FrequencyUnit, FollowUpAppointment } from '../lib/database';
 
 // Extended schedule interface for UI
 export interface ScheduleWithDetails extends db.Schedule {

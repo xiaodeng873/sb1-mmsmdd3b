@@ -375,6 +375,9 @@ const TaskManagement: React.FC = () => {
                       <td className="px-4 py-4 whitespace-nowrap">
                         {getStatusBadge(task)}
                       </td>
+                      <td className="px-4 py-4 text-sm text-gray-900 max-w-xs truncate">
+                        {task.notes || '-'}
+                      </td>
                       <td className="px-4 py-4 whitespace-nowrap text-sm font-medium">
                         <div className="flex space-x-2">
                           <button

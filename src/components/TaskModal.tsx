@@ -343,6 +343,19 @@ const TaskModal: React.FC<TaskModalProps> = ({ task, onClose }) => {
             )}
           </div>
 
+          {/* 備註 */}
+          <div>
+            <label className="form-label">備註</label>
+            <textarea
+              name="notes"
+              value={formData.notes}
+              onChange={(e) => setFormData(prev => ({ ...prev, notes: e.target.value }))}
+              className="form-input"
+              rows={3}
+              placeholder="任務的特殊說明或注意事項..."
+            />
+          </div>
+
           {/* 提交按鈕 */}
           <div className="flex space-x-3 pt-4 border-t border-gray-200">
             <button

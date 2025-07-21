@@ -228,6 +228,9 @@ const Dashboard: React.FC = () => {
                     <div className="flex-1">
                       <p className="font-medium text-gray-900">{patient?.中文姓名}</p>
                       <p className="text-sm text-gray-600">{task.health_record_type}</p>
+                      {task.notes && (
+                        <p className="text-xs text-gray-500 mt-1">{task.notes}</p>
+                      )}
                       <p className="text-xs text-gray-500">
                         {new Date(task.next_due_at).toLocaleString('zh-TW')}
                       </p>
