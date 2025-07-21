@@ -1,9 +1,13 @@
 import type { PatientHealthTask, FrequencyUnit } from '../lib/database'; 
 
-// 計算下一個到期時間
 export function calculateNextDueDate(task: PatientHealthTask, fromDate?: Date): Date {
   const baseDate = fromDate || new Date(task.next_due_at || new Date());
   const nextDue = new Date(baseDate);
+
+  // Default time to 08:00 if no specific times are provided
+  const defaultHours = 8;
+  const defaultMinutes = 0;
+  let hasSpecificTime = false;
 
   switch (task.frequency_unit) {
     case 'hourly':
@@ -13,48 +17,56 @@ export function calculateNextDueDate(task: PatientHealthTask, fromDate?: Date): 
     case 'daily':
       nextDue.setDate(nextDue.getDate() + task.frequency_value);
       
-      // 如果有指定時間，設定為第一個指定時間
+      // Set specific time if available
       if (task.specific_times.length > 0) {
         const [hours, minutes] = task.specific_times[0].split(':').map(Number);
         nextDue.setHours(hours, minutes, 0, 0);
+        hasSpecificTime = true;
       }
       break;
 
     case 'weekly':
-      // 直接加上週數間隔
+      // Add weeks interval
       nextDue.setDate(nextDue.getDate() + task.frequency_value * 7);
       
-      // 如果有指定星期幾，調整到正確的星期幾
+      // Adjust to specific day of week if provided
       if (task.specific_days_of_week.length > 0) {
-        const targetDay = task.specific_days_of_week[0]; // 使用第一個指定的星期幾
-        const adjustedTargetDay = targetDay === 7 ? 0 : targetDay; // 轉換為 JS 的星期格式
+        const targetDay = task.specific_days_of_week[0];
+        const adjustedTargetDay = targetDay === 7 ? 0 : targetDay;
         const currentDay = nextDue.getDay();
         const dayDiff = adjustedTargetDay - currentDay;
         nextDue.setDate(nextDue.getDate() + dayDiff);
       }
       
-      // 如果有指定時間，設定為第一個指定時間
+      // Set specific time if available
       if (task.specific_times.length > 0) {
         const [hours, minutes] = task.specific_times[0].split(':').map(Number);
         nextDue.setHours(hours, minutes, 0, 0);
+        hasSpecificTime = true;
       }
       break;
 
     case 'monthly':
-      // 直接加上月數間隔
+      // Add months interval
       nextDue.setMonth(nextDue.getMonth() + task.frequency_value);
       
-      // 如果有指定日期，設定為第一個指定日期
+      // Set specific day of month if provided
       if (task.specific_days_of_month.length > 0) {
         nextDue.setDate(task.specific_days_of_month[0]);
       }
       
-      // 如果有指定時間，設定為第一個指定時間
+      // Set specific time if available
       if (task.specific_times.length > 0) {
         const [hours, minutes] = task.specific_times[0].split(':').map(Number);
         nextDue.setHours(hours, minutes, 0, 0);
+        hasSpecificTime = true;
       }
       break;
+  }
+
+  // Apply default time of 08:00 if no specific time was set
+  if (!hasSpecificTime) {
+    nextDue.setHours(defaultHours, defaultMinutes, 0, 0);
   }
 
   return nextDue;
