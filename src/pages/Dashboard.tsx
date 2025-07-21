@@ -41,7 +41,7 @@ const Dashboard: React.FC = () => {
   const upcomingFollowUps = followUpAppointments
     .filter(a => new Date(a.覆診日期) >= new Date())
     .sort((a, b) => new Date(a.覆診日期).getTime() - new Date(b.覆診日期).getTime())
-    .slice(0, 5);
+    .slice(0, 10);
 
   // 任務統計
   const monitoringTasks = patientHealthTasks.filter(task => isMonitoringTask(task.health_record_type));
