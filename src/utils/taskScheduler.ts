@@ -2,7 +2,7 @@ import type { PatientHealthTask, FrequencyUnit } from '../lib/database';
 
 // 計算下一個到期時間
 export function calculateNextDueDate(task: PatientHealthTask, fromDate?: Date): Date {
-  const baseDate = fromDate || (task.last_completed_at ? new Date(task.last_completed_at) : new Date());
+  const baseDate = fromDate || new Date(task.next_due_at || new Date());
   const nextDue = new Date(baseDate);
 
   switch (task.frequency_unit) {
@@ -11,87 +11,48 @@ export function calculateNextDueDate(task: PatientHealthTask, fromDate?: Date): 
       break;
 
     case 'daily':
+      nextDue.setDate(nextDue.getDate() + task.frequency_value);
+      
+      // 如果有指定時間，設定為第一個指定時間
       if (task.specific_times.length > 0) {
-        // 如果有指定時間，找到下一個時間點
-        const today = new Date(baseDate);
-        today.setHours(0, 0, 0, 0);
-        
-        let foundNextTime = false;
-        for (const timeStr of task.specific_times.sort()) {
-          const [hours, minutes] = timeStr.split(':').map(Number);
-          const timeToday = new Date(today);
-          timeToday.setHours(hours, minutes, 0, 0);
-          
-          if (timeToday > baseDate) {
-            nextDue.setTime(timeToday.getTime());
-            foundNextTime = true;
-            break;
-          }
-        }
-        
-        if (!foundNextTime) {
-          // 如果今天沒有更多時間，移到明天的第一個時間
-          const tomorrow = new Date(today);
-          tomorrow.setDate(tomorrow.getDate() + task.frequency_value);
-          const [hours, minutes] = task.specific_times[0].split(':').map(Number);
-          tomorrow.setHours(hours, minutes, 0, 0);
-          nextDue.setTime(tomorrow.getTime());
-        }
-      } else {
-        nextDue.setDate(nextDue.getDate() + task.frequency_value);
+        const [hours, minutes] = task.specific_times[0].split(':').map(Number);
+        nextDue.setHours(hours, minutes, 0, 0);
       }
       break;
 
     case 'weekly':
+      // 直接加上週數間隔
+      nextDue.setDate(nextDue.getDate() + task.frequency_value * 7);
+      
+      // 如果有指定星期幾，調整到正確的星期幾
       if (task.specific_days_of_week.length > 0) {
-        // 找到下一個指定的星期幾
-        const currentDay = nextDue.getDay(); // 0 = 週日, 1 = 週一, ..., 6 = 週六
-        const targetDays = task.specific_days_of_week.sort();
-        
-        let foundNextDay = false;
-        for (const targetDay of targetDays) {
-          const adjustedTargetDay = targetDay === 7 ? 0 : targetDay; // 轉換為 JS 的星期格式
-          if (adjustedTargetDay > currentDay) {
-            const daysToAdd = adjustedTargetDay - currentDay;
-            nextDue.setDate(nextDue.getDate() + daysToAdd);
-            foundNextDay = true;
-            break;
-          }
-        }
-        
-        if (!foundNextDay) {
-          // 如果這週沒有更多指定日期，移到下週的第一個指定日期
-          const firstTargetDay = targetDays[0] === 7 ? 0 : targetDays[0];
-          const daysToAdd = (7 - currentDay + firstTargetDay) % 7;
-          nextDue.setDate(nextDue.getDate() + daysToAdd + (task.frequency_value - 1) * 7);
-        }
-      } else {
-        nextDue.setDate(nextDue.getDate() + task.frequency_value * 7);
+        const targetDay = task.specific_days_of_week[0]; // 使用第一個指定的星期幾
+        const adjustedTargetDay = targetDay === 7 ? 0 : targetDay; // 轉換為 JS 的星期格式
+        const currentDay = nextDue.getDay();
+        const dayDiff = adjustedTargetDay - currentDay;
+        nextDue.setDate(nextDue.getDate() + dayDiff);
+      }
+      
+      // 如果有指定時間，設定為第一個指定時間
+      if (task.specific_times.length > 0) {
+        const [hours, minutes] = task.specific_times[0].split(':').map(Number);
+        nextDue.setHours(hours, minutes, 0, 0);
       }
       break;
 
     case 'monthly':
+      // 直接加上月數間隔
+      nextDue.setMonth(nextDue.getMonth() + task.frequency_value);
+      
+      // 如果有指定日期，設定為第一個指定日期
       if (task.specific_days_of_month.length > 0) {
-        // 找到下一個指定的月份日期
-        const currentDate = nextDue.getDate();
-        const targetDates = task.specific_days_of_month.sort((a, b) => a - b);
-        
-        let foundNextDate = false;
-        for (const targetDate of targetDates) {
-          if (targetDate > currentDate) {
-            nextDue.setDate(targetDate);
-            foundNextDate = true;
-            break;
-          }
-        }
-        
-        if (!foundNextDate) {
-          // 如果這個月沒有更多指定日期，移到下個月的第一個指定日期
-          nextDue.setMonth(nextDue.getMonth() + task.frequency_value);
-          nextDue.setDate(targetDates[0]);
-        }
-      } else {
-        nextDue.setMonth(nextDue.getMonth() + task.frequency_value);
+        nextDue.setDate(task.specific_days_of_month[0]);
+      }
+      
+      // 如果有指定時間，設定為第一個指定時間
+      if (task.specific_times.length > 0) {
+        const [hours, minutes] = task.specific_times[0].split(':').map(Number);
+        nextDue.setHours(hours, minutes, 0, 0);
       }
       break;
   }
