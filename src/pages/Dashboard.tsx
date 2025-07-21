@@ -120,7 +120,49 @@ const Dashboard: React.FC = () => {
 
       {/* Recent Activity */}
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
-  {/* 監測任務 */}
+               {/* Upcoming Follow-ups */}
+        <div className="card p-6">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-lg font-semibold text-gray-900">近期覆診</h2>
+            <Link 
+              to="/follow-up" 
+              className="text-sm text-blue-600 hover:text-blue-700 font-medium"
+            >
+              查看全部
+            </Link>
+          </div>
+          <div className="space-y-3">
+            {upcomingFollowUps.length > 0 ? (
+              upcomingFollowUps.map(appointment => {
+                const patient = patients.find(p => p.院友id === appointment.院友id);
+                return (
+                  <div key={appointment.覆診id} className="flex items-center space-x-3 p-3 bg-gray-50 rounded-lg">
+                    <CalendarCheck className="h-5 w-5 text-indigo-600" />
+                    <div className="flex-1">
+                      <p className="font-medium text-gray-900">{patient?.中文姓名}</p>
+                      <p className="text-sm text-gray-600">
+                        {new Date(appointment.覆診日期).toLocaleDateString('zh-TW')} 
+                        {appointment.覆診時間 && ` ${appointment.覆診時間}`}
+                      </p>
+                      <p className="text-xs text-gray-500">
+                        {appointment.覆診地點} - {appointment.覆診專科}
+                      </p>
+                    </div>
+                    <span className="status-badge status-scheduled">待覆診</span>
+                  </div>
+                );
+              })
+            ) : (
+              <div className="text-center py-8 text-gray-500">
+                <CalendarCheck className="h-12 w-12 mx-auto mb-2 text-gray-300" />
+                <p>近期無覆診安排</p>
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+       
+      {/* 監測任務 */}
         <div className="card p-6">
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-lg font-semibold text-gray-900">監測任務</h2>
@@ -215,53 +257,6 @@ const Dashboard: React.FC = () => {
           </div>
         </div>
 
-      
-
-   
-
-        {/* Upcoming Follow-ups */}
-        <div className="card p-6">
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-lg font-semibold text-gray-900">近期覆診</h2>
-            <Link 
-              to="/follow-up" 
-              className="text-sm text-blue-600 hover:text-blue-700 font-medium"
-            >
-              查看全部
-            </Link>
-          </div>
-          <div className="space-y-3">
-            {upcomingFollowUps.length > 0 ? (
-              upcomingFollowUps.map(appointment => {
-                const patient = patients.find(p => p.院友id === appointment.院友id);
-                return (
-                  <div key={appointment.覆診id} className="flex items-center space-x-3 p-3 bg-gray-50 rounded-lg">
-                    <CalendarCheck className="h-5 w-5 text-indigo-600" />
-                    <div className="flex-1">
-                      <p className="font-medium text-gray-900">{patient?.中文姓名}</p>
-                      <p className="text-sm text-gray-600">
-                        {new Date(appointment.覆診日期).toLocaleDateString('zh-TW')} 
-                        {appointment.覆診時間 && ` ${appointment.覆診時間}`}
-                      </p>
-                      <p className="text-xs text-gray-500">
-                        {appointment.覆診地點} - {appointment.覆診專科}
-                      </p>
-                    </div>
-                    <span className="status-badge status-scheduled">待覆診</span>
-                  </div>
-                );
-              })
-            ) : (
-              <div className="text-center py-8 text-gray-500">
-                <CalendarCheck className="h-12 w-12 mx-auto mb-2 text-gray-300" />
-                <p>近期無覆診安排</p>
-              </div>
-            )}
-          </div>
-        </div>
-      </div>
-
-  
 
       {/* 健康記錄模態框 */}
       {showHealthModal && selectedTaskForRecord && (
