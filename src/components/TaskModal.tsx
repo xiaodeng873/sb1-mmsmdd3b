@@ -185,4 +185,3 @@ export function formatFrequencyDescription(task: PatientHealthTask): string {
       return '未知頻率';
   }
 }
-```
