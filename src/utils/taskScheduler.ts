@@ -126,9 +126,7 @@ export function isTaskDueSoon(task: PatientHealthTask): boolean {
   }
   
   const now = new Date();
-  const dueDate = new Date(task.next_d
-
-ue_at);
+  const dueDate = new Date(task.next_due_at);
   
   const tomorrowStart = new Date(now);
   tomorrowStart.setDate(tomorrowStart.getDate() + 1);
