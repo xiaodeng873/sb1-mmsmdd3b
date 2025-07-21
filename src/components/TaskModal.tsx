@@ -19,7 +19,9 @@ const TaskModal: React.FC<TaskModalProps> = ({ task, onClose }) => {
     specific_days_of_week: task?.specific_days_of_week || [],
     specific_days_of_month: task?.specific_days_of_month || [],
     notes: task?.notes || '',
-    last_completed_at: task?.last_completed_at || ''
+    last_completed_at: task?.last_completed_at || '',
+    start_date: task ? (task.last_completed_at ? new Date(task.last_completed_at).toISOString().split('T')[0] : '') : new Date().toISOString().split('T')[0],
+    start_time: task ? (task.last_completed_at ? new Date(task.last_completed_at).toTimeString().slice(0, 5) : '') : new Date().toTimeString().slice(0, 5)
   });
   const [newTime, setNewTime] = useState('');
 
@@ -93,7 +95,9 @@ const TaskModal: React.FC<TaskModalProps> = ({ task, onClose }) => {
         specific_times: formData.specific_times,
         specific_days_of_week: formData.specific_days_of_week,
         specific_days_of_month: formData.specific_days_of_month,
-        last_completed_at: task?.last_completed_at,
+        last_completed_at: formData.start_date && formData.start_time ? 
+          new Date(`${formData.start_date}T${formData.start_time}`).toISOString() : 
+          task?.last_completed_at,
         next_due_at: '',
         created_at: '',
         updated_at: ''
@@ -109,7 +113,9 @@ const TaskModal: React.FC<TaskModalProps> = ({ task, onClose }) => {
         specific_times: formData.specific_times,
         specific_days_of_week: formData.specific_days_of_week,
         specific_days_of_month: formData.specific_days_of_month,
-        last_completed_at: formData.last_completed_at || task?.last_completed_at || null,
+        last_completed_at: formData.start_date && formData.start_time ? 
+          new Date(`${formData.start_date}T${formData.start_time}`).toISOString() : 
+          (task?.last_completed_at || null),
         next_due_at: nextDueAt.toISOString()
       };
 
@@ -230,12 +236,9 @@ const TaskModal: React.FC<TaskModalProps> = ({ task, onClose }) => {
               </label>
               <input
                 type="date"
-                name="last_completed_at"
-                value={formData.last_completed_at ? new Date(formData.last_completed_at).toISOString().split('T')[0] : ''}
-                onChange={(e) => setFormData(prev => ({ 
-                  ...prev, 
-                  last_completed_at: e.target.value ? new Date(e.target.value).toISOString() : ''
-                }))}
+                name="start_date"
+                value={formData.start_date}
+                onChange={handleChange}
                 className="form-input"
               />
               <p className="text-xs text-gray-500 mt-1">
@@ -244,6 +247,44 @@ const TaskModal: React.FC<TaskModalProps> = ({ task, onClose }) => {
             </div>
           )}
 
+          {/* 監測任務的開始日期和時間 */}
+          {(formData.health_record_type === '生命表徵' || formData.health_record_type === '血糖控制' || formData.health_record_type === '體重控制') && (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className="form-label">
+                  <Calendar className="h-4 w-4 inline mr-1" />
+                  開始日期
+                </label>
+                <input
+                  type="date"
+                  name="start_date"
+                  value={formData.start_date}
+                  onChange={handleChange}
+                  className="form-input"
+                />
+                <p className="text-xs text-gray-500 mt-1">
+                  設定任務開始執行的日期
+                </p>
+              </div>
+              
+              <div>
+                <label className="form-label">
+                  <Clock className="h-4 w-4 inline mr-1" />
+                  開始時間
+                </label>
+                <input
+                  type="time"
+                  name="start_time"
+                  value={formData.start_time}
+                  onChange={handleChange}
+                  className="form-input"
+                />
+                <p className="text-xs text-gray-500 mt-1">
+                  設定任務開始執行的時間
+                </p>
+              </div>
+            </div>
+          )}
           {/* 頻率設定 */}
           <div className="space-y-4">
             <h3 className="text-lg font-medium text-gray-900">頻率設定</h3>
