@@ -200,7 +200,7 @@ const HealthRecordModal: React.FC<HealthRecordModalProps> = ({
 
         <form onSubmit={handleSubmit} className="p-6 space-y-6">
           {/* Basic Information */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
             <div>
               <label className="form-label">
                 <User className="h-4 w-4 inline mr-1" />
@@ -266,7 +266,34 @@ const HealthRecordModal: React.FC<HealthRecordModalProps> = ({
                 <option value="體重控制">體重控制</option>
               </select>
             </div>
+
+            <div>
+              <label className="form-label">記錄人員</label>
+              <input
+                type="text"
+                name="記錄人員"
+                value={formData.記錄人員}
+                onChange={handleChange}
+                className="form-input"
+                placeholder="記錄人員姓名"
+              />
+            </div>
           </div>
+
+          {/* 任務來源提示 */}
+          {(defaultRecordDate || defaultRecordTime) && (
+            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+              <div className="flex items-center space-x-2">
+                <CheckSquare className="h-5 w-5 text-blue-600" />
+                <div>
+                  <p className="text-sm font-medium text-blue-800">來自任務提醒</p>
+                  <p className="text-xs text-blue-600">
+                    此記錄來自監測任務，您可以調整上方的記錄日期和時間
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
 
           {/* Vital Signs */}
           {formData.記錄類型 === '生命表徵' && (
@@ -405,6 +432,17 @@ const HealthRecordModal: React.FC<HealthRecordModalProps> = ({
                     正常範圍：空腹 4.0-6.1，餐後 4.4-7.8
                   </p>
                 </div>
+                <div>
+                  <label className="form-label">備註</label>
+                  <textarea
+                    name="備註"
+                    value={formData.備註}
+                    onChange={handleChange}
+                    className="form-input"
+                    rows={2}
+                    placeholder="其他備註資訊..."
+                  />
+                </div>
               </div>
             </div>
           )}
@@ -446,6 +484,18 @@ const HealthRecordModal: React.FC<HealthRecordModalProps> = ({
                     </div>
                   </div>
                 )}
+              </div>
+              
+              <div>
+                <label className="form-label">備註</label>
+                <textarea
+                  name="備註"
+                  value={formData.備註}
+                  onChange={handleChange}
+                  className="form-input"
+                  rows={2}
+                  placeholder="其他備註資訊..."
+                />
               </div>
             </div>
           )}
