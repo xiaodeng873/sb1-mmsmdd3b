@@ -2,7 +2,6 @@ import React, { createContext, useContext, useState, useEffect } from 'react';
 import { ReactNode } from 'react';
 import * as db from '../lib/database';
 import { useAuth } from './AuthContext';
-import { createDefaultTasks } from '../utils/taskScheduler';
 
 // Re-export types from database module
 export type { Patient, Schedule, ScheduleDetail, ServiceReason, Prescription, HealthRecord } from '../lib/database';
@@ -171,18 +170,6 @@ export const PatientProvider: React.FC<{ children: React.ReactNode }> = ({ child
   const addPatient = async (patient: Omit<db.Patient, '院友id'>) => {
     try {
       const newPatient = await db.createPatient(patient);
-      if (newPatient) {
-        // 為新院友建立預設任務
-        try {
-          const defaultTasks = createDefaultTasks(newPatient.院友id);
-          for (const task of defaultTasks) {
-            await db.createPatientHealthTask(task);
-          }
-          console.log(`已為院友 ${newPatient.中文姓名} 建立預設健康任務`);
-        } catch (error) {
-          console.error('建立預設任務失敗:', error);
-        }
-      }
       await refreshData();
     } catch (error) {
       console.error('Error adding patient:', error);

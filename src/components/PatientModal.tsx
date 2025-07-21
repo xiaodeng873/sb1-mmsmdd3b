@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import { X, User, Upload, Camera, Trash2 } from 'lucide-react';
 import { usePatients } from '../context/PatientContext';
-import { createDefaultTasks } from '../utils/taskScheduler';
 
 interface PatientModalProps {
   patient?: any;
@@ -211,22 +210,7 @@ const PatientModal: React.FC<PatientModalProps> = ({ patient, onClose }) => {
         ...formData
       });
     } else {
-      // 新增院友並建立預設任務
-      addPatient(formData).then(() => {
-        // 假設新院友的ID會在addPatient後可用，我們需要從最新的patients列表中找到
-        // 這裡使用setTimeout確保資料已更新
-        setTimeout(async () => {
-          try {
-            // 建立預設任務
-            const defaultTasks = createDefaultTasks(0); // 暫時使用0，實際應該是新院友的ID
-            
-            // 由於我們無法直接獲取新建立院友的ID，我們將在PatientContext中處理這個邏輯
-            console.log('新院友已建立，預設任務將在PatientContext中建立');
-          } catch (error) {
-            console.error('建立預設任務失敗:', error);
-          }
-        }, 1000);
-      });
+      addPatient(formData);
     }
     
     onClose();
