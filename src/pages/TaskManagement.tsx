@@ -16,7 +16,9 @@ import {
   CheckCircle,
   X,
   ChevronUp,
-  ChevronDown
+  ChevronDown,
+  FileText,
+  Stethoscope
 } from 'lucide-react';
 import { usePatients, type PatientHealthTask, type HealthTaskType, type FrequencyUnit } from '../context/PatientContext';
 import TaskModal from '../components/TaskModal';
