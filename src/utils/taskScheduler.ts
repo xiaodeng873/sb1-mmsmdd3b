@@ -166,15 +166,17 @@ export function isTaskOverdue(task: PatientHealthTask): boolean {
     return dueDateOnly < nowDate && (!task.last_completed_at || new Date(task.last_completed_at) < dueDate);
   }
   
-  // 監測任務：如果已完成則不算逾期
+  // 監測任務：檢查是否逾期
   if (task.last_completed_at) {
-    return false;
+    const lastCompleted = new Date(task.last_completed_at);
+    // 如果最後完成時間晚於或等於到期時間，則不算逾期
+    if (lastCompleted >= dueDate) {
+      return false;
+    }
   }
   
-  const todayMidnight = new Date(now);
-  todayMidnight.setHours(0, 0, 0, 0);
-  
-  return dueDate < todayMidnight;
+  // 如果到期時間已過，則為逾期
+  return dueDate < now;
 }
 
 // 檢查任務是否為未完成
@@ -190,22 +192,27 @@ export function isTaskPendingToday(task: PatientHealthTask): boolean {
            (!task.last_completed_at || new Date(task.last_completed_at) < dueDate);
   }
   
-  // 監測任務：檢查是否在今天到期且未完成
-  if (task.last_completed_at) {
-    const lastCompleted = new Date(task.last_completed_at);
-    // 如果最後完成時間晚於或等於到期時間，則已完成
-    if (lastCompleted >= dueDate) {
-      return false;
-    }
-  }
-  
   const todayStart = new Date(now);
   todayStart.setHours(0, 0, 0, 0);
   
   const todayEnd = new Date(now);
   todayEnd.setHours(23, 59, 59, 999);
   
-  return dueDate >= todayStart && dueDate <= todayEnd;
+  // 檢查是否在今天到期
+  const isDueToday = dueDate >= todayStart && dueDate <= todayEnd;
+  
+  if (!isDueToday) {
+    return false;
+  }
+  
+  // 檢查是否未完成
+  if (task.last_completed_at) {
+    const lastCompleted = new Date(task.last_completed_at);
+    // 如果最後完成時間晚於或等於到期時間，則已完成
+    return lastCompleted < dueDate;
+  }
+  
+  return true;
 }
 
 // 檢查任務是否即將到期（未來24小時內，不包括今日）
@@ -217,12 +224,17 @@ export function isTaskDueSoon(task: PatientHealthTask): boolean {
     // 文件任務：僅比較日期
     const tomorrowStart = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1);
     const dueDateOnly = new Date(dueDate.getFullYear(), dueDate.getMonth(), dueDate.getDate());
-    return dueDateOnly.getTime() === tomorrowStart.getTime() && !task.last_completed_at;
+    return dueDateOnly.getTime() === tomorrowStart.getTime() && 
+           (!task.last_completed_at || new Date(task.last_completed_at) < dueDate);
   }
   
-  // 監測任務：如果已完成則不算即將到期
+  // 監測任務：檢查是否即將到期
   if (task.last_completed_at) {
-    return false;
+    const lastCompleted = new Date(task.last_completed_at);
+    // 如果最後完成時間晚於或等於到期時間，則不算即將到期
+    if (lastCompleted >= dueDate) {
+      return false;
+    }
   }
   
   const tomorrowStart = new Date(now);
@@ -257,12 +269,21 @@ export function isTaskScheduled(task: PatientHealthTask): boolean {
     }
   }
   
-  // 未來的任務（明天之後）
-  const tomorrowEnd = new Date(now);
-  tomorrowEnd.setDate(tomorrowEnd.getDate() + 1);
-  tomorrowEnd.setHours(23, 59, 59, 999);
+  // 未來的任務（明天之後）或今天但還沒到時間的任務
+  const todayEnd = new Date(now);
+  todayEnd.setHours(23, 59, 59, 999);
   
-  return dueDate > tomorrowEnd;
+  // 如果是未來的任務，則為排程中
+  if (dueDate > todayEnd) {
+    return true;
+  }
+  
+  // 如果是今天的任務但還沒到時間，也算排程中
+  if (dueDate > now) {
+    return true;
+  }
+  
+  return false;
 }
 
 // 獲取任務狀態
