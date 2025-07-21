@@ -32,6 +32,20 @@ const MedicationRegistration: React.FC = () => {
   const [filters, setFilters] = useState<FilterOption[]>([]);
   const [showFilterPanel, setShowFilterPanel] = useState(false);
   const [dateFilter, setDateFilter] = useState('');
+  const [showAdvancedFilters, setShowAdvancedFilters] = useState(false);
+  const [advancedFilters, setAdvancedFilters] = useState({
+    床號: '',
+    中文姓名: '',
+    藥物名稱: '',
+    劑型: '',
+    服用途徑: '',
+    藥物來源: '',
+    需要時: '',
+    記錄人員: '',
+    備註: '',
+    startDate: '',
+    endDate: ''
+  });
 
   if (loading) {
     return (
@@ -52,13 +66,54 @@ const MedicationRegistration: React.FC = () => {
       return false;
     }
     
+    // 日期區間篩選
+    if (advancedFilters.startDate || advancedFilters.endDate) {
+      const prescriptionDate = new Date(prescription.處方日期);
+      if (advancedFilters.startDate && prescriptionDate < new Date(advancedFilters.startDate)) {
+        return false;
+      }
+      if (advancedFilters.endDate && prescriptionDate > new Date(advancedFilters.endDate)) {
+        return false;
+      }
+    }
+    
+    // 進階篩選
+    if (advancedFilters.床號 && !patient?.床號.toLowerCase().includes(advancedFilters.床號.toLowerCase())) {
+      return false;
+    }
+    if (advancedFilters.中文姓名 && !patient?.中文姓名.toLowerCase().includes(advancedFilters.中文姓名.toLowerCase())) {
+      return false;
+    }
+    if (advancedFilters.藥物名稱 && !prescription.藥物名稱.toLowerCase().includes(advancedFilters.藥物名稱.toLowerCase())) {
+      return false;
+    }
+    if (advancedFilters.劑型 && !prescription.劑型?.toLowerCase().includes(advancedFilters.劑型.toLowerCase())) {
+      return false;
+    }
+    if (advancedFilters.服用途徑 && !prescription.服用途徑?.toLowerCase().includes(advancedFilters.服用途徑.toLowerCase())) {
+      return false;
+    }
+    if (advancedFilters.藥物來源 && !prescription.藥物來源.toLowerCase().includes(advancedFilters.藥物來源.toLowerCase())) {
+      return false;
+    }
+    if (advancedFilters.需要時) {
+      const isAsNeeded = prescription.需要時;
+      if (advancedFilters.需要時 === '是' && !isAsNeeded) return false;
+      if (advancedFilters.需要時 === '否' && isAsNeeded) return false;
+    }
+    
     // 搜索條件
     let matchesSearch = true;
     if (searchTerm) {
       matchesSearch = prescription.藥物名稱.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          (patient?.中文姓名.toLowerCase().includes(searchTerm.toLowerCase()) || false) ||
                          (patient?.床號.toLowerCase().includes(searchTerm.toLowerCase()) || false) ||
-                         new Date(prescription.處方日期).toLocaleDateString('zh-TW').includes(searchTerm.toLowerCase());
+                         new Date(prescription.處方日期).toLocaleDateString('zh-TW').includes(searchTerm.toLowerCase()) ||
+                         prescription.劑型?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         prescription.服用途徑?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         prescription.藥物來源.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         prescription.服用次數?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         prescription.服用份量?.toLowerCase().includes(searchTerm.toLowerCase());
     }
     
     // 篩選條件
@@ -126,6 +181,43 @@ const MedicationRegistration: React.FC = () => {
     
     return matchesSearch && matchesFilters;
   });
+
+  // 檢查是否有進階篩選條件
+  const hasAdvancedFilters = () => {
+    return Object.values(advancedFilters).some(value => value !== '');
+  };
+
+  const updateAdvancedFilter = (field: string, value: string) => {
+    setAdvancedFilters(prev => ({
+      ...prev,
+      [field]: value
+    }));
+  };
+
+  // 獲取所有唯一值的選項
+  const getUniqueOptions = (field: string) => {
+    const values = new Set<string>();
+    prescriptions.forEach(prescription => {
+      let value = '';
+      
+      switch (field) {
+        case '劑型':
+          value = prescription.劑型 || '';
+          break;
+        case '服用途徑':
+          value = prescription.服用途徑 || '';
+          break;
+        case '藥物來源':
+          value = prescription.藥物來源;
+          break;
+        default:
+          return;
+      }
+      
+      if (value) values.add(value);
+    });
+    return Array.from(values).sort();
+  };
 
   const sortedPrescriptions = [...filteredPrescriptions].sort((a, b) => {
     const patientA = patients.find(p => p.院友id === a.院友id);
@@ -467,6 +559,19 @@ const MedicationRegistration: React.FC = () => {
     setFilters([]);
     setSearchTerm('');
     setDateFilter('');
+    setAdvancedFilters({
+      床號: '',
+      中文姓名: '',
+      藥物名稱: '',
+      劑型: '',
+      服用途徑: '',
+      藥物來源: '',
+      需要時: '',
+      記錄人員: '',
+      備註: '',
+      startDate: '',
+      endDate: ''
+    });
   };
 
   const getFieldOptions = () => [
@@ -546,7 +651,7 @@ const MedicationRegistration: React.FC = () => {
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
               <input
                 type="text"
-                placeholder="搜索藥物名稱、院友姓名、床號或處方日期..."
+                placeholder="搜索藥物名稱、院友姓名、床號、處方日期、劑型、服用途徑、藥物來源、服用次數、服用份量..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 className="form-input pl-10"
@@ -562,7 +667,22 @@ const MedicationRegistration: React.FC = () => {
                 title="按處方日期篩選"
               />
               
-              {(searchTerm || dateFilter || filters.length > 0) && (
+              <button
+                onClick={() => setShowAdvancedFilters(!showAdvancedFilters)}
+                className={`btn-secondary flex items-center space-x-2 ${
+                  showAdvancedFilters ? 'bg-blue-50 text-blue-700' : ''
+                } ${hasAdvancedFilters() ? 'border-blue-300' : ''}`}
+              >
+                <Filter className="h-4 w-4" />
+                <span>進階篩選</span>
+                {hasAdvancedFilters() && (
+                  <span className="bg-blue-600 text-white text-xs px-2 py-1 rounded-full">
+                    已套用
+                  </span>
+                )}
+              </button>
+              
+              {(searchTerm || dateFilter || filters.length > 0 || hasAdvancedFilters()) && (
                 <button
                   onClick={clearAllFilters}
                   className="btn-secondary flex items-center space-x-2 text-red-600 hover:text-red-700"
@@ -574,6 +694,129 @@ const MedicationRegistration: React.FC = () => {
             </div>
           </div>
           
+          {showAdvancedFilters && (
+            <div className="border-t border-gray-200 pt-4">
+              <h3 className="text-sm font-medium text-gray-900 mb-3">進階篩選</h3>
+              
+              <div className="mb-4">
+                <label className="form-label">處方日期區間</label>
+                <div className="flex items-center space-x-2">
+                  <input
+                    type="date"
+                    value={advancedFilters.startDate}
+                    onChange={(e) => updateAdvancedFilter('startDate', e.target.value)}
+                    className="form-input"
+                    placeholder="開始日期"
+                  />
+                  <span className="text-gray-500">至</span>
+                  <input
+                    type="date"
+                    value={advancedFilters.endDate}
+                    onChange={(e) => updateAdvancedFilter('endDate', e.target.value)}
+                    className="form-input"
+                    placeholder="結束日期"
+                  />
+                </div>
+              </div>
+              
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                <div>
+                  <label className="form-label">床號</label>
+                  <input
+                    type="text"
+                    value={advancedFilters.床號}
+                    onChange={(e) => updateAdvancedFilter('床號', e.target.value)}
+                    className="form-input"
+                    placeholder="搜索床號..."
+                  />
+                </div>
+                
+                <div>
+                  <label className="form-label">中文姓名</label>
+                  <input
+                    type="text"
+                    value={advancedFilters.中文姓名}
+                    onChange={(e) => updateAdvancedFilter('中文姓名', e.target.value)}
+                    className="form-input"
+                    placeholder="搜索姓名..."
+                  />
+                </div>
+                
+                <div>
+                  <label className="form-label">藥物名稱</label>
+                  <input
+                    type="text"
+                    value={advancedFilters.藥物名稱}
+                    onChange={(e) => updateAdvancedFilter('藥物名稱', e.target.value)}
+                    className="form-input"
+                    placeholder="搜索藥物名稱..."
+                  />
+                </div>
+                
+                <div>
+                  <label className="form-label">劑型</label>
+                  <input
+                    list="dosage-form-options"
+                    value={advancedFilters.劑型}
+                    onChange={(e) => updateAdvancedFilter('劑型', e.target.value)}
+                    className="form-input"
+                    placeholder="選擇或輸入劑型..."
+                  />
+                  <datalist id="dosage-form-options">
+                    {getUniqueOptions('劑型').map(option => (
+                      <option key={option} value={option} />
+                    ))}
+                  </datalist>
+                </div>
+                
+                <div>
+                  <label className="form-label">服用途徑</label>
+                  <input
+                    list="route-options"
+                    value={advancedFilters.服用途徑}
+                    onChange={(e) => updateAdvancedFilter('服用途徑', e.target.value)}
+                    className="form-input"
+                    placeholder="選擇或輸入服用途徑..."
+                  />
+                  <datalist id="route-options">
+                    {getUniqueOptions('服用途徑').map(option => (
+                      <option key={option} value={option} />
+                    ))}
+                  </datalist>
+                </div>
+                
+                <div>
+                  <label className="form-label">藥物來源</label>
+                  <input
+                    list="source-options"
+                    value={advancedFilters.藥物來源}
+                    onChange={(e) => updateAdvancedFilter('藥物來源', e.target.value)}
+                    className="form-input"
+                    placeholder="選擇或輸入藥物來源..."
+                  />
+                  <datalist id="source-options">
+                    {getUniqueOptions('藥物來源').map(option => (
+                      <option key={option} value={option} />
+                    ))}
+                  </datalist>
+                </div>
+                
+                <div>
+                  <label className="form-label">需要時</label>
+                  <select
+                    value={advancedFilters.需要時}
+                    onChange={(e) => updateAdvancedFilter('需要時', e.target.value)}
+                    className="form-input"
+                  >
+                    <option value="">所有類型</option>
+                    <option value="是">需要時</option>
+                    <option value="否">定服</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+          )}
+          
           {/* Filter Controls */}
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-2">
@@ -582,14 +825,14 @@ const MedicationRegistration: React.FC = () => {
                 className={`btn-secondary flex items-center space-x-2 ${showFilterPanel ? 'bg-blue-50 text-blue-700' : ''}`}
               >
                 <Filter className="h-4 w-4" />
-                <span>進階篩選</span>
+                <span>自訂篩選</span>
                 {filters.length > 0 && (
                   <span className="bg-blue-600 text-white text-xs px-2 py-1 rounded-full">
                     {filters.length}
                   </span>
                 )}
               </button>
-              {filters.length > 0 && (
+              {(filters.length > 0 || hasAdvancedFilters()) && (
                 <button
                   onClick={clearAllFilters}
                   className="text-sm text-red-600 hover:text-red-700"
@@ -600,7 +843,7 @@ const MedicationRegistration: React.FC = () => {
             </div>
             <div className="text-sm text-gray-600">
               顯示 {filteredPrescriptions.length} / {prescriptions.length} 筆處方記錄
-              {(searchTerm || dateFilter || filters.length > 0) && (
+              {(searchTerm || dateFilter || filters.length > 0 || hasAdvancedFilters()) && (
                 <span className="text-blue-600 ml-2">已套用篩選條件</span>
               )}
             </div>
@@ -610,7 +853,7 @@ const MedicationRegistration: React.FC = () => {
           {showFilterPanel && (
             <div className="border border-gray-200 rounded-lg p-4 bg-gray-50">
               <div className="flex items-center justify-between mb-3">
-                <h3 className="text-sm font-medium text-gray-900">篩選條件</h3>
+                <h3 className="text-sm font-medium text-gray-900">自訂篩選條件</h3>
                 <button
                   onClick={addFilter}
                   className="btn-secondary text-sm flex items-center space-x-1"
@@ -891,12 +1134,12 @@ const MedicationRegistration: React.FC = () => {
           <div className="text-center py-12">
             <Pill className="h-24 w-24 mx-auto mb-4 text-gray-300" />
             <h3 className="text-lg font-medium text-gray-900 mb-2">
-              {searchTerm || dateFilter || filters.length > 0 ? '找不到符合條件的處方' : '暫無處方記錄'}
+              {searchTerm || dateFilter || filters.length > 0 || hasAdvancedFilters() ? '找不到符合條件的處方' : '暫無處方記錄'}
             </h3>
             <p className="text-gray-600 mb-4">
-              {searchTerm || dateFilter || filters.length > 0 ? '請嘗試調整搜索條件' : '開始掃描藥物標籤或手動登記'}
+              {searchTerm || dateFilter || filters.length > 0 || hasAdvancedFilters() ? '請嘗試調整搜索條件' : '開始掃描藥物標籤或手動登記'}
             </p>
-            {!searchTerm && !dateFilter && filters.length === 0 ? (
+            {!searchTerm && !dateFilter && filters.length === 0 && !hasAdvancedFilters() ? (
               <div className="flex justify-center space-x-4">
                 <button
                   onClick={handleCameraCapture}
