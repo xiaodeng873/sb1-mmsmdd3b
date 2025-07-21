@@ -101,20 +101,30 @@ export function calculateNextDueDate(task: PatientHealthTask, fromDate?: Date): 
 
 // 檢查任務是否逾期
 export function isTaskOverdue(task: PatientHealthTask): boolean {
+  // 如果任務已完成，不算逾期
+  if (task.last_completed_at) {
+    return false;
+  }
+  
   const now = new Date();
   const dueDate = new Date(task.next_due_at);
   
-  // 獲取今日的開始時間 (00:00:00)
-  const todayStart = new Date(now);
-  todayStart.setHours(0, 0, 0, 0);
+  // 獲取今日的午夜時間 (00:00:00)
+  const todayMidnight = new Date(now);
+  todayMidnight.setHours(0, 0, 0, 0);
   
-  // 只有到期日期在今日之前才算逾期
-  // 例如：21/7的任務，需要踏入22/7的00:00才算逾期
-  return dueDate < todayStart;
+  // 只有到期日期在今日午夜之前且未完成才算逾期
+  // 例如：21/7的任務，需要踏入22/7的00:00且未完成才算逾期
+  return dueDate < todayMidnight;
 }
 
 // 檢查任務是否為未完成
 export function isTaskPendingToday(task: PatientHealthTask): boolean {
+  // 如果任務已完成，不算未完成
+  if (task.last_completed_at) {
+    return false;
+  }
+  
   const now = new Date();
   const dueDate = new Date(task.next_due_at);
   
@@ -125,12 +135,17 @@ export function isTaskPendingToday(task: PatientHealthTask): boolean {
   const todayEnd = new Date(now);
   todayEnd.setHours(23, 59, 59, 999);
   
-  // 到期日期在今日範圍內
+  // 到期日期在今日範圍內且未完成
   return dueDate >= todayStart && dueDate <= todayEnd;
 }
 
 // 檢查任務是否即將到期（未來24小時內，不包括今日）
 export function isTaskDueSoon(task: PatientHealthTask): boolean {
+  // 如果任務已完成，不算即將到期
+  if (task.last_completed_at) {
+    return false;
+  }
+  
   const now = new Date();
   const dueDate = new Date(task.next_due_at);
   
@@ -144,12 +159,31 @@ export function isTaskDueSoon(task: PatientHealthTask): boolean {
   dayAfterTomorrowStart.setDate(dayAfterTomorrowStart.getDate() + 2);
   dayAfterTomorrowStart.setHours(0, 0, 0, 0);
   
-  // 到期日期在明日範圍內
+  // 到期日期在明日範圍內且未完成
   return dueDate >= tomorrowStart && dueDate < dayAfterTomorrowStart;
 }
 
+// 檢查任務是否為排程中（已完成或未來的任務）
+export function isTaskScheduled(task: PatientHealthTask): boolean {
+  // 如果任務已完成，狀態為排程中
+  if (task.last_completed_at) {
+    return true;
+  }
+  
+  const now = new Date();
+  const dueDate = new Date(task.next_due_at);
+  
+  // 獲取後天的開始時間
+  const dayAfterTomorrowStart = new Date(now);
+  dayAfterTomorrowStart.setDate(dayAfterTomorrowStart.getDate() + 2);
+  dayAfterTomorrowStart.setHours(0, 0, 0, 0);
+  
+  // 到期日期在後天或更遠的未來
+  return dueDate >= dayAfterTomorrowStart;
+}
+
 // 獲取任務狀態
-export function getTaskStatus(task: PatientHealthTask): 'overdue' | 'pending' | 'due_soon' | 'upcoming' {
+export function getTaskStatus(task: PatientHealthTask): 'overdue' | 'pending' | 'due_soon' | 'scheduled' {
   if (isTaskOverdue(task)) {
     return 'overdue';
   } else if (isTaskPendingToday(task)) {
@@ -157,7 +191,7 @@ export function getTaskStatus(task: PatientHealthTask): 'overdue' | 'pending' | 
   } else if (isTaskDueSoon(task)) {
     return 'due_soon';
   } else {
-    return 'upcoming';
+    return 'scheduled';
   }
 }
 
