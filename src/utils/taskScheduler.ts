@@ -48,36 +48,34 @@ export function calculateNextDueDate(task: PatientHealthTask, fromDate?: Date): 
       break;
 
     case 'weekly':
-      // 如果有指定星期，計算到最近的未來指定星期
       if (task.specific_days_of_week.length > 0 && !isDocumentTask(task.health_record_type)) {
         const targetDay = task.specific_days_of_week[0];
-        const adjustedTargetDay = targetDay === 7 ? 0 : targetDay; // 將星期日（7）轉為 0
+        const adjustedTargetDay = targetDay === 7 ? 0 : targetDay;
         const currentDay = nextDue.getDay();
         let dayDiff = adjustedTargetDay - currentDay;
         
-        // 如果當前日期等於或晚於目標星期，跳到下一週
-        if (dayDiff <= 0) {
-          dayDiff += 7;
+        // 如果當前日期已是目標星期，且任務未完成，允許當天
+        if (dayDiff === 0 && !task.last_completed_at) {
+          dayDiff = 0;
+        } else {
+          // 否則選擇最近的目標星期（可能在當前週或下一週）
+          dayDiff = dayDiff >= 0 ? dayDiff : dayDiff + 7;
+          // 應用 frequency_value（多週間隔）
+          if (task.frequency_value > 1) {
+            nextDue.setDate(nextDue.getDate() + (task.frequency_value - 1) * 7);
+          }
         }
-        // 應用頻率值（例如，每 2 週）
-        nextDue.setDate(nextDue.getDate() + dayDiff + (task.frequency_value - 1) * 7);
-        
-        // Set specific time if available
-        if (task.specific_times.length > 0) {
-          const [hours, minutes] = task.specific_times[0].split(':').map(Number);
-          nextDue.setHours(hours, minutes, 0, 0);
-          hasSpecificTime = true;
-        }
+        nextDue.setDate(nextDue.getDate() + dayDiff);
       } else {
-        // 無指定星期，直接加 frequency_value 週
+        // 無特定星期，僅加週數
         nextDue.setDate(nextDue.getDate() + task.frequency_value * 7);
-        
-        // Set specific time if available
-        if (task.specific_times.length > 0 && !isDocumentTask(task.health_record_type)) {
-          const [hours, minutes] = task.specific_times[0].split(':').map(Number);
-          nextDue.setHours(hours, minutes, 0, 0);
-          hasSpecificTime = true;
-        }
+      }
+      
+      // Set specific time if available
+      if (task.specific_times.length > 0 && !isDocumentTask(task.health_record_type)) {
+        const [hours, minutes] = task.specific_times[0].split(':').map(Number);
+        nextDue.setHours(hours, minutes, 0, 0);
+        hasSpecificTime = true;
       }
       break;
 
