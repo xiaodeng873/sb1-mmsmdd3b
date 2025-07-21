@@ -1,7 +1,14 @@
 import type { PatientHealthTask, FrequencyUnit } from '../lib/database'; 
 
 export function calculateNextDueDate(task: PatientHealthTask, fromDate?: Date): Date {
-  const baseDate = fromDate || new Date(task.next_due_at || new Date());
+  // For initializing new tasks, set baseDate to today at 00:00:00
+  const baseDate = !task.next_due_at && !fromDate 
+    ? (() => {
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        return today;
+      })()
+    : fromDate || new Date(task.next_due_at || new Date());
   const nextDue = new Date(baseDate);
 
   // Default time to 08:00 if no specific times are provided
@@ -11,8 +18,10 @@ export function calculateNextDueDate(task: PatientHealthTask, fromDate?: Date): 
 
   switch (task.frequency_unit) {
     case 'daily':
-      // Add days interval
-      nextDue.setDate(nextDue.getDate() + task.frequency_value);
+      // For new tasks, use today; for existing tasks, add frequency_value days
+      if (task.next_due_at || fromDate) {
+        nextDue.setDate(nextDue.getDate() + task.frequency_value);
+      }
       
       // Set specific time if available
       if (task.specific_times.length > 0) {
@@ -23,8 +32,10 @@ export function calculateNextDueDate(task: PatientHealthTask, fromDate?: Date): 
       break;
 
     case 'weekly':
-      // Add weeks interval
-      nextDue.setDate(nextDue.getDate() + task.frequency_value * 7);
+      // For new tasks, use today; for existing tasks, add weeks interval
+      if (task.next_due_at || fromDate) {
+        nextDue.setDate(nextDue.getDate() + task.frequency_value * 7);
+      }
       
       // Adjust to specific day of week if provided
       if (task.specific_days_of_week.length > 0) {
@@ -44,8 +55,10 @@ export function calculateNextDueDate(task: PatientHealthTask, fromDate?: Date): 
       break;
 
     case 'monthly':
-      // Add months interval
-      nextDue.setMonth(nextDue.getMonth() + task.frequency_value);
+      // For new tasks, use today; for existing tasks, add months interval
+      if (task.next_due_at || fromDate) {
+        nextDue.setMonth(nextDue.getMonth() + task.frequency_value);
+      }
       
       // Set specific day of month if provided
       if (task.specific_days_of_month.length > 0) {
@@ -113,7 +126,9 @@ export function isTaskDueSoon(task: PatientHealthTask): boolean {
   }
   
   const now = new Date();
-  const dueDate = new Date(task.next_due_at);
+  const dueDate = new Date(task.next_d
+
+ue_at);
   
   const tomorrowStart = new Date(now);
   tomorrowStart.setDate(tomorrowStart.getDate() + 1);
