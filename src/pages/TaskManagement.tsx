@@ -499,7 +499,8 @@ const TaskManagement: React.FC = () => {
               />
             </div>
             
-          
+            <div className="flex space-x-2">
+            
               
               <button
                 onClick={() => setShowAdvancedFilters(!showAdvancedFilters)}
