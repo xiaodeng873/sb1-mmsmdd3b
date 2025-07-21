@@ -499,29 +499,7 @@ const TaskManagement: React.FC = () => {
               />
             </div>
             
-            <div className="flex space-x-2">
-              <select
-                value={filterType}
-                onChange={(e) => setFilterType(e.target.value as any)}
-                className="form-input lg:w-40"
-              >
-                <option value="all">所有類型</option>
-                <option value="生命表徵">生命表徵</option>
-                <option value="血糖控制">血糖控制</option>
-                <option value="體重控制">體重控制</option>
-              </select>
-              
-              <select
-                value={filterStatus}
-                onChange={(e) => setFilterStatus(e.target.value as 'all' | 'overdue' | 'due_soon' | 'pending' | 'scheduled')}
-                className="form-input lg:w-40"
-              >
-                <option value="all">所有狀態</option>
-                <option value="overdue">逾期</option>
-                <option value="pending">未完成</option>
-                <option value="due_soon">即將到期</option>
-                <option value="scheduled">排程中</option>
-              </select>
+          
               
               <button
                 onClick={() => setShowAdvancedFilters(!showAdvancedFilters)}
