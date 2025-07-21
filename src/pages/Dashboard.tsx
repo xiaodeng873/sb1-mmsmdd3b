@@ -119,8 +119,8 @@ const Dashboard: React.FC = () => {
       </div>
 
       {/* Recent Activity */}
-
-        {/* 監測任務 */}
+      <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+  {/* 監測任務 */}
         <div className="card p-6">
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-lg font-semibold text-gray-900">監測任務</h2>
@@ -179,7 +179,6 @@ const Dashboard: React.FC = () => {
             )}
           </div>
         </div>
-      <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
         {/* Today's Schedule */}
         <div className="card p-6">
           <div className="flex items-center justify-between mb-4">
