@@ -86,13 +86,7 @@ const Dashboard: React.FC = () => {
   };
 
   const stats = [
-    {
-      title: '總院友數',
-      value: patients.length,
-      icon: Users,
-      color: 'bg-blue-500',
-      change: '+2 本月'
-    },
+
     
   ];
 
