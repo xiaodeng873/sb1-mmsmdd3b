@@ -29,7 +29,7 @@ const Dashboard: React.FC = () => {
     .sort((a, b) => new Date(a.到診日期).getTime() - new Date(b.到診日期).getTime())
     .slice(0, 5);
 
-  // 近期監測：最近5個健康記錄
+  // 近期監測：最近10個健康記錄
   const recentHealthRecords = healthRecords
     .sort((a, b) => new Date(`${b.記錄日期} ${b.記錄時間}`).getTime() - new Date(`${a.記錄日期} ${a.記錄時間}`).getTime())
     .slice(0, 10);
@@ -247,7 +247,9 @@ const Dashboard: React.FC = () => {
                         <p className="text-xs text-gray-500 mt-1">{task.notes}</p>
                       )}
                       <p className="text-xs text-gray-500">
-                        {new Date(task.next_due_at).toLocaleString('zh-TW')}
+                        {isDocumentTask(task.health_record_type)
+                          ? new Date(task.next_due_at).toLocaleDateString('zh-TW')
+                          : new Date(task.next_due_at).toLocaleString('zh-TW')}
                       </p>
                     </div>
                     <span className={`status-badge ${
