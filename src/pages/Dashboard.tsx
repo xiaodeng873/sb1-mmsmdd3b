@@ -94,14 +94,6 @@ const Dashboard: React.FC = () => {
       change: '+2 本月'
     },
     
-   
-    {
-      title: '逾期任務',
-      value: overdueTasks.length,
-      icon: AlertTriangle,
-      color: 'bg-red-500',
-      change: `${pendingTasks.length} 未完成`
-    }
   ];
 
   return (
