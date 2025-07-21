@@ -60,7 +60,6 @@ const Dashboard: React.FC = () => {
   const handleTaskClick = (task: any) => {
     const patient = patients.find(p => p.院友id === task.patient_id);
     if (patient) {
-      const dueDate = new Date(task.next_due_at);
       setSelectedTaskForRecord({
         task,
         patient,
@@ -81,16 +80,15 @@ const Dashboard: React.FC = () => {
     }
   };
 
-  const handleTaskCompleted = async (taskId: string) => {
+  const handleTaskCompleted = async (taskId: string, recordDateTime: Date) => {
     const task = patientHealthTasks.find(t => t.id === taskId);
     if (task) {
-      const now = new Date();
       const { calculateNextDueDate } = await import('../utils/taskScheduler');
-      const nextDueAt = calculateNextDueDate(task, now);
+      const nextDueAt = calculateNextDueDate(task, recordDateTime);
       
       await updatePatientHealthTask({
         ...task,
-        last_completed_at: now.toISOString(),
+        last_completed_at: recordDateTime.toISOString(),
         next_due_at: nextDueAt.toISOString()
       });
     }
@@ -469,7 +467,7 @@ const Dashboard: React.FC = () => {
             setShowHealthModal(false);
             setSelectedTaskForRecord(null);
           }}
-          onTaskCompleted={() => handleTaskCompleted(selectedTaskForRecord.task.id)}
+          onTaskCompleted={(recordDateTime) => handleTaskCompleted(selectedTaskForRecord.task.id, recordDateTime)}
           defaultRecordDate={(() => {
             const dateObj = new Date(selectedTaskForRecord.task.next_due_at);
             const year = dateObj.getFullYear();

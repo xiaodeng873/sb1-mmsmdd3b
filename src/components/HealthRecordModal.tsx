@@ -5,7 +5,7 @@ import { usePatients, type HealthRecord } from '../context/PatientContext';
 interface HealthRecordModalProps {
   record?: HealthRecord;
   onClose: () => void;
-  onTaskCompleted?: () => void;
+  onTaskCompleted?: (recordDateTime: Date) => void;
   defaultRecordDate?: string;
   defaultRecordTime?: string;
 }
@@ -146,7 +146,11 @@ const HealthRecordModal: React.FC<HealthRecordModalProps> = ({
         await addHealthRecord(recordData);
       }
       
-      if (onTaskCompleted) onTaskCompleted();
+      // 將記錄的日期時間傳遞給任務完成回調
+      if (onTaskCompleted) {
+        const recordDateTime = new Date(`${formData.記錄日期}T${formData.記錄時間}`);
+        onTaskCompleted(recordDateTime);
+      }
       onClose();
     } catch (error) {
       console.error('儲存健康記錄失敗:', error);
