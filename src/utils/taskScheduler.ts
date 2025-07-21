@@ -154,6 +154,7 @@ function parseTimeString(timeStr: string): { hours: number; minutes: number } {
   console.warn(`無法解析時間格式: ${timeStr}，使用預設時間 08:00`);
   return { hours: 8, minutes: 0 };
 }
+
 // 檢查任務是否逾期
 export function isTaskOverdue(task: PatientHealthTask): boolean {
   const now = new Date();
@@ -215,16 +216,18 @@ export function isTaskPendingToday(task: PatientHealthTask): boolean {
   return true;
 }
 
-// 檢查任務是否即將到期（未來24小時內，不包括今日）
+// 檢查任務是否即將到期（文件任務：未來14天內；監測任務：未來24小時內，不包括今日）
 export function isTaskDueSoon(task: PatientHealthTask): boolean {
   const now = new Date();
   const dueDate = new Date(task.next_due_at);
   
   if (isDocumentTask(task.health_record_type)) {
-    // 文件任務：僅比較日期
-    const tomorrowStart = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1);
+    // 文件任務：檢查未來14天內（包括今天）
+    const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const twoWeeksLater = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 14);
     const dueDateOnly = new Date(dueDate.getFullYear(), dueDate.getMonth(), dueDate.getDate());
-    return dueDateOnly.getTime() === tomorrowStart.getTime() && 
+    return dueDateOnly >= todayStart && 
+           dueDateOnly <= twoWeeksLater && 
            (!task.last_completed_at || new Date(task.last_completed_at) < dueDate);
   }
   
