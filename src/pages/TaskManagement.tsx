@@ -331,8 +331,8 @@ const TaskManagement: React.FC = () => {
       case '生命表徵': return 'bg-blue-100 text-blue-800';
       case '血糖控制': return 'bg-red-100 text-red-800';
       case '體重控制': return 'bg-green-100 text-green-800';
-      case '約束物品同意書': return 'bg-orange-100 text-orange-800';
-      case '年度體檢': return 'bg-purple-100 text-purple-800';
+      case '約束物品同意書': return 'bg-white-100 text-white-800';
+      case '年度體檢': return 'bg-yellow-100 text-yellow-800';
       default: return 'bg-gray-100 text-gray-800';
     }
   };
