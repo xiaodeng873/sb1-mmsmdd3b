@@ -238,42 +238,7 @@ const Dashboard: React.FC = () => {
           </div>
         </div>
 
-        {/* Recent Prescriptions */}
-        <div className="card p-6">
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-lg font-semibold text-gray-900">最近處方</h2>
-            <Link 
-              to="/medication" 
-              className="text-sm text-blue-600 hover:text-blue-700 font-medium"
-            >
-              查看全部
-            </Link>
-          </div>
-          <div className="space-y-3">
-            {recentPrescriptions.length > 0 ? (
-              recentPrescriptions.map(prescription => {
-                const patient = patients.find(p => p.院友id === prescription.院友id);
-                return (
-                  <div key={prescription.處方id} className="flex items-center space-x-3 p-3 bg-gray-50 rounded-lg">
-                    <Pill className="h-5 w-5 text-purple-600" />
-                    <div className="flex-1">
-                      <p className="font-medium text-gray-900">{patient?.中文姓名}</p>
-                      <p className="text-sm text-gray-600">{prescription.藥物名稱}</p>
-                      <p className="text-xs text-gray-500">
-                        {new Date(prescription.處方日期).toLocaleDateString('zh-TW')}
-                      </p>
-                    </div>
-                  </div>
-                );
-              })
-            ) : (
-              <div className="text-center py-8 text-gray-500">
-                <Pill className="h-12 w-12 mx-auto mb-2 text-gray-300" />
-                <p>暫無處方記錄</p>
-              </div>
-            )}
-          </div>
-        </div>
+   
 
         {/* Upcoming Follow-ups */}
         <div className="card p-6">
