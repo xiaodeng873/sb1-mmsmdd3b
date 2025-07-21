@@ -50,12 +50,12 @@ const Dashboard: React.FC = () => {
   const overdueMonitoringTasks = monitoringTasks.filter(task => isTaskOverdue(task));
   const pendingMonitoringTasks = monitoringTasks.filter(task => isTaskPendingToday(task));
   const dueSoonMonitoringTasks = monitoringTasks.filter(task => isTaskDueSoon(task));
-  const urgentMonitoringTasks = [...overdueMonitoringTasks, ...pendingMonitoringTasks, ...dueSoonMonitoringTasks].slice(0, 5);
+  const urgentMonitoringTasks = [...overdueMonitoringTasks, ...pendingMonitoringTasks, ...dueSoonMonitoringTasks].slice(0, 10);
   
   const overdueDocumentTasks = documentTasks.filter(task => isTaskOverdue(task));
   const pendingDocumentTasks = documentTasks.filter(task => isTaskPendingToday(task));
   const dueSoonDocumentTasks = documentTasks.filter(task => isTaskDueSoon(task));
-  const urgentDocumentTasks = [...overdueDocumentTasks, ...pendingDocumentTasks, ...dueSoonDocumentTasks].slice(0, 5);
+  const urgentDocumentTasks = [...overdueDocumentTasks, ...pendingDocumentTasks, ...dueSoonDocumentTasks].slice(0, 10);
 
   const handleTaskClick = (task: any) => {
     const patient = patients.find(p => p.院友id === task.patient_id);
