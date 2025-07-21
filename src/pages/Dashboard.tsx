@@ -101,13 +101,7 @@ const Dashboard: React.FC = () => {
       change: `${todaySchedules.reduce((sum, s) => sum + s.院友列表.length, 0)} 位院友`
     },
    
-    {
-      title: '處方記錄',
-      value: prescriptions.length,
-      icon: Pill,
-      color: 'bg-purple-500',
-      change: '+5 本週'
-    },
+  
     {
       title: '待覆診',
       value: upcomingFollowUps.length,
