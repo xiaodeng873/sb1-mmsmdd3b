@@ -1,3 +1,4 @@
+```typescript
 import React, { useState, useEffect } from 'react';
 import { X, Heart, Activity, Droplets, Scale, User, Calendar, Clock } from 'lucide-react';
 import { usePatients } from '../context/PatientContext';
@@ -47,7 +48,6 @@ const HealthRecordModal: React.FC<HealthRecordModalProps> = ({ record, onClose, 
       return;
     }
 
-    // Filter weight records for the same patient, excluding the current record if editing
     const patientWeightRecords = healthRecords
       .filter(r => 
         r.院友id === parseInt(formData.院友id) && 
@@ -85,13 +85,11 @@ const HealthRecordModal: React.FC<HealthRecordModalProps> = ({ record, onClose, 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    // Validate required fields
     if (!formData.院友id || !formData.記錄日期 || !formData.記錄時間 || !formData.記錄類型) {
       alert('請填寫所有必填欄位');
       return;
     }
 
-    // Validate fields based on record type
     if (formData.記錄類型 === '生命表徵') {
       if (!formData.血壓收縮壓 && !formData.血壓舒張壓 && !formData.脈搏 && !formData.體溫 && !formData.血含氧量 && !formData.呼吸頻率) {
         alert('生命表徵記錄至少需要填寫一項數值');
@@ -124,13 +122,13 @@ const HealthRecordModal: React.FC<HealthRecordModalProps> = ({ record, onClose, 
         血糖值: formData.血糖值 ? parseFloat(formData.血糖值) : null,
         體重: formData.體重 ? parseFloat(formData.體重) : null,
         備註: formData.備註 || null,
-        記錄人員: formData.記錄人員 || null,
-        ...(record && { 記錄id: parseInt(record.記錄id) }) // Ensure record ID is included for updates
+        記錄人員: formData.記錄人員 || null
       };
 
       if (record && record.記錄id) {
-        await updateHealthRecord(recordData);
+        await updateHealthRecord({ ...recordData, 記錄id: parseInt(record.記錄id) });
       } else {
+        // For new records, omit 記錄id to let Supabase auto-generate it
         await addHealthRecord(recordData);
       }
       
@@ -183,7 +181,6 @@ const HealthRecordModal: React.FC<HealthRecordModalProps> = ({ record, onClose, 
         </div>
 
         <form onSubmit={handleSubmit} className="p-6 space-y-6">
-          {/* Basic Information */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
             <div>
               <label className="form-label">
@@ -252,7 +249,6 @@ const HealthRecordModal: React.FC<HealthRecordModalProps> = ({ record, onClose, 
             </div>
           </div>
 
-          {/* Vital Signs */}
           {formData.記錄類型 === '生命表徵' && (
             <div className="space-y-4">
               <h3 className="text-lg font-medium text-blue-600 flex items-center">
@@ -261,7 +257,6 @@ const HealthRecordModal: React.FC<HealthRecordModalProps> = ({ record, onClose, 
               </h3>
               
               <div className="space-y-4">
-                {/* First Row: Blood Pressure, Pulse, Temperature */}
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   <div>
                     <label className="form-label">血壓 (mmHg)</label>
@@ -318,7 +313,6 @@ const HealthRecordModal: React.FC<HealthRecordModalProps> = ({ record, onClose, 
                   </div>
                 </div>
                 
-                {/* Second Row: Oxygen Saturation, Respiratory Rate, Notes */}
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   <div>
                     <label className="form-label">血含氧量 (%)</label>
@@ -362,7 +356,6 @@ const HealthRecordModal: React.FC<HealthRecordModalProps> = ({ record, onClose, 
             </div>
           )}
 
-          {/* Blood Glucose */}
           {formData.記錄類型 === '血糖控制' && (
             <div className="space-y-4">
               <h3 className="text-lg font-medium text-red-600 flex items-center">
@@ -393,7 +386,6 @@ const HealthRecordModal: React.FC<HealthRecordModalProps> = ({ record, onClose, 
             </div>
           )}
 
-          {/* Weight Control */}
           {formData.記錄類型 === '體重控制' && (
             <div className="space-y-4">
               <h3 className="text-lg font-medium text-green-600 flex items-center">
@@ -434,7 +426,6 @@ const HealthRecordModal: React.FC<HealthRecordModalProps> = ({ record, onClose, 
             </div>
           )}
 
-          {/* Submit Buttons */}
           <div className="flex space-x-3 pt-4 border-t border-gray-200">
             <button
               type="submit"
@@ -457,3 +448,84 @@ const HealthRecordModal: React.FC<HealthRecordModalProps> = ({ record, onClose, 
 };
 
 export default HealthRecordModal;
+```
+
+### Changes Made
+1. **Removed `記錄id` for New Records**: In the `handleSubmit` function, the `recordData` object no longer includes `記錄id` when creating a new record (`addHealthRecord`). This allows Supabase to auto-generate the `記錄id` if the column is configured as a serial or identity column.
+   ```typescript
+   if (record && record.記錄id) {
+     await updateHealthRecord({ ...recordData, 記錄id: parseInt(record.記錄id) });
+   } else {
+     await addHealthRecord(recordData); // Omit 記錄id for new records
+   }
+   ```
+   Previously, the code included `...(record && { 記錄id: parseInt(record.記錄id) })` in `recordData`, which could result in `記錄id` being `undefined` or `null` for new records, causing the error.
+
+2. **Kept Update Logic Intact**: For updating existing records, the `記錄id` is included in the `recordData` to ensure Supabase knows which record to update.
+
+### Additional Considerations
+- **Database Schema**: Verify that the `記錄id` column in your Supabase table (`健康記錄主表`) is set to auto-increment (e.g., `SERIAL` or `INTEGER GENERATED ALWAYS AS IDENTITY`). You can check this in the Supabase dashboard under Table Editor or by running the following SQL query in the SQL Editor:
+  ```sql
+  SELECT column_name, data_type, is_nullable, column_default
+  FROM information_schema.columns
+  WHERE table_name = '健康記錄主表' AND column_name = '記錄id';
+  ```
+  If `column_default` is something like `nextval('健康記錄主表_記錄id_seq'::regclass)`, the column is auto-incrementing, and you should not include `記錄id` when inserting new records.
+
+- **Manual ID Generation (if needed)**: If `記錄id` is not auto-generated by the database, you need to generate a unique ID for new records. For example, you could query the maximum existing `記錄id` and increment it:
+  ```typescript
+  const getNextRecordId = async () => {
+    const { data } = await supabase
+      .from('健康記錄主表')
+      .select('記錄id')
+      .order('記錄id', { ascending: false })
+      .limit(1);
+    return data && data.length > 0 ? data[0].記錄id + 1 : 1;
+  };
+  ```
+  Then, modify the `handleSubmit` function to include the generated ID for new records:
+  ```typescript
+  if (record && record.記錄id) {
+    await updateHealthRecord({ ...recordData, 記錄id: parseInt(record.記錄id) });
+  } else {
+    const newRecordId = await getNextRecordId();
+    await addHealthRecord({ ...recordData, 記錄id: newRecordId });
+  }
+  ```
+  Note: This approach requires the `supabase` client to be available in your `PatientContext`. Replace `supabase` with the appropriate client instance from your context.
+
+- **PatientContext Functions**: Ensure that `addHealthRecord` and `updateHealthRecord` in your `PatientContext` are correctly implemented to handle the Supabase API calls. For example:
+  ```typescript
+  // In PatientContext.tsx
+  const addHealthRecord = async (data: any) => {
+    const { error } = await supabase.from('健康記錄主表').insert([data]);
+    if (error) throw error;
+  };
+
+  const updateHealthRecord = async (data: any) => {
+    const { error } = await supabase
+      .from('健康記錄主表')
+      .update(data)
+      .eq('記錄id', data.記錄id);
+    if (error) throw error;
+  };
+  ```
+
+- **Error Handling**: The current error handling logs the error and shows an alert. Consider adding more specific error messages to help diagnose issues:
+  ```typescript
+  catch (error: any) {
+    console.error('儲存健康記錄失敗:', error);
+    alert(`儲存健康記錄失敗: ${error.message || '請重試'}`);
+  }
+  ```
+
+### Next Steps
+1. **Check Supabase Schema**: Confirm whether `記錄id` is auto-incrementing. If it is, the provided code should work. If not, implement manual ID generation as described.
+2. **Test the Component**: Test both creating and updating records to ensure the error is resolved.
+3. **Inspect PatientContext**: Verify that `addHealthRecord` does not expect a `記錄id` in the payload for new records unless explicitly required by your schema.
+4. **Debugging**: If the error persists, log the `recordData` object before calling `addHealthRecord` to confirm its contents:
+   ```typescript
+   console.log('Submitting recordData:', recordData);
+   ```
+
+If you confirm that `記錄id` is not auto-generated and need help implementing manual ID generation, or if you encounter other issues, please provide additional details about your Supabase schema or `PatientContext` implementation.
