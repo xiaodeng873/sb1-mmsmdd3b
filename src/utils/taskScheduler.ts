@@ -20,11 +20,14 @@ export function calculateNextDueDate(task: PatientHealthTask, fromDate?: Date): 
     baseDate.setHours(0, 0, 0, 0);
   } else {
     // 監測任務：使用 next_due_at 或當前日期
-    baseDate = fromDate || new Date(task.next_due_at || (() => {
-      const today = new Date();
-      today.setHours(0, 0, 0, 0);
-      return today;
-    })());
+    if (fromDate) {
+      baseDate = new Date(fromDate);
+    } else if (task.last_completed_at) {
+      baseDate = new Date(task.last_completed_at);
+    } else {
+      // 新任務：使用當前時間作為基準
+      baseDate = new Date();
+    }
   }
   
   const nextDue = new Date(baseDate);
@@ -41,8 +44,9 @@ export function calculateNextDueDate(task: PatientHealthTask, fromDate?: Date): 
       
       // Set specific time if available
       if (task.specific_times.length > 0 && !isDocumentTask(task.health_record_type)) {
-        const [hours, minutes] = task.specific_times[0].split(':').map(Number);
-        nextDue.setHours(hours, minutes, 0, 0);
+        const timeStr = task.specific_times[0];
+        const time = parseTimeString(timeStr);
+        nextDue.setHours(time.hours, time.minutes, 0, 0);
         hasSpecificTime = true;
       }
       break;
@@ -73,8 +77,9 @@ export function calculateNextDueDate(task: PatientHealthTask, fromDate?: Date): 
       
       // Set specific time if available
       if (task.specific_times.length > 0 && !isDocumentTask(task.health_record_type)) {
-        const [hours, minutes] = task.specific_times[0].split(':').map(Number);
-        nextDue.setHours(hours, minutes, 0, 0);
+        const timeStr = task.specific_times[0];
+        const time = parseTimeString(timeStr);
+        nextDue.setHours(time.hours, time.minutes, 0, 0);
         hasSpecificTime = true;
       }
       break;
@@ -99,8 +104,9 @@ export function calculateNextDueDate(task: PatientHealthTask, fromDate?: Date): 
         
         // Set specific time if available
         if (task.specific_times.length > 0) {
-          const [hours, minutes] = task.specific_times[0].split(':').map(Number);
-          nextDue.setHours(hours, minutes, 0, 0);
+          const timeStr = task.specific_times[0];
+          const time = parseTimeString(timeStr);
+          nextDue.setHours(time.hours, time.minutes, 0, 0);
           hasSpecificTime = true;
         }
       }
@@ -118,6 +124,36 @@ export function calculateNextDueDate(task: PatientHealthTask, fromDate?: Date): 
   return nextDue;
 }
 
+// 解析時間字串（支援 HH:MM 和 藥物時間格式如 7A, 12N, 6P）
+function parseTimeString(timeStr: string): { hours: number; minutes: number } {
+  // 先嘗試標準 HH:MM 格式
+  const standardMatch = timeStr.match(/^(\d{1,2}):(\d{2})$/);
+  if (standardMatch) {
+    return {
+      hours: parseInt(standardMatch[1]),
+      minutes: parseInt(standardMatch[2])
+    };
+  }
+  
+  // 嘗試藥物時間格式 (如 7A, 12N, 6P)
+  const medicationMatch = timeStr.match(/^(\d{1,2})(?::(\d{2}))?([APN])$/);
+  if (medicationMatch) {
+    let hours = parseInt(medicationMatch[1]);
+    const minutes = parseInt(medicationMatch[2] || '0');
+    const period = medicationMatch[3];
+    
+    // 轉換為24小時制
+    if (period === 'A' && hours === 12) hours = 0; // 12A = 00:xx
+    if (period === 'P' && hours !== 12) hours += 12; // xP = (x+12):xx (除了12P)
+    if (period === 'N') hours = 12; // 12N = 12:xx
+    
+    return { hours, minutes };
+  }
+  
+  // 如果都無法解析，返回預設時間 08:00
+  console.warn(`無法解析時間格式: ${timeStr}，使用預設時間 08:00`);
+  return { hours: 8, minutes: 0 };
+}
 // 檢查任務是否逾期
 export function isTaskOverdue(task: PatientHealthTask): boolean {
   const now = new Date();
