@@ -100,13 +100,7 @@ const Dashboard: React.FC = () => {
       color: 'bg-green-500',
       change: `${todaySchedules.reduce((sum, s) => sum + s.院友列表.length, 0)} 位院友`
     },
-    {
-      title: '本週排程',
-      value: thisWeekSchedules.length,
-      icon: Clock,
-      color: 'bg-orange-500',
-      change: `${thisWeekSchedules.reduce((sum, s) => sum + s.院友列表.length, 0)} 位院友`
-    },
+   
     {
       title: '處方記錄',
       value: prescriptions.length,
