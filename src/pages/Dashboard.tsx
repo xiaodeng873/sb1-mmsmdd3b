@@ -93,13 +93,7 @@ const Dashboard: React.FC = () => {
       color: 'bg-blue-500',
       change: '+2 本月'
     },
-    {
-      title: '今日排程',
-      value: todaySchedules.length,
-      icon: Calendar,
-      color: 'bg-green-500',
-      change: `${todaySchedules.reduce((sum, s) => sum + s.院友列表.length, 0)} 位院友`
-    },
+    
    
     {
       title: '逾期任務',
