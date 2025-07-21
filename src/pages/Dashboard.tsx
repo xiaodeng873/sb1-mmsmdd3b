@@ -137,6 +137,35 @@ const Dashboard: React.FC = () => {
   const stats = [
   ]; 
 
+  const getHealthRecordData = (record: any) => {
+    switch (record.記錄類型) {
+      case '生命表徵':
+        const vitals = [];
+        if (record.血壓收縮壓 && record.血壓舒張壓) vitals.push(`血壓 ${record.血壓收縮壓}/${record.血壓舒張壓}`);
+        if (record.脈搏) vitals.push(`脈搏 ${record.脈搏}`);
+        if (record.體溫) vitals.push(`體溫 ${record.體溫}°C`);
+        if (record.血含氧量) vitals.push(`血氧 ${record.血含氧量}%`);
+        return vitals.join(', ') || '無數據';
+      case '血糖控制':
+        return record.血糖值 ? `${record.血糖值} mmol/L` : '無數據';
+      case '體重控制':
+        return record.體重 ? `${record.體重} kg` : '無數據';
+      default:
+        return '無數據';
+    }
+  };
+
+  const getStatusBadgeClass = (status: string) => {
+    switch (status) {
+      case '尚未安排': return 'bg-red-100 text-red-800';
+      case '已安排': return 'bg-blue-100 text-blue-800';
+      case '已完成': return 'bg-green-100 text-green-800';
+      case '改期': return 'bg-orange-100 text-orange-800';
+      case '取消': return 'bg-red-100 text-red-800';
+      default: return 'bg-gray-100 text-gray-800';
+    }
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
@@ -289,7 +318,7 @@ const Dashboard: React.FC = () => {
             )}
           </div>
         </div>
-        <div className="card p-6">
+        
         {/* 近期監測 */}
         <div className="card p-6">
           <div className="flex items-center justify-between mb-4">
@@ -345,6 +374,8 @@ const Dashboard: React.FC = () => {
             )}
           </div>
         </div>
+
+        <div className="card p-6">
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-lg font-semibold text-gray-900">近期覆診</h2>
             <Link 
@@ -360,9 +391,6 @@ const Dashboard: React.FC = () => {
                 const patient = patients.find(p => p.院友id === appointment.院友id);
                 return (
                   <div key={appointment.覆診id} className="flex items-center space-x-3 p-3 bg-gray-50 rounded-lg">
-                    <CalendarCheck className="h-5 w-5 text-indigo-600" />
-                    <div className="flex-1">
-                      <p className="font-medium text-gray-900">{patient?.中文姓名}</p>
                     <div className="w-10 h-10 bg-blue-100 rounded-full overflow-hidden flex items-center justify-center">
                       {patient?.院友相片 ? (
                         <img 
@@ -374,22 +402,24 @@ const Dashboard: React.FC = () => {
                         <User className="h-5 w-5 text-blue-600" />
                       )}
                     </div>
-                        {new Date(appointment.覆診日期).toLocaleDateString('zh-TW')} 
+                    <div className="flex-1">
                       <div className="flex items-center space-x-2">
                         <p className="font-medium text-gray-900">{patient?.中文姓名}</p>
                         <span className="text-xs text-gray-500">({patient?.床號})</span>
                       </div>
+                      <p className="text-sm text-gray-600">
+                        {new Date(appointment.覆診日期).toLocaleDateString('zh-TW')} 
                       </p>
                       <p className="text-xs text-gray-500">
                         {appointment.覆診地點} - {appointment.覆診專科}
                       </p>
                     </div>
-                    <span className="status-badge status-scheduled">待覆診</span>
-                  </div>
-                );
                     <span className={`status-badge ${getStatusBadgeClass(appointment.狀態)}`}>
                       {appointment.狀態}
                     </span>
+                  </div>
+                );
+              })
             ) : (
               <div className="text-center py-8 text-gray-500">
                 <CalendarCheck className="h-12 w-12 mx-auto mb-2 text-gray-300" />
@@ -398,56 +428,10 @@ const Dashboard: React.FC = () => {
             )}
           </div>
         </div>
-        {/* Today's Schedule */}
-        <div className="card p-6">
-          <div className="flex items-center justify-between mb-4">
-        
-        {/* 最近排程 */}
-            <Link 
-              to="/scheduling" 
-            <h2 className="text-lg font-semibold text-gray-900">最近排程</h2>
-            >
-              查看全部
-            </Link>
-          </div>
-          <div className="space-y-3">
-            {todaySchedules.length > 0 ? (
-              todaySchedules.map(schedule => (
-                <div key={schedule.排程id} className="flex items-center space-x-3 p-3 bg-gray-50 rounded-lg">
-            {recentSchedules.length > 0 ? (
-              recentSchedules.map(schedule => (
-                    <p className="font-medium text-gray-900">
-                      {new Date(schedule.到診日期).toLocaleDateString('zh-TW')}
-                    </p>
-                    <p className="text-sm text-gray-600">
-                      {schedule.院友列表.length} 位院友預約
-                    </p>
-                  </div>
-                  <span className="status-badge status-scheduled">預約中</span>
-                </div>
-              ))
-                  <span className="status-badge status-scheduled">
-                    {new Date(schedule.到診日期).toDateString() === new Date().toDateString() ? '今日' : '預約中'}
-                  </span>
-              <div className="text-center py-8 text-gray-500">
-                <Calendar className="h-12 w-12 mx-auto mb-2 text-gray-300" />
-                <p>今日無排程</p>
-              </div>
-            )}
-                <p>近期無排程</p>
-        </div>
-
-      
-
-   
       </div>
 
-  const getHealthRecordData = (record: any) => {
-    switch (record.記錄類型) {
-      case '生命表徵':
-        const vitals = [];
-        if (record.血壓收縮壓 && record.血壓舒張壓) vitals.push(`血壓 ${record.血壓收縮壓}/${record.血壓舒張壓}`);
-        if (record.脈搏) vitals.push(`脈搏 ${record.脈搏}`);
+      {/* 健康記錄模態框 */}
+      {showHealthModal && selectedTaskForRecord && (
         <HealthRecordModal
           record={{
             院友id: selectedTaskForRecord.patient.院友id,
@@ -506,7 +490,7 @@ const DocumentTaskModal: React.FC<{
       default: return <CheckSquare className="h-6 w-6 text-gray-600" />;
     }
   };
-        if (record.體溫) vitals.push(`體溫 ${record.體溫}°C`);
+
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
       <div className="bg-white rounded-lg max-w-md w-full p-6">
@@ -522,7 +506,7 @@ const DocumentTaskModal: React.FC<{
             <X className="h-6 w-6" />
           </button>
         </div>
-        if (record.血含氧量) vitals.push(`血氧 ${record.血含氧量}%`);
+        
         <div className="mb-4 p-4 bg-gray-50 rounded-lg">
           <div className="flex items-center space-x-3">
             <div className="w-12 h-12 bg-blue-100 rounded-full overflow-hidden flex items-center justify-center">
@@ -543,7 +527,7 @@ const DocumentTaskModal: React.FC<{
             </div>
           </div>
         </div>
-        return vitals.join(', ') || '無數據';
+        
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
             <label className="form-label">
@@ -561,7 +545,7 @@ const DocumentTaskModal: React.FC<{
               請輸入醫生簽署此文件的日期，系統將根據此日期計算下次到期時間
             </p>
           </div>
-      case '血糖控制':
+          
           <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
             <p className="text-sm text-blue-800">
               <strong>當前狀態：</strong>
@@ -574,7 +558,7 @@ const DocumentTaskModal: React.FC<{
               <strong>下次到期：</strong>{new Date(task.next_due_at).toLocaleDateString('zh-TW')}
             </p>
           </div>
-        return record.血糖值 ? `${record.血糖值} mmol/L` : '無數據';
+          
           <div className="flex space-x-3 pt-4">
             <button
               type="submit"
@@ -595,43 +579,8 @@ const DocumentTaskModal: React.FC<{
     </div>
   );
 };
-      case '體重控制':
+
 // 添加必要的 import
 import { X } from 'lucide-react';
-        return record.體重 ? `${record.體重} kg` : '無數據';
-export default Dashboard;
-      default:
-        return '無數據';
-    }
-  };
-
-  const getStatusBadgeClass = (status: string) => {
-    switch (status) {
-      case '尚未安排': return 'bg-red-100 text-red-800';
-      case '已安排': return 'bg-blue-100 text-blue-800';
-      case '已完成': return 'bg-green-100 text-green-800';
-      case '改期': return 'bg-orange-100 text-orange-800';
-      case '取消': return 'bg-red-100 text-red-800';
-      default: return 'bg-gray-100 text-gray-800';
-    }
-  };
-      {/* 健康記錄模態框 */}
-      {showHealthModal && selectedTaskForRecord && (
-        <HealthRecordModal
-          record={{
-            院友id: selectedTaskForRecord.patient.院友id,
-            記錄類型: selectedTaskForRecord.預設記錄類型
-          }}
-          onClose={() => {
-            setShowHealthModal(false);
-            setSelectedTaskForRecord(null);
-          }}
-          onTaskCompleted={() => handleTaskCompleted(selectedTaskForRecord.task.id)}
-        />
-      )}
-    </div>
-  );
-};
 
 export default Dashboard;
-      <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
