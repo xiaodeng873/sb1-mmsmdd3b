@@ -22,7 +22,7 @@ import {
 } from 'lucide-react';
 import { usePatients, type PatientHealthTask, type HealthTaskType, type FrequencyUnit } from '../context/PatientContext';
 import TaskModal from '../components/TaskModal';
-import { formatFrequencyDescription, getTaskStatus, isTaskOverdue, isTaskDueSoon, isTaskPendingToday } from '../utils/taskScheduler';
+import { formatFrequencyDescription, getTaskStatus, isTaskOverdue, isTaskDueSoon, isTaskPendingToday, isDocumentTask } from '../utils/taskScheduler';
 import PatientTooltip from '../components/PatientTooltip';
 
 type SortField = 'patient_name' | 'health_record_type' | 'frequency' | 'next_due_at' | 'last_completed_at' | 'notes';
@@ -320,6 +320,8 @@ const TaskManagement: React.FC = () => {
       case '生命表徵': return <Activity className="h-4 w-4" />;
       case '血糖控制': return <Droplets className="h-4 w-4" />;
       case '體重控制': return <Scale className="h-4 w-4" />;
+      case '約束物品同意書': return <FileText className="h-4 w-4" />;
+      case '年度體檢': return <Stethoscope className="h-4 w-4" />;
       default: return <CheckSquare className="h-4 w-4" />;
     }
   };
@@ -329,6 +331,8 @@ const TaskManagement: React.FC = () => {
       case '生命表徵': return 'bg-blue-100 text-blue-800';
       case '血糖控制': return 'bg-red-100 text-red-800';
       case '體重控制': return 'bg-green-100 text-green-800';
+      case '約束物品同意書': return 'bg-orange-100 text-orange-800';
+      case '年度體檢': return 'bg-purple-100 text-purple-800';
       default: return 'bg-gray-100 text-gray-800';
     }
   };
@@ -502,8 +506,6 @@ const TaskManagement: React.FC = () => {
             </div>
             
             <div className="flex space-x-2">
-            
-              
               <button
                 onClick={() => setShowAdvancedFilters(!showAdvancedFilters)}
                 className={`btn-secondary flex items-center space-x-2 ${
@@ -590,6 +592,8 @@ const TaskManagement: React.FC = () => {
                     <option value="生命表徵">生命表徵</option>
                     <option value="血糖控制">血糖控制</option>
                     <option value="體重控制">體重控制</option>
+                    <option value="約束物品同意書">約束物品同意書</option>
+                    <option value="年度體檢">年度體檢</option>
                   </select>
                 </div>
                 
@@ -768,14 +772,22 @@ const TaskManagement: React.FC = () => {
                       <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900">
                         <div className="flex items-center space-x-1">
                           <Calendar className="h-4 w-4 text-gray-400" />
-                          <span>{new Date(task.next_due_at).toLocaleString('zh-TW')}</span>
+                          <span>
+                            {isDocumentTask(task.health_record_type)
+                              ? new Date(task.next_due_at).toLocaleDateString('zh-TW')
+                              : new Date(task.next_due_at).toLocaleString('zh-TW')}
+                          </span>
                         </div>
                       </td>
                       <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900">
                         {task.last_completed_at ? (
                           <div className="flex items-center space-x-1">
                             <CheckCircle className="h-4 w-4 text-green-500" />
-                            <span>{new Date(task.last_completed_at).toLocaleString('zh-TW')}</span>
+                            <span>
+                              {isDocumentTask(task.health_record_type)
+                                ? new Date(task.last_completed_at).toLocaleDateString('zh-TW')
+                                : new Date(task.last_completed_at).toLocaleString('zh-TW')}
+                            </span>
                           </div>
                         ) : (
                           <span className="text-gray-500">尚未完成</span>
