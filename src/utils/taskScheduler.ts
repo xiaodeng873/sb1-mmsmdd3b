@@ -11,10 +11,26 @@ export function calculateNextDueDate(task: PatientHealthTask, fromDate?: Date): 
 
   switch (task.frequency_unit) {
     case 'hourly':
+      // Add hours interval
       nextDue.setHours(nextDue.getHours() + task.frequency_value);
+      
+      // Set specific time if available
+      if (task.specific_times.length > 0) {
+        const [hours, minutes] = task.specific_times[0].split(':').map(Number);
+        // Find the next valid time slot on or after the calculated time
+        const currentHours = nextDue.getHours();
+        const currentMinutes = nextDue.getMinutes();
+        if (currentHours > hours || (currentHours === hours && currentMinutes >= minutes)) {
+          // If past the specific time, add another interval
+          nextDue.setHours(nextDue.getHours() + task.frequency_value);
+        }
+        nextDue.setHours(hours, minutes, 0, 0);
+        hasSpecificTime = true;
+      }
       break;
 
     case 'daily':
+      // Add days interval
       nextDue.setDate(nextDue.getDate() + task.frequency_value);
       
       // Set specific time if available
@@ -35,7 +51,7 @@ export function calculateNextDueDate(task: PatientHealthTask, fromDate?: Date): 
         const adjustedTargetDay = targetDay === 7 ? 0 : targetDay;
         const currentDay = nextDue.getDay();
         const dayDiff = adjustedTargetDay - currentDay;
-        nextDue.setDate(nextDue.getDate() + dayDiff);
+        nextDue.setDate(nextDue.getDate() + (dayDiff >= 0 ? dayDiff : dayDiff + 7));
       }
       
       // Set specific time if available
@@ -52,7 +68,8 @@ export function calculateNextDueDate(task: PatientHealthTask, fromDate?: Date): 
       
       // Set specific day of month if provided
       if (task.specific_days_of_month.length > 0) {
-        nextDue.setDate(task.specific_days_of_month[0]);
+        const targetDay = Math.min(task.specific_days_of_month[0], new Date(nextDue.getFullYear(), nextDue.getMonth() + 1, 0).getDate());
+        nextDue.setDate(targetDay);
       }
       
       // Set specific time if available
@@ -62,6 +79,27 @@ export function calculateNextDueDate(task: PatientHealthTask, fromDate?: Date): 
         hasSpecificTime = true;
       }
       break;
+
+    case 'yearly':
+      // Add years interval
+      nextDue.setFullYear(nextDue.getFullYear() + task.frequency_value);
+      
+      // Set specific day of month if provided
+      if (task.specific_days_of_month.length > 0) {
+        const targetDay = Math.min(task.specific_days_of_month[0], new Date(nextDue.getFullYear(), nextDue.getMonth() + 1, 0).getDate());
+        nextDue.setDate(targetDay);
+      }
+      
+      // Set specific time if available
+      if (task.specific_times.length > 0) {
+        const [hours, minutes] = task.specific_times[0].split(':').map(Number);
+        nextDue.setHours(hours, minutes, 0, 0);
+        hasSpecificTime = true;
+      }
+      break;
+
+    default:
+      throw new Error('未知的頻率單位');
   }
 
   // Apply default time of 08:00 if no specific time was set
