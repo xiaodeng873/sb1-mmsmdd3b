@@ -119,44 +119,8 @@ const Dashboard: React.FC = () => {
       </div>
 
       {/* Recent Activity */}
-      <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
-        {/* Today's Schedule */}
-        <div className="card p-6">
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-lg font-semibold text-gray-900">今日排程</h2>
-            <Link 
-              to="/scheduling" 
-              className="text-sm text-blue-600 hover:text-blue-700 font-medium"
-            >
-              查看全部
-            </Link>
-          </div>
-          <div className="space-y-3">
-            {todaySchedules.length > 0 ? (
-              todaySchedules.map(schedule => (
-                <div key={schedule.排程id} className="flex items-center space-x-3 p-3 bg-gray-50 rounded-lg">
-                  <Calendar className="h-5 w-5 text-blue-600" />
-                  <div className="flex-1">
-                    <p className="font-medium text-gray-900">
-                      {new Date(schedule.到診日期).toLocaleDateString('zh-TW')}
-                    </p>
-                    <p className="text-sm text-gray-600">
-                      {schedule.院友列表.length} 位院友預約
-                    </p>
-                  </div>
-                  <span className="status-badge status-scheduled">預約中</span>
-                </div>
-              ))
-            ) : (
-              <div className="text-center py-8 text-gray-500">
-                <Calendar className="h-12 w-12 mx-auto mb-2 text-gray-300" />
-                <p>今日無排程</p>
-              </div>
-            )}
-          </div>
-        </div>
 
-        {/* 緊急任務 */}
+        {/* 監測任務 */}
         <div className="card p-6">
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-lg font-semibold text-gray-900">監測任務</h2>
@@ -215,6 +179,44 @@ const Dashboard: React.FC = () => {
             )}
           </div>
         </div>
+      <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+        {/* Today's Schedule */}
+        <div className="card p-6">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-lg font-semibold text-gray-900">今日排程</h2>
+            <Link 
+              to="/scheduling" 
+              className="text-sm text-blue-600 hover:text-blue-700 font-medium"
+            >
+              查看全部
+            </Link>
+          </div>
+          <div className="space-y-3">
+            {todaySchedules.length > 0 ? (
+              todaySchedules.map(schedule => (
+                <div key={schedule.排程id} className="flex items-center space-x-3 p-3 bg-gray-50 rounded-lg">
+                  <Calendar className="h-5 w-5 text-blue-600" />
+                  <div className="flex-1">
+                    <p className="font-medium text-gray-900">
+                      {new Date(schedule.到診日期).toLocaleDateString('zh-TW')}
+                    </p>
+                    <p className="text-sm text-gray-600">
+                      {schedule.院友列表.length} 位院友預約
+                    </p>
+                  </div>
+                  <span className="status-badge status-scheduled">預約中</span>
+                </div>
+              ))
+            ) : (
+              <div className="text-center py-8 text-gray-500">
+                <Calendar className="h-12 w-12 mx-auto mb-2 text-gray-300" />
+                <p>今日無排程</p>
+              </div>
+            )}
+          </div>
+        </div>
+
+      
 
    
 
