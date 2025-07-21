@@ -160,7 +160,6 @@ const Dashboard: React.FC = () => {
             )}
           </div>
         </div>
-      </div>
   {/* 監測任務 */}
         <div className="card p-6">
           <div className="flex items-center justify-between mb-4">
@@ -256,9 +255,11 @@ const Dashboard: React.FC = () => {
           </div>
         </div>
 
-  
+      
 
-  
+   
+      </div>
+
 
       {/* 健康記錄模態框 */}
       {showHealthModal && selectedTaskForRecord && (
