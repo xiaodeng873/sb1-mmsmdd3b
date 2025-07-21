@@ -6,14 +6,22 @@ interface HealthRecordModalProps {
   record?: HealthRecord;
   onClose: () => void;
   onTaskCompleted?: () => void;
+  defaultRecordDate?: string;
+  defaultRecordTime?: string;
 }
 
-const HealthRecordModal: React.FC<HealthRecordModalProps> = ({ record, onClose, onTaskCompleted }) => {
+const HealthRecordModal: React.FC<HealthRecordModalProps> = ({ 
+  record, 
+  onClose, 
+  onTaskCompleted,
+  defaultRecordDate,
+  defaultRecordTime 
+}) => {
   const { patients, addHealthRecord, updateHealthRecord, healthRecords } = usePatients();
   const [formData, setFormData] = useState({
     院友id: record?.院友id || '',
-    記錄日期: record?.記錄日期 || new Date().toISOString().split('T')[0],
-    記錄時間: record?.記錄時間 || new Date().toTimeString().slice(0, 5),
+    記錄日期: record?.記錄日期 || defaultRecordDate || new Date().toISOString().split('T')[0],
+    記錄時間: record?.記錄時間 || defaultRecordTime || new Date().toTimeString().slice(0, 5),
     記錄類型: record?.記錄類型 || '生命表徵',
     血壓收縮壓: record?.血壓收縮壓 || '',
     血壓舒張壓: record?.血壓舒張壓 || '',

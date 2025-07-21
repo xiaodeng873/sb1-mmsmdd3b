@@ -100,6 +100,7 @@ export interface FollowUpAppointment {
 }
 
 export type HealthTaskType = '生命表徵' | '血糖控制' | '體重控制';
+export type HealthTaskType = '生命表徵' | '血糖控制' | '體重控制' | '約束物品同意書' | '年度體檢';
 export type FrequencyUnit = 'hourly' | 'daily' | 'weekly' | 'monthly';
 
 export interface PatientHealthTask {

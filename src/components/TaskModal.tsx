@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { X, CheckSquare, User, Calendar, Clock, Activity, Droplets, Scale } from 'lucide-react';
+import { X, CheckSquare, User, Calendar, Clock, Activity, Droplets, Scale, FileText, Stethoscope } from 'lucide-react';
 import { usePatients, type PatientHealthTask, type HealthTaskType, type FrequencyUnit } from '../context/PatientContext';
 import { calculateNextDueDate } from '../utils/taskScheduler';
 
@@ -107,7 +107,7 @@ const TaskModal: React.FC<TaskModalProps> = ({ task, onClose }) => {
         specific_times: formData.specific_times,
         specific_days_of_week: formData.specific_days_of_week,
         specific_days_of_month: formData.specific_days_of_month,
-        last_completed_at: task?.last_completed_at,
+        last_completed_at: formData.last_completed_at || task?.last_completed_at,
         next_due_at: nextDueAt.toISOString()
       };
 
@@ -132,6 +132,8 @@ const TaskModal: React.FC<TaskModalProps> = ({ task, onClose }) => {
       case '生命表徵': return <Activity className="h-5 w-5" />;
       case '血糖控制': return <Droplets className="h-5 w-5" />;
       case '體重控制': return <Scale className="h-5 w-5" />;
+      case '約束物品同意書': return <FileText className="h-5 w-5" />;
+      case '年度體檢': return <Stethoscope className="h-5 w-5" />;
       default: return <CheckSquare className="h-5 w-5" />;
     }
   };
@@ -141,6 +143,8 @@ const TaskModal: React.FC<TaskModalProps> = ({ task, onClose }) => {
       case '生命表徵': return 'text-blue-600';
       case '血糖控制': return 'text-red-600';
       case '體重控制': return 'text-green-600';
+      case '約束物品同意書': return 'text-orange-600';
+      case '年度體檢': return 'text-purple-600';
       default: return 'text-purple-600';
     }
   };
@@ -202,14 +206,40 @@ const TaskModal: React.FC<TaskModalProps> = ({ task, onClose }) => {
                 className="form-input"
                 required
               >
-                <option value="生命表徵">生命表徵</option>
-                <option value="血糖控制">血糖控制</option>
-                <option value="體重控制">體重控制</option>
-                <option value="體重控制">體重控制</option>
-                <option value="體重控制">體重控制</option>
+                <optgroup label="監測任務">
+                  <option value="生命表徵">生命表徵</option>
+                  <option value="血糖控制">血糖控制</option>
+                  <option value="體重控制">體重控制</option>
+                </optgroup>
+                <optgroup label="文件任務">
+                  <option value="約束物品同意書">約束物品同意書</option>
+                  <option value="年度體檢">年度體檢</option>
+                </optgroup>
               </select>
             </div>
           </div>
+
+          {/* 文件任務的上次醫生簽署日期 */}
+          {(formData.health_record_type === '約束物品同意書' || formData.health_record_type === '年度體檢') && (
+            <div>
+              <label className="form-label">
+                <Calendar className="h-4 w-4 inline mr-1" />
+                上次醫生簽署日期
+              </label>
+              <input
+                type="date"
+                value={task?.last_completed_at ? new Date(task.last_completed_at).toISOString().split('T')[0] : ''}
+                onChange={(e) => setFormData(prev => ({ 
+                  ...prev, 
+                  last_completed_at: e.target.value ? new Date(e.target.value).toISOString() : undefined 
+                }))}
+                className="form-input"
+              />
+              <p className="text-xs text-gray-500 mt-1">
+                設定上次醫生簽署此文件的日期，系統將根據此日期計算下次到期時間
+              </p>
+            </div>
+          )}
 
           {/* 頻率設定 */}
           <div className="space-y-4">
@@ -253,7 +283,8 @@ const TaskModal: React.FC<TaskModalProps> = ({ task, onClose }) => {
             </div>
 
             {/* 特定時間設定 */}
-            {(formData.frequency_unit === 'daily' || formData.frequency_unit === 'weekly' || formData.frequency_unit === 'monthly') && (
+            {(formData.frequency_unit === 'daily' || formData.frequency_unit === 'weekly' || formData.frequency_unit === 'monthly') && 
+             (formData.health_record_type === '生命表徵' || formData.health_record_type === '血糖控制' || formData.health_record_type === '體重控制') && (
               <div>
                 <label className="form-label">
                   <Clock className="h-4 w-4 inline mr-1" />
@@ -302,7 +333,8 @@ const TaskModal: React.FC<TaskModalProps> = ({ task, onClose }) => {
             )}
 
             {/* 特定星期幾設定 */}
-            {formData.frequency_unit === 'weekly' && (
+            {formData.frequency_unit === 'weekly' && 
+             (formData.health_record_type === '生命表徵' || formData.health_record_type === '血糖控制' || formData.health_record_type === '體重控制') && (
               <div>
                 <label className="form-label">特定星期幾</label>
                 <div className="grid grid-cols-7 gap-2">
@@ -325,7 +357,8 @@ const TaskModal: React.FC<TaskModalProps> = ({ task, onClose }) => {
             )}
 
             {/* 特定日期設定 */}
-            {formData.frequency_unit === 'monthly' && (
+            {formData.frequency_unit === 'monthly' && 
+             (formData.health_record_type === '生命表徵' || formData.health_record_type === '血糖控制' || formData.health_record_type === '體重控制') && (
               <div>
                 <label className="form-label">特定日期</label>
                 <div className="grid grid-cols-7 gap-2">
