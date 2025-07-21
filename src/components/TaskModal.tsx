@@ -1,4 +1,3 @@
-```typescript
 import type { PatientHealthTask, FrequencyUnit } from '../lib/database'; 
 
 export function calculateNextDueDate(task: PatientHealthTask, fromDate?: Date): Date {
