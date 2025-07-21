@@ -161,8 +161,7 @@ const Dashboard: React.FC = () => {
           </div>
         </div>
       </div>
-       
-      {/* 監測任務 */}
+  {/* 監測任務 */}
         <div className="card p-6">
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-lg font-semibold text-gray-900">監測任務</h2>
@@ -257,6 +256,9 @@ const Dashboard: React.FC = () => {
           </div>
         </div>
 
+  
+
+  
 
       {/* 健康記錄模態框 */}
       {showHealthModal && selectedTaskForRecord && (
