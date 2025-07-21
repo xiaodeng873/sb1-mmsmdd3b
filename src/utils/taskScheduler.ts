@@ -48,23 +48,36 @@ export function calculateNextDueDate(task: PatientHealthTask, fromDate?: Date): 
       break;
 
     case 'weekly':
-      // Add weeks interval
-      nextDue.setDate(nextDue.getDate() + task.frequency_value * 7);
-      
-      // Adjust to specific day of week if provided
+      // 如果有指定星期，計算到最近的未來指定星期
       if (task.specific_days_of_week.length > 0 && !isDocumentTask(task.health_record_type)) {
         const targetDay = task.specific_days_of_week[0];
-        const adjustedTargetDay = targetDay === 7 ? 0 : targetDay;
+        const adjustedTargetDay = targetDay === 7 ? 0 : targetDay; // 將星期日（7）轉為 0
         const currentDay = nextDue.getDay();
-        const dayDiff = adjustedTargetDay - currentDay;
-        nextDue.setDate(nextDue.getDate() + (dayDiff >= 0 ? dayDiff : dayDiff + 7));
-      }
-      
-      // Set specific time if available
-      if (task.specific_times.length > 0 && !isDocumentTask(task.health_record_type)) {
-        const [hours, minutes] = task.specific_times[0].split(':').map(Number);
-        nextDue.setHours(hours, minutes, 0, 0);
-        hasSpecificTime = true;
+        let dayDiff = adjustedTargetDay - currentDay;
+        
+        // 如果當前日期等於或晚於目標星期，跳到下一週
+        if (dayDiff <= 0) {
+          dayDiff += 7;
+        }
+        // 應用頻率值（例如，每 2 週）
+        nextDue.setDate(nextDue.getDate() + dayDiff + (task.frequency_value - 1) * 7);
+        
+        // Set specific time if available
+        if (task.specific_times.length > 0) {
+          const [hours, minutes] = task.specific_times[0].split(':').map(Number);
+          nextDue.setHours(hours, minutes, 0, 0);
+          hasSpecificTime = true;
+        }
+      } else {
+        // 無指定星期，直接加 frequency_value 週
+        nextDue.setDate(nextDue.getDate() + task.frequency_value * 7);
+        
+        // Set specific time if available
+        if (task.specific_times.length > 0 && !isDocumentTask(task.health_record_type)) {
+          const [hours, minutes] = task.specific_times[0].split(':').map(Number);
+          nextDue.setHours(hours, minutes, 0, 0);
+          hasSpecificTime = true;
+        }
       }
       break;
 
