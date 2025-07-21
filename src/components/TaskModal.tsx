@@ -205,6 +205,8 @@ const TaskModal: React.FC<TaskModalProps> = ({ task, onClose }) => {
                 <option value="生命表徵">生命表徵</option>
                 <option value="血糖控制">血糖控制</option>
                 <option value="體重控制">體重控制</option>
+                <option value="體重控制">體重控制</option>
+                <option value="體重控制">體重控制</option>
               </select>
             </div>
           </div>
