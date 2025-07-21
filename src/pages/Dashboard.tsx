@@ -101,14 +101,6 @@ const Dashboard: React.FC = () => {
       change: `${todaySchedules.reduce((sum, s) => sum + s.院友列表.length, 0)} 位院友`
     },
    
-  
-    {
-      title: '待覆診',
-      value: upcomingFollowUps.length,
-      icon: CalendarCheck,
-      color: 'bg-indigo-500',
-      change: `${followUpAppointments.filter(a => a.狀態 === '已安排' || a.狀態 === '尚未安排').length} 已安排`
-    },
     {
       title: '逾期任務',
       value: overdueTasks.length,
