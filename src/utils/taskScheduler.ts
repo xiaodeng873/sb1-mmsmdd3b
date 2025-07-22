@@ -58,17 +58,13 @@ export function calculateNextDueDate(task: PatientHealthTask, fromDate?: Date): 
         const currentDay = nextDue.getDay();
         let dayDiff = adjustedTargetDay - currentDay;
         
-        // 如果當前日期已是目標星期，且任務未完成，允許當天
-        if (dayDiff === 0 && !task.last_completed_at) {
-          dayDiff = 0;
-        } else {
-          // 否則選擇最近的目標星期（可能在當前週或下一週）
-          dayDiff = dayDiff >= 0 ? dayDiff : dayDiff + 7;
-          // 應用 frequency_value（多週間隔）
-          if (task.frequency_value > 1) {
-            nextDue.setDate(nextDue.getDate() + (task.frequency_value - 1) * 7);
-          }
+        // 選擇最近的目標星期（可能在當前週或下一週）
+        dayDiff = dayDiff >= 0 ? dayDiff : dayDiff + 7;
+        // 應用 frequency_value（多週間隔）
+        if (task.frequency_value > 1) {
+          nextDue.setDate(nextDue.getDate() + (task.frequency_value - 1) * 7);
         }
+        
         nextDue.setDate(nextDue.getDate() + dayDiff);
       } else {
         // 無特定星期，僅加週數
@@ -340,4 +336,4 @@ export function formatFrequencyDescription(task: PatientHealthTask): string {
     default:
       return '未知頻率';
   }
-} 
+}
