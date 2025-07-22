@@ -122,7 +122,8 @@ const TaskModal: React.FC<TaskModalProps> = ({ task, onClose }) => {
         last_completed_at: formData.start_date && formData.start_time ? 
           new Date(`${formData.start_date}T${formData.start_time}`).toISOString() : 
           (task?.last_completed_at || null),
-        next_due_at: nextDueAt.toISOString()
+        next_due_at: nextDueAt.toISOString(),
+        notes: formData.notes || null
       };
 
       if (task) {
