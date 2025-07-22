@@ -726,21 +726,7 @@ const TaskManagement: React.FC = () => {
                         {getStatusBadge(task)}
                       </td>
                       <td className="px-4 py-4 text-sm text-gray-900 max-w-xs truncate">
-                        <div className="flex items-center space-x-2">
-                          {task.notes && ["服藥前", "注射前", "定期", "特別關顧"].includes(task.notes) ? (
-                            <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
-                              task.notes === '服藥前' ? 'bg-orange-100 text-orange-800' :
-                              task.notes === '注射前' ? 'bg-red-100 text-red-800' :
-                              task.notes === '定期' ? 'bg-blue-100 text-blue-800' :
-                              task.notes === '特別關顧' ? 'bg-purple-100 text-purple-800' :
-                              'bg-gray-100 text-gray-800'
-                            }`}>
-                              {task.notes}
-                            </span>
-                          ) : (
-                            <span>{task.notes || '-'}</span>
-                          )}
-                        </div>
+                        {task.notes || '-'}
                       </td>
                       <td className="px-4 py-4 whitespace-nowrap text-sm font-medium">
                         <div className="flex space-x-2">

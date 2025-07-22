@@ -6,17 +6,6 @@ import { isTaskOverdue, isTaskPendingToday, isTaskDueSoon, getTaskStatus, isDocu
 import HealthRecordModal from '../components/HealthRecordModal';
 import FollowUpModal from '../components/FollowUpModal';
 
-// 備註標籤樣式
-const getRemarkBadgeClass = (remark: string): string => {
-  switch (remark) {
-    case '服藥前': return 'bg-orange-100 text-orange-800 border border-orange-200';
-    case '注射前': return 'bg-red-100 text-red-800 border border-red-200';
-    case '定期': return 'bg-blue-100 text-blue-800 border border-blue-200';
-    case '特別關顧': return 'bg-purple-100 text-purple-800 border border-purple-200';
-    default: return 'bg-gray-100 text-gray-800 border border-gray-200';
-  }
-};
-
 const Dashboard: React.FC = () => {
   const { patients, schedules, prescriptions, followUpAppointments, patientHealthTasks, healthRecords, loading, updatePatientHealthTask } = usePatients();
   const [showHealthModal, setShowHealthModal] = React.useState(false);
@@ -252,15 +241,7 @@ const Dashboard: React.FC = () => {
                         <User className="h-5 w-5 text-blue-600" />
                       )}
                     </div>
-                    <div className="flex-1 relative">
-                      {/* 備註標籤 - 右上角 */}
-                      {task.notes && ["服藥前", "注射前", "定期", "特別關顧"].includes(task.notes) && (
-                        <div className="absolute -top-1 -right-1 z-10">
-                          <span className={`inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium ${getRemarkBadgeClass(task.notes)}`}>
-                            {task.notes}
-                          </span>
-                        </div>
-                      )}
+                    <div className="flex-1">
                       <div className="flex items-center space-x-2">
                         <p className="font-medium text-gray-900">{patient?.中文姓名}</p>
                         <span className="text-xs text-gray-500">({patient?.床號})</span>
@@ -269,7 +250,7 @@ const Dashboard: React.FC = () => {
                         {getTaskTypeIcon(task.health_record_type)}
                         <p className="text-sm text-gray-600">{task.health_record_type}</p>
                       </div>
-                      {task.notes && !["服藥前", "注射前", "定期", "特別關顧"].includes(task.notes) && (
+                      {task.notes && (
                         <p className="text-xs text-gray-500 mt-1">{task.notes}</p>
                       )}
                       <p className="text-xs text-gray-500">
