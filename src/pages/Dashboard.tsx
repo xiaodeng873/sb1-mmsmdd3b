@@ -53,7 +53,7 @@ const Dashboard: React.FC = () => {
   // 監測任務：僅顯示逾期和未完成
   const overdueMonitoringTasks = monitoringTasks.filter(task => isTaskOverdue(task));
   const pendingMonitoringTasks = monitoringTasks.filter(task => isTaskPendingToday(task));
-  const urgentMonitoringTasks = [...overdueMonitoringTasks, ...pendingMonitoringTasks].slice(0, 10);
+  const urgentMonitoringTasks = [...overdueMonitoringTasks, ...pendingMonitoringTasks].slice(0, 100);
   
   // 文件任務：包含逾期、未完成和即將到期
   const overdueDocumentTasks = documentTasks.filter(task => isTaskOverdue(task));
