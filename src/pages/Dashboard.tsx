@@ -259,11 +259,6 @@ const Dashboard: React.FC = () => {
                           : new Date(task.next_due_at).toLocaleString('zh-TW')}
                       </p>
                     </div>
-                    {task.notes && (
-                      <div className="absolute -top-1 -right-1 bg-orange-500 text-white text-xs px-1.5 py-0.5 rounded-full font-medium shadow-sm">
-                        {task.notes}
-                      </div>
-                    )}
                     <span className={`status-badge ${
                       status === 'overdue' ? 'bg-red-100 text-red-800' : 
                       status === 'pending' ? 'bg-green-100 text-green-800' :
@@ -307,7 +302,6 @@ const Dashboard: React.FC = () => {
                   <div 
                     key={task.id} 
                     className="flex items-center space-x-3 p-3 bg-gray-50 rounded-lg cursor-pointer hover:bg-gray-100 transition-colors"
-                    className="relative flex items-center space-x-3 p-3 bg-gray-50 rounded-lg cursor-pointer hover:bg-gray-100 transition-colors"
                     onClick={() => handleDocumentTaskClick(task)}
                   >
                     <div className="w-10 h-10 bg-blue-100 rounded-full overflow-hidden flex items-center justify-center">
@@ -337,11 +331,6 @@ const Dashboard: React.FC = () => {
                         到期: {new Date(task.next_due_at).toLocaleDateString('zh-TW')}
                       </p>
                     </div>
-                    {task.notes && (
-                      <div className="absolute -top-1 -right-1 bg-orange-500 text-white text-xs px-1.5 py-0.5 rounded-full font-medium shadow-sm">
-                        {task.notes}
-                      </div>
-                    )}
                     <span className={`status-badge ${
                       status === 'overdue' ? 'bg-red-100 text-red-800' : 
                       status === 'pending' ? 'bg-green-100 text-green-800' :
