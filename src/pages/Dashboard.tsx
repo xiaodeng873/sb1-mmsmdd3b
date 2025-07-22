@@ -677,7 +677,7 @@ setSelectedDocumentTask(null);
         setSelectedFollowUp(null);
       }}
     />
-  )}
+  )} 
 </div>
 
   );};
