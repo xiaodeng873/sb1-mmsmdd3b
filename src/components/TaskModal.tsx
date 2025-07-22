@@ -1,3 +1,6 @@
+import React, { useState, useEffect } from 'react';
+import { X } from 'lucide-react';
+
 // 定義備註的枚舉類型
 enum TaskRemark {
   BeforeMedication = "服藥前",
@@ -16,123 +19,143 @@ interface HealthTask {
   completed: boolean;
 }
 
-// 模擬任務數據
-let tasks: HealthTask[] = [];
+interface TaskModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+  task?: HealthTask;
+  onSave: (task: Omit<HealthTask, 'id' | 'completed'>) => void;
+}
 
-// 任務模態框組件（簡化版）
-class TaskModal {
-  private modalElement: HTMLElement;
-  private formElement: HTMLFormElement;
-  private remarkSelect: HTMLSelectElement;
+const TaskModal: React.FC<TaskModalProps> = ({ isOpen, onClose, task, onSave }) => {
+  const [title, setTitle] = useState('');
+  const [description, setDescription] = useState('');
+  const [remark, setRemark] = useState<TaskRemark>(TaskRemark.Regular);
+  const [dueDate, setDueDate] = useState('');
 
-  constructor() {
-    // 初始化模態框
-    this.modalElement = document.createElement('div');
-    this.modalElement.className = 'modal';
-    
-    // 創建表單
-    this.formElement = document.createElement('form');
-    this.formElement.innerHTML = `
-      <label>任務標題: <input type="text" id="taskTitle" required></label><br>
-      <label>任務描述: <textarea id="taskDescription"></textarea></label><br>
-      <label>備註: 
-        <select id="taskRemark" required>
-          ${Object.values(TaskRemark).map(remark => `<option value="${remark}">${remark}</option>`).join('')}
-        </select>
-      </label><br>
-      <label>到期日期: <input type="date" id="taskDueDate" required></label><br>
-      <button type="submit">保存</button>
-      <button type="button" onclick="this.closest('.modal').style.display='none'">取消</button>
-    `;
-    
-    this.modalElement.appendChild(this.formElement);
-    document.body.appendChild(this.modalElement);
-    
-    this.remarkSelect = this.formElement.querySelector('#taskRemark') as HTMLSelectElement;
-    this.formElement.addEventListener('submit', this.handleSubmit.bind(this));
-  }
-
-  // 顯示模態框進行新增或編輯
-  public open(task?: HealthTask): void {
-    this.modalElement.style.display = 'block';
-    
+  useEffect(() => {
     if (task) {
       // 編輯模式
-      (this.formElement.querySelector('#taskTitle') as HTMLInputElement).value = task.title;
-      (this.formElement.querySelector('#taskDescription') as HTMLTextAreaElement).value = task.description;
-      this.remarkSelect.value = task.remark;
-      (this.formElement.querySelector('#taskDueDate') as HTMLInputElement).value = 
-        task.dueDate.toISOString().split('T')[0];
+      setTitle(task.title);
+      setDescription(task.description);
+      setRemark(task.remark);
+      setDueDate(task.dueDate.toISOString().split('T')[0]);
     } else {
       // 新增模式
-      this.formElement.reset();
+      setTitle('');
+      setDescription('');
+      setRemark(TaskRemark.Regular);
+      setDueDate('');
     }
-  }
+  }, [task, isOpen]);
 
-  // 處理表單提交
-  private handleSubmit(event: Event): void {
-    event.preventDefault();
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
     
-    const title = (this.formElement.querySelector('#taskTitle') as HTMLInputElement).value;
-    const description = (this.formElement.querySelector('#taskDescription') as HTMLTextAreaElement).value;
-    const remark = this.remarkSelect.value as TaskRemark;
-    const dueDate = new Date((this.formElement.querySelector('#taskDueDate') as HTMLInputElement).value);
-    
-    const task: HealthTask = {
-      id: tasks.length + 1,
+    const taskData = {
       title,
       description,
       remark,
-      dueDate,
-      completed: false
+      dueDate: new Date(dueDate)
     };
     
-    tasks.push(task);
-    this.displayTasks();
-    this.modalElement.style.display = 'none';
-  }
+    onSave(taskData);
+    onClose();
+  };
 
-  // 顯示今日任務（包含備註標註）
-  private displayTasks(): void {
-    const todayTasksElement = document.getElementById('todayTasks');
-    if (!todayTasksElement) return;
+  if (!isOpen) return null;
 
-    todayTasksElement.innerHTML = '<h2>今日任務</h2><h3>監測任務</h3>';
-    
-    tasks
-      .filter(task => {
-        const today = new Date();
-        return task.dueDate.toDateString() === today.toDateString() && !task.completed;
-      })
-      .forEach(task => {
-        const taskElement = document.createElement('div');
-        taskElement.className = 'task-item';
-        taskElement.innerHTML = `
-          ${task.title}
-          <span class="task-remark">${task.remark}</span>
-        `;
-        todayTasksElement.appendChild(taskElement);
-      });
-  }
-}
+  return (
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+      <div className="bg-white rounded-lg p-6 w-full max-w-md mx-4">
+        <div className="flex justify-between items-center mb-4">
+          <h2 className="text-xl font-semibold">
+            {task ? '編輯任務' : '新增任務'}
+          </h2>
+          <button
+            onClick={onClose}
+            className="text-gray-400 hover:text-gray-600"
+          >
+            <X size={24} />
+          </button>
+        </div>
+
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              任務標題
+            </label>
+            <input
+              type="text"
+              value={title}
+              onChange={(e) => setTitle(e.target.value)}
+              required
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              任務描述
+            </label>
+            <textarea
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+              rows={3}
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              備註
+            </label>
+            <select
+              value={remark}
+              onChange={(e) => setRemark(e.target.value as TaskRemark)}
+              required
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+            >
+              {Object.values(TaskRemark).map(remarkOption => (
+                <option key={remarkOption} value={remarkOption}>
+                  {remarkOption}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              到期日期
+            </label>
+            <input
+              type="date"
+              value={dueDate}
+              onChange={(e) => setDueDate(e.target.value)}
+              required
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+          </div>
+
+          <div className="flex justify-end space-x-3 pt-4">
+            <button
+              type="button"
+              onClick={onClose}
+              className="px-4 py-2 text-gray-600 border border-gray-300 rounded-md hover:bg-gray-50"
+            >
+              取消
+            </button>
+            <button
+              type="submit"
+              className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
+            >
+              保存
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+};
 
 export default TaskModal;
-
-// CSS 樣式（假設在外部 CSS 文件中）
-/*
-.task-item {
-  position: relative;
-  padding: 10px;
-  border-bottom: 1px solid #ccc;
-}
-
-.task-remark {
-  position: absolute;
-  top: 5px;
-  right: 5px;
-  background-color: #f0f0f0;
-  padding: 2px 5px;
-  font-size: 0.8em;
-  border-radius: 3px;
-}
-*/
+export type { HealthTask, TaskRemark };
