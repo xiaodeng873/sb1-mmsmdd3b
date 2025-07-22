@@ -124,6 +124,15 @@ const Dashboard: React.FC = () => {
     setSelectedDocumentTask(null);
   };
 
+  const getNotesBadgeClass = (notes: string) => {
+    switch (notes) {
+      case '服藥前': return 'bg-blue-500 text-white';
+      case '注射前': return 'bg-red-500 text-white';
+      case '定期': return 'bg-green-500 text-white';
+      case '特別關顧': return 'bg-orange-500 text-white';
+      default: return 'bg-gray-500 text-white';
+    }
+  };
   const getTaskTypeIcon = (type: string) => {
     switch (type) {
       case '生命表徵': return <Activity className="h-4 w-4" />;
@@ -227,9 +236,14 @@ const Dashboard: React.FC = () => {
                 return (
                   <div 
                     key={task.id} 
-                    className="flex items-center space-x-3 p-3 bg-gray-50 rounded-lg cursor-pointer hover:bg-gray-100 transition-colors"
+                    className="relative flex items-center space-x-3 p-3 bg-gray-50 rounded-lg cursor-pointer hover:bg-gray-100 transition-colors"
                     onClick={() => handleTaskClick(task)}
                   >
+                    {task.notes && isMonitoringTask(task.health_record_type) && (
+                      <div className={`absolute top-2 right-2 px-2 py-1 rounded-full text-xs font-medium ${getNotesBadgeClass(task.notes)}`}>
+                        {task.notes}
+                      </div>
+                    )}
                     <div className="w-10 h-10 bg-blue-100 rounded-full overflow-hidden flex items-center justify-center">
                       {patient?.院友相片 ? (
                         <img 
@@ -259,7 +273,7 @@ const Dashboard: React.FC = () => {
                           : new Date(task.next_due_at).toLocaleString('zh-TW')}
                       </p>
                     </div>
-                    <span className={`status-badge ${
+                    <span className={`status-badge flex-shrink-0 ${
                       status === 'overdue' ? 'bg-red-100 text-red-800' : 
                       status === 'pending' ? 'bg-green-100 text-green-800' :
                       status === 'due_soon' ? 'bg-orange-100 text-orange-800' :

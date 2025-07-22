@@ -431,14 +431,18 @@ const TaskModal: React.FC<TaskModalProps> = ({ task, onClose }) => {
           {/* 備註 */}
           <div>
             <label className="form-label">備註</label>
-            <textarea
+            <select
               name="notes"
               value={formData.notes || ''}
               onChange={handleChange}
               className="form-input"
-              rows={3}
-              placeholder="任務的特殊說明或注意事項..."
-            />
+            >
+              <option value="">請選擇備註</option>
+              <option value="服藥前">服藥前</option>
+              <option value="注射前">注射前</option>
+              <option value="定期">定期</option>
+              <option value="特別關顧">特別關顧</option>
+            </select>
           </div>
 
           {/* 提交按鈕 */}
