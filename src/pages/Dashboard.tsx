@@ -2,8 +2,9 @@ import React from 'react';
 import { Calendar, Users, Pill, FileText, TrendingUp, Clock, CalendarCheck, CheckSquare, AlertTriangle, Activity, Droplets, Scale, User, Stethoscope, X } from 'lucide-react';
 import { usePatients } from '../context/PatientContext';
 import { Link } from 'react-router-dom';
-import { isTaskOverdue, isTaskDueSoon, isTaskPendingToday, getTaskStatus, isDocumentTask, isMonitoringTask } from '../utils/taskScheduler';
+import { isTaskOverdue, isTaskPendingToday, isTaskDueSoon, getTaskStatus, isDocumentTask, isMonitoringTask } from '../utils/taskScheduler';
 import HealthRecordModal from '../components/HealthRecordModal';
+import FollowUpModal from '../components/FollowUpModal';
 
 const Dashboard: React.FC = () => {
   const { patients, schedules, prescriptions, followUpAppointments, patientHealthTasks, healthRecords, loading, updatePatientHealthTask } = usePatients();
@@ -11,6 +12,8 @@ const Dashboard: React.FC = () => {
   const [selectedTaskForRecord, setSelectedTaskForRecord] = React.useState<any>(null);
   const [showDocumentTaskModal, setShowDocumentTaskModal] = React.useState(false);
   const [selectedDocumentTask, setSelectedDocumentTask] = React.useState<any>(null);
+  const [showFollowUpModal, setShowFollowUpModal] = React.useState(false);
+  const [selectedFollowUp, setSelectedFollowUp] = React.useState<any>(null);
 
   if (loading) {
     return (
@@ -47,11 +50,12 @@ const Dashboard: React.FC = () => {
   const monitoringTasks = patientHealthTasks.filter(task => isMonitoringTask(task.health_record_type));
   const documentTasks = patientHealthTasks.filter(task => isDocumentTask(task.health_record_type));
   
+  // 監測任務：僅顯示逾期和未完成
   const overdueMonitoringTasks = monitoringTasks.filter(task => isTaskOverdue(task));
   const pendingMonitoringTasks = monitoringTasks.filter(task => isTaskPendingToday(task));
-  const dueSoonMonitoringTasks = monitoringTasks.filter(task => isTaskDueSoon(task));
-  const urgentMonitoringTasks = [...overdueMonitoringTasks, ...pendingMonitoringTasks, ...dueSoonMonitoringTasks].slice(0, 10);
+  const urgentMonitoringTasks = [...overdueMonitoringTasks, ...pendingMonitoringTasks].slice(0, 10);
   
+  // 文件任務：包含逾期、未完成和即將到期
   const overdueDocumentTasks = documentTasks.filter(task => isTaskOverdue(task));
   const pendingDocumentTasks = documentTasks.filter(task => isTaskPendingToday(task));
   const dueSoonDocumentTasks = documentTasks.filter(task => isTaskDueSoon(task));
@@ -78,6 +82,11 @@ const Dashboard: React.FC = () => {
       });
       setShowDocumentTaskModal(true);
     }
+  };
+
+  const handleFollowUpClick = (appointment: any) => {
+    setSelectedFollowUp(appointment);
+    setShowFollowUpModal(true);
   };
 
   const handleTaskCompleted = async (taskId: string, recordDateTime: Date) => {
@@ -401,6 +410,7 @@ const Dashboard: React.FC = () => {
           </div>
         </div>
 
+        {/* 近期覆診 */}
         <div className="card p-6">
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-lg font-semibold text-gray-900">近期覆診</h2>
@@ -416,7 +426,11 @@ const Dashboard: React.FC = () => {
               upcomingFollowUps.map(appointment => {
                 const patient = patients.find(p => p.院友id === appointment.院友id);
                 return (
-                  <div key={appointment.覆診id} className="flex items-center space-x-3 p-3 bg-gray-50 rounded-lg">
+                  <div 
+                    key={appointment.覆診id} 
+                    className="flex items-center space-x-3 p-3 bg-gray-50 rounded-lg cursor-pointer hover:bg-gray-100 transition-colors"
+                    onClick={() => handleFollowUpClick(appointment)}
+                  >
                     <div className="w-10 h-10 bg-blue-100 rounded-full overflow-hidden flex items-center justify-center">
                       {patient?.院友相片 ? (
                         <img 
@@ -494,6 +508,17 @@ const Dashboard: React.FC = () => {
             setSelectedDocumentTask(null);
           }}
           onTaskCompleted={handleDocumentTaskCompleted}
+        />
+      )}
+
+      {/* 覆診模態框 */}
+      {showFollowUpModal && (
+        <FollowUpModal
+          appointment={selectedFollowUp}
+          onClose={() => {
+            setShowFollowUpModal(false);
+            setSelectedFollowUp(null);
+          }}
         />
       )}
     </div>
@@ -616,5 +641,5 @@ const DocumentTaskModal: React.FC<{
     </div>
   );
 };
- 
+
 export default Dashboard;
