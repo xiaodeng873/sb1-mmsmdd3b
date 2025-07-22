@@ -6,14 +6,55 @@ import { isTaskOverdue, isTaskPendingToday, isTaskDueSoon, getTaskStatus, isDocu
 import HealthRecordModal from '../components/HealthRecordModal';
 import FollowUpModal from '../components/FollowUpModal';
 
+// 定義任務和病人的接口
+interface Patient {
+  院友id: string;
+  中文姓名: string;
+  床號: string;
+  院友相片?: string;
+}
+
+interface HealthTask {
+  id: string;
+  patient_id: string;
+  health_record_type: string;
+  notes?: string;
+  next_due_at: string;
+  last_completed_at?: string;
+}
+
+interface FollowUpAppointment {
+  覆診id: string;
+  院友id: string;
+  覆診日期: string;
+  覆診地點: string;
+  覆診專科: string;
+  狀態: string;
+}
+
+interface HealthRecord {
+  記錄id: string;
+  院友id: string;
+  記錄類型: string;
+  記錄日期: string;
+  記錄時間: string;
+  血壓收縮壓?: number;
+  血壓舒張壓?: number;
+  脈搏?: number;
+  體溫?: number;
+  血含氧量?: number;
+  血糖值?: number;
+  體重?: number;
+}
+
 const Dashboard: React.FC = () => {
   const { patients, schedules, prescriptions, followUpAppointments, patientHealthTasks, healthRecords, loading, updatePatientHealthTask } = usePatients();
   const [showHealthModal, setShowHealthModal] = React.useState(false);
-  const [selectedTaskForRecord, setSelectedTaskForRecord] = React.useState<any>(null);
+  const [selectedTaskForRecord, setSelectedTaskForRecord] = React.useState<{ task: HealthTask; patient: Patient; 預設記錄類型: string } | null>(null);
   const [showDocumentTaskModal, setShowDocumentTaskModal] = React.useState(false);
-  const [selectedDocumentTask, setSelectedDocumentTask] = React.useState<any>(null);
+  const [selectedDocumentTask, setSelectedDocumentTask] = React.useState<{ task: HealthTask; patient: Patient } | null>(null);
   const [showFollowUpModal, setShowFollowUpModal] = React.useState(false);
-  const [selectedFollowUp, setSelectedFollowUp] = React.useState<any>(null);
+  const [selectedFollowUp, setSelectedFollowUp] = React.useState<FollowUpAppointment | null>(null);
 
   if (loading) {
     return (
@@ -25,7 +66,7 @@ const Dashboard: React.FC = () => {
       </div>
     );
   }
-  
+
   // 最近排程：今天及未來最多5個排程
   const recentSchedules = schedules
     .filter(s => new Date(s.到診日期) >= new Date(new Date().toDateString()))
@@ -49,19 +90,36 @@ const Dashboard: React.FC = () => {
   // 任務統計
   const monitoringTasks = patientHealthTasks.filter(task => isMonitoringTask(task.health_record_type));
   const documentTasks = patientHealthTasks.filter(task => isDocumentTask(task.health_record_type));
-  
+
   // 監測任務：僅顯示逾期和未完成
   const overdueMonitoringTasks = monitoringTasks.filter(task => isTaskOverdue(task));
   const pendingMonitoringTasks = monitoringTasks.filter(task => isTaskPendingToday(task));
-  const urgentMonitoringTasks = [...overdueMonitoringTasks, ...pendingMonitoringTasks].slice(0, 100);
-  
+  const urgentMonitoringTasks = [...overdueMonitoringTasks, ...pendingMonitoringTasks].sort((a, b) => {
+    const timeA = new Date(a.next_due_at).getTime();
+    const timeB = new Date(b.next_due_at).getTime();
+
+    if (timeA === timeB) {
+      // 定義優先級
+      const priority = {
+        '服藥前': 1,
+        '注射前': 2,
+        '定期': 3
+      };
+      // 如果 notes 為空，設置最低優先級
+      const priorityA = a.notes ? priority[a.notes] || 4 : 4;
+      const priorityB = b.notes ? priority[b.notes] || 4 : 4;
+      return priorityA - priorityB;
+    }
+    return timeA - timeB;
+  }).slice(0, 100);
+
   // 文件任務：包含逾期、未完成和即將到期
   const overdueDocumentTasks = documentTasks.filter(task => isTaskOverdue(task));
   const pendingDocumentTasks = documentTasks.filter(task => isTaskPendingToday(task));
   const dueSoonDocumentTasks = documentTasks.filter(task => isTaskDueSoon(task));
   const urgentDocumentTasks = [...overdueDocumentTasks, ...pendingDocumentTasks, ...dueSoonDocumentTasks].slice(0, 10);
 
-  const handleTaskClick = (task: any) => {
+  const handleTaskClick = (task: HealthTask) => {
     const patient = patients.find(p => p.院友id === task.patient_id);
     if (patient) {
       setSelectedTaskForRecord({
@@ -73,7 +131,7 @@ const Dashboard: React.FC = () => {
     }
   };
 
-  const handleDocumentTaskClick = (task: any) => {
+  const handleDocumentTaskClick = (task: HealthTask) => {
     const patient = patients.find(p => p.院友id === task.patient_id);
     if (patient) {
       setSelectedDocumentTask({
@@ -84,7 +142,7 @@ const Dashboard: React.FC = () => {
     }
   };
 
-  const handleFollowUpClick = (appointment: any) => {
+  const handleFollowUpClick = (appointment: FollowUpAppointment) => {
     setSelectedFollowUp(appointment);
     setShowFollowUpModal(true);
   };
@@ -94,7 +152,7 @@ const Dashboard: React.FC = () => {
     if (task) {
       const { calculateNextDueDate } = await import('../utils/taskScheduler');
       const nextDueAt = calculateNextDueDate(task, recordDateTime);
-      
+
       await updatePatientHealthTask({
         ...task,
         last_completed_at: recordDateTime.toISOString(),
@@ -113,7 +171,7 @@ const Dashboard: React.FC = () => {
         ...task,
         last_completed_at: newSignatureDate
       });
-      
+
       await updatePatientHealthTask({
         ...task,
         last_completed_at: newSignatureDate,
@@ -134,6 +192,7 @@ const Dashboard: React.FC = () => {
       default: return 'bg-gray-500 text-white';
     }
   };
+
   const getTaskTypeIcon = (type: string) => {
     switch (type) {
       case '生命表徵': return <Activity className="h-4 w-4" />;
@@ -156,7 +215,7 @@ const Dashboard: React.FC = () => {
 
   const stats = [];
 
-  const getHealthRecordData = (record: any) => {
+  const getHealthRecordData = (record: HealthRecord) => {
     switch (record.記錄類型) {
       case '生命表徵':
         const vitals = [];
@@ -217,7 +276,6 @@ const Dashboard: React.FC = () => {
 
       {/* Recent Activity */}
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
-        
         {/* 監測任務 */}
         <div className="card p-6">
           <div className="flex items-center justify-between mb-4">
@@ -368,7 +426,7 @@ const Dashboard: React.FC = () => {
             )}
           </div>
         </div>
-        
+
         {/* 近期監測 */}
         <div className="card p-6">
           <div className="flex items-center justify-between mb-4">
@@ -527,7 +585,7 @@ const Dashboard: React.FC = () => {
       )}
 
       {/* 覆診模態框 */}
-      {showFollowUpModal && (
+      {showFollowUpModal && selectedFollowUp && (
         <FollowUpModal
           appointment={selectedFollowUp}
           onClose={() => {
@@ -542,8 +600,8 @@ const Dashboard: React.FC = () => {
 
 // 文件任務模態框組件
 const DocumentTaskModal: React.FC<{
-  task: any;
-  patient: any;
+  task: HealthTask;
+  patient: Patient;
   onClose: () => void;
   onTaskCompleted: (taskId: string, newSignatureDate: string) => void;
 }> = ({ task, patient, onClose, onTaskCompleted }) => {
@@ -583,7 +641,7 @@ const DocumentTaskModal: React.FC<{
             <X className="h-6 w-6" />
           </button>
         </div>
-        
+
         <div className="mb-4 p-4 bg-gray-50 rounded-lg">
           <div className="flex items-center space-x-3">
             <div className="w-12 h-12 bg-blue-100 rounded-full overflow-hidden flex items-center justify-center">
@@ -604,7 +662,7 @@ const DocumentTaskModal: React.FC<{
             </div>
           </div>
         </div>
-        
+
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
             <label className="form-label">
@@ -622,7 +680,7 @@ const DocumentTaskModal: React.FC<{
               請輸入醫生簽署此文件的日期，系統將根據此日期計算下次到期時間
             </p>
           </div>
-          
+
           <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
             <p className="text-sm text-blue-800">
               <strong>當前狀態：</strong>
@@ -635,7 +693,7 @@ const DocumentTaskModal: React.FC<{
               <strong>下次到期：</strong>{new Date(task.next_due_at).toLocaleDateString('zh-TW')}
             </p>
           </div>
-          
+
           <div className="flex space-x-3 pt-4">
             <button
               type="submit"
