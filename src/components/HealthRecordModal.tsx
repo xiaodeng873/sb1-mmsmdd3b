@@ -100,12 +100,7 @@ const HealthRecordModal: React.FC<HealthRecordModalProps> = ({
     }
 
     // Validate fields based on record type
-    if (formData.記錄類型 === '生命表徵') {
-      if (!formData.血壓收縮壓 && !formData.血壓舒張壓 && !formData.脈搏 && !formData.體溫 && !formData.血含氧量 && !formData.呼吸頻率) {
-        alert('生命表徵記錄至少需要填寫一項數值');
-        return;
-      }
-    } else if (formData.記錄類型 === '血糖控制') {
+    if (formData.記錄類型 === '血糖控制') {
       if (!formData.血糖值) {
         alert('血糖控制記錄需要填寫血糖值');
         return;
@@ -116,6 +111,8 @@ const HealthRecordModal: React.FC<HealthRecordModalProps> = ({
         return;
       }
     }
+    // 移除生命表徵的強制數據要求，允許所有欄位為空
+    // 只要備註有值或基本欄位填寫即可儲存
 
     try {
       const recordData = {
