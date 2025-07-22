@@ -160,15 +160,10 @@ export function isTaskOverdue(task: PatientHealthTask): boolean {
   const now = new Date();
   const dueDate = new Date(task.next_due_at);
   
-  // 設置當天的結束時間（午夜12點，即次日0點）
-  const todayEnd = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-  todayEnd.setHours(23, 59, 59, 999);
-  
   if (isDocumentTask(task.health_record_type)) {
     // 文件任務：僅比較日期
     const nowDate = new Date(now.getFullYear(), now.getMonth(), now.getDate());
     const dueDateOnly = new Date(dueDate.getFullYear(), dueDate.getMonth(), dueDate.getDate());
-    // 逾期條件：到期日期早於當前日期，且未完成或最後完成時間早於到期時間
     return dueDateOnly < nowDate && (!task.last_completed_at || new Date(task.last_completed_at) < dueDate);
   }
   
@@ -181,8 +176,8 @@ export function isTaskOverdue(task: PatientHealthTask): boolean {
     }
   }
   
-  // 逾期條件：到期時間早於當天結束時間（午夜12點）
-  return dueDate < todayEnd;
+  // 如果到期時間已過，則為逾期
+  return dueDate < now;
 }
 
 // 檢查任務是否為未完成
@@ -322,7 +317,6 @@ export function formatFrequencyDescription(task: PatientHealthTask): string {
       if (specific_days_of_week.length > 0 && !isDocumentTask(task.health_record_type)) {
         const dayNames = ['週日', '週一', '週二', '週三', '週四', '週五', '週六'];
         const days = specific_days_of_week.map(day => dayNames[day === 7 ? 0 : day]).join(', ');
-        const dayNames[day === 7 ? 0 : day]).join(', ');
         return frequency_value === 1 ? `每週 ${days}${specific_times[0] ? ` ${specific_times[0]}` : ''}` : `每 ${frequency_value} 週 ${days}${specific_times[0] ? ` ${specific_times[0]}` : ''}`;
       }
       return frequency_value === 1 ? '每週' : `每 ${frequency_value} 週`;
@@ -337,4 +331,5 @@ export function formatFrequencyDescription(task: PatientHealthTask): string {
     default:
       return '未知頻率';
   }
-}
+} 
+ 
