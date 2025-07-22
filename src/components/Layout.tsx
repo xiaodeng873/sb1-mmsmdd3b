@@ -30,14 +30,14 @@ const Layout: React.FC<LayoutProps> = ({ children, user, onSignOut }) => {
   const location = useLocation();
 
   const navigation = [
-    { name: '任務提示', href: '/', icon: Home },
+    { name: '今日任務', href: '/', icon: Home },
     { name: '院友列表', href: '/patients', icon: Users },
     { name: 'VMO排程', href: '/scheduling', icon: Calendar },
     { name: '覆診管理', href: '/follow-up', icon: CalendarCheck },
-    { name: '任務管理', href: '/tasks', icon: CheckSquare },
     { name: '藥物登記', href: '/medication', icon: Pill },
     { name: '監測數據', href: '/health', icon: Heart },
     { name: '範本管理', href: '/templates', icon: FileText },
+    { name: '任務管理', href: '/tasks', icon: CheckSquare },
     { name: '報表查詢', href: '/reports', icon: BarChart3 },
   ];
 
