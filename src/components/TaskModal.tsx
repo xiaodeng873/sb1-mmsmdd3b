@@ -116,6 +116,8 @@ class TaskModal {
   }
 }
 
+export default TaskModal;
+
 // CSS 樣式（假設在外部 CSS 文件中）
 /*
 .task-item {
