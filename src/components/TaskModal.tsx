@@ -18,7 +18,7 @@ const TaskModal: React.FC<TaskModalProps> = ({ task, onClose }) => {
     health_record_type: task?.health_record_type || '約束物品同意書' as HealthTaskType,
     frequency_unit: task?.frequency_unit || 'monthly' as FrequencyUnit,
     frequency_value: task?.frequency_value || 6,
-     health_record_type: task?.health_record_type || '年度體檢' as HealthTaskType,
+    health_record_type: task?.health_record_type || '年度體檢' as HealthTaskType,
     frequency_unit: task?.frequency_unit || 'monthly' as FrequencyUnit,
     frequency_value: task?.frequency_value || 12,
     specific_times: task?.specific_times || [],
