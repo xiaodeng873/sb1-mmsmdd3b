@@ -89,16 +89,6 @@ const Dashboard: React.FC = () => {
     setShowFollowUpModal(true);
   };
 
-  const getTaskNoteBadgeColor = (note: string) => {
-    switch (note) {
-      case '注射前': return 'bg-red-500';
-      case '服藥前': return 'bg-orange-500';
-      case '定期': return 'bg-blue-400';
-      case '特別關顧': return 'bg-pink-500';
-      default: return 'bg-gray-500';
-    }
-  };
-
   const handleTaskCompleted = async (taskId: string, recordDateTime: Date) => {
     const task = patientHealthTasks.find(t => t.id === taskId);
     if (task) {
@@ -270,7 +260,7 @@ const Dashboard: React.FC = () => {
                       </p>
                     </div>
                     {task.notes && (
-                      <div className={`absolute -top-1 -right-1 text-white text-xs px-1.5 py-0.5 rounded-full font-medium shadow-sm ${getTaskNoteBadgeColor(task.notes)}`}>
+                      <div className="absolute -top-1 -right-1 bg-orange-500 text-white text-xs px-1.5 py-0.5 rounded-full font-medium shadow-sm">
                         {task.notes}
                       </div>
                     )}
@@ -347,6 +337,11 @@ const Dashboard: React.FC = () => {
                         到期: {new Date(task.next_due_at).toLocaleDateString('zh-TW')}
                       </p>
                     </div>
+                    {task.notes && (
+                      <div className="absolute -top-1 -right-1 bg-orange-500 text-white text-xs px-1.5 py-0.5 rounded-full font-medium shadow-sm">
+                        {task.notes}
+                      </div>
+                    )}
                     <span className={`status-badge ${
                       status === 'overdue' ? 'bg-red-100 text-red-800' : 
                       status === 'pending' ? 'bg-green-100 text-green-800' :
