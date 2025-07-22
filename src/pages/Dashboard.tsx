@@ -130,6 +130,7 @@ const Dashboard: React.FC = () => {
       case '注射前': return 'bg-red-500 text-white';
       case '定期': return 'bg-green-500 text-white';
       case '特別關顧': return 'bg-orange-500 text-white';
+      case '社康': return 'bg-purple-500 text-white';
       default: return 'bg-gray-500 text-white';
     }
   };
