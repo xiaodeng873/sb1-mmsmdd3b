@@ -32,7 +32,7 @@ const Dashboard: React.FC = () => {
     .sort((a, b) => new Date(a.到診日期).getTime() - new Date(b.到診日期).getTime())
     .slice(0, 5);
 
-  // 近期監測：最近10個健康記錄
+  // 近期監測：最近30個健康記錄
   const recentHealthRecords = healthRecords
     .sort((a, b) => new Date(`${b.記錄日期} ${b.記錄時間}`).getTime() - new Date(`${a.記錄日期} ${a.記錄時間}`).getTime())
     .slice(0, 30);
