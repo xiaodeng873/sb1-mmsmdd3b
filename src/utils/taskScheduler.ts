@@ -167,6 +167,15 @@ export function isTaskOverdue(task: PatientHealthTask): boolean {
     return dueDateOnly < nowDate && (!task.last_completed_at || new Date(task.last_completed_at) < dueDate);
   }
   
+  // 監測任務：只有過了午夜12時（即不在同一天）才算逾期
+  const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  const dueDateDay = new Date(dueDate.getFullYear(), dueDate.getMonth(), dueDate.getDate());
+  
+  // 如果到期日期是今天或未來，不算逾期
+  if (dueDateDay >= todayStart) {
+    return false;
+  }
+  
   // 監測任務：檢查是否逾期
   if (task.last_completed_at) {
     const lastCompleted = new Date(task.last_completed_at);
@@ -176,8 +185,8 @@ export function isTaskOverdue(task: PatientHealthTask): boolean {
     }
   }
   
-  // 如果到期時間已過，則為逾期
-  return dueDate < now;
+  // 只有過了午夜12時（不在同一天）才算逾期
+  return true;
 }
 
 // 檢查任務是否為未完成
