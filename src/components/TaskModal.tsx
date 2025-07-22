@@ -12,15 +12,15 @@ const TaskModal: React.FC<TaskModalProps> = ({ task, onClose }) => {
   const { patients, addPatientHealthTask, updatePatientHealthTask } = usePatients();
   const [formData, setFormData] = useState({
     patient_id: task?.patient_id || '',
+    health_record_type: task?.health_record_type || '年度體檢' as HealthTaskType,
+    frequency_unit: task?.frequency_unit || 'monthly' as FrequencyUnit,
+    frequency_value: task?.frequency_value || 12,
     health_record_type: task?.health_record_type || '生命表徵' as HealthTaskType,
     frequency_unit: task?.frequency_unit || 'weekly' as FrequencyUnit,
     frequency_value: task?.frequency_value || 1,
     health_record_type: task?.health_record_type || '約束物品同意書' as HealthTaskType,
     frequency_unit: task?.frequency_unit || 'monthly' as FrequencyUnit,
     frequency_value: task?.frequency_value || 6,
-    health_record_type: task?.health_record_type || '年度體檢' as HealthTaskType,
-    frequency_unit: task?.frequency_unit || 'monthly' as FrequencyUnit,
-    frequency_value: task?.frequency_value || 12,
     specific_times: task?.specific_times || [],
     specific_days_of_week: task?.specific_days_of_week || [],
     specific_days_of_month: task?.specific_days_of_month || [],
