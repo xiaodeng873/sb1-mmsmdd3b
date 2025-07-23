@@ -169,20 +169,11 @@ export default function FollowUpModal({ appointment, onClose }: FollowUpModalPro
                 <User className="h-4 w-4 inline mr-1" />
                 院友 *
               </label>
-              <select
-                name="院友id"
+              <PatientAutocomplete
                 value={formData.院友id}
-                onChange={handleChange}
-                className="form-input"
-                required
-              >
-                <option value="">請選擇院友</option>
-                {patients.map(patient => (
-                  <option key={patient.院友id} value={patient.院友id}>
-                    {patient.床號} - {patient.中文姓名}
-                  </option>
-                ))}
-              </select>
+                onChange={(patientId) => setFormData(prev => ({ ...prev, 院友id: patientId }))}
+                placeholder="搜索院友..."
+              />
             </div>
 
             <div>
