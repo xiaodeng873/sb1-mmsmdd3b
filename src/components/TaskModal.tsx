@@ -11,6 +11,20 @@ interface TaskModalProps {
 
 const TaskModal: React.FC<TaskModalProps> = ({ task, onClose }) => {
   const { patients, addPatientHealthTask, updatePatientHealthTask } = usePatients();
+
+  // 香港時區輔助函數
+  const getHongKongDate = () => {
+    const now = new Date();
+    const hongKongTime = new Date(now.getTime() + (8 * 60 * 60 * 1000)); // GMT+8
+    return hongKongTime.toISOString().split('T')[0];
+  };
+
+  const getHongKongTime = () => {
+    const now = new Date();
+    const hongKongTime = new Date(now.getTime() + (8 * 60 * 60 * 1000)); // GMT+8
+    return hongKongTime.toISOString().split('T')[1].slice(0, 5);
+  };
+
   const [formData, setFormData] = useState({
     patient_id: task?.patient_id || '',
     frequency_unit: task?.frequency_unit || 'monthly' as FrequencyUnit,
@@ -31,19 +45,6 @@ const TaskModal: React.FC<TaskModalProps> = ({ task, onClose }) => {
     start_time: task ? (task.last_completed_at ? new Date(task.last_completed_at).toTimeString().slice(0, 5) : '') : getHongKongTime()
   });
   const [newTime, setNewTime] = useState('');
-
-  // 香港時區輔助函數
-  const getHongKongDate = () => {
-    const now = new Date();
-    const hongKongTime = new Date(now.getTime() + (8 * 60 * 60 * 1000)); // GMT+8
-    return hongKongTime.toISOString().split('T')[0];
-  };
-
-  const getHongKongTime = () => {
-    const now = new Date();
-    const hongKongTime = new Date(now.getTime() + (8 * 60 * 60 * 1000)); // GMT+8
-    return hongKongTime.toISOString().split('T')[1].slice(0, 5);
-  };
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value, type } = e.target;

@@ -19,6 +19,20 @@ const HealthRecordModal: React.FC<HealthRecordModalProps> = ({
   defaultRecordTime
 }) => {
   const { patients, addHealthRecord, updateHealthRecord, healthRecords } = usePatients();
+
+  // 香港時區輔助函數
+  const getHongKongDate = () => {
+    const now = new Date();
+    const hongKongTime = new Date(now.getTime() + (8 * 60 * 60 * 1000)); // GMT+8
+    return hongKongTime.toISOString().split('T')[0];
+  };
+
+  const getHongKongTime = () => {
+    const now = new Date();
+    const hongKongTime = new Date(now.getTime() + (8 * 60 * 60 * 1000)); // GMT+8
+    return hongKongTime.toISOString().split('T')[1].slice(0, 5);
+  };
+
   const [formData, setFormData] = useState({
     院友id: record?.院友id || '',
     記錄日期: record?.記錄日期 || defaultRecordDate || getHongKongDate(),
@@ -38,19 +52,6 @@ const HealthRecordModal: React.FC<HealthRecordModalProps> = ({
 
   const [weightChange, setWeightChange] = useState('');
   const [showDateTimeConfirm, setShowDateTimeConfirm] = useState(false);
-
-  // 香港時區輔助函數
-  const getHongKongDate = () => {
-    const now = new Date();
-    const hongKongTime = new Date(now.getTime() + (8 * 60 * 60 * 1000)); // GMT+8
-    return hongKongTime.toISOString().split('T')[0];
-  };
-
-  const getHongKongTime = () => {
-    const now = new Date();
-    const hongKongTime = new Date(now.getTime() + (8 * 60 * 60 * 1000)); // GMT+8
-    return hongKongTime.toISOString().split('T')[1].slice(0, 5);
-  };
 
   const parseHongKongDateTime = (date: string, time: string) => {
     // 將香港時間轉換為 UTC 時間

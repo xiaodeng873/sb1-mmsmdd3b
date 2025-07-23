@@ -9,9 +9,6 @@ interface ScheduleModalProps {
 
 const ScheduleModal: React.FC<ScheduleModalProps> = ({ schedule, onClose }) => {
   const { addSchedule, updateSchedule } = usePatients();
-  const [formData, setFormData] = useState({
-    到診日期: schedule?.到診日期 || getHongKongDate()
-  });
 
   // 香港時區輔助函數
   const getHongKongDate = () => {
@@ -19,6 +16,10 @@ const ScheduleModal: React.FC<ScheduleModalProps> = ({ schedule, onClose }) => {
     const hongKongTime = new Date(now.getTime() + (8 * 60 * 60 * 1000)); // GMT+8
     return hongKongTime.toISOString().split('T')[0];
   };
+
+  const [formData, setFormData] = useState({
+    到診日期: schedule?.到診日期 || getHongKongDate()
+  });
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();

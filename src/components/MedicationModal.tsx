@@ -11,6 +11,14 @@ interface MedicationModalProps {
 
 const MedicationModal: React.FC<MedicationModalProps> = ({ prescription, onClose }) => {
   const { addPrescription, updatePrescription, patients } = usePatients();
+
+  // 香港時區輔助函數
+  const getHongKongDate = () => {
+    const now = new Date();
+    const hongKongTime = new Date(now.getTime() + (8 * 60 * 60 * 1000)); // GMT+8
+    return hongKongTime.toISOString().split('T')[0];
+  };
+
   const [formData, setFormData] = useState({
     院友id: prescription?.院友id || '',
     藥物來源: prescription?.藥物來源 || '',
@@ -27,13 +35,6 @@ const MedicationModal: React.FC<MedicationModalProps> = ({ prescription, onClose
   const [selectedTime, setSelectedTime] = useState('');
   const [timeInput, setTimeInput] = useState('');
   const [showTimeDropdown, setShowTimeDropdown] = useState(false);
-
-  // 香港時區輔助函數
-  const getHongKongDate = () => {
-    const now = new Date();
-    const hongKongTime = new Date(now.getTime() + (8 * 60 * 60 * 1000)); // GMT+8
-    return hongKongTime.toISOString().split('T')[0];
-  };
 
   // Debug: 檢查初始資料
   console.log('Prescription data:', prescription);

@@ -9,6 +9,14 @@ interface FollowUpModalProps {
 
 export default function FollowUpModal({ appointment, onClose }: FollowUpModalProps) {
   const { patients, addFollowUpAppointment, updateFollowUpAppointment } = usePatients();
+
+  // 香港時區輔助函數
+  const getHongKongDate = () => {
+    const now = new Date();
+    const hongKongTime = new Date(now.getTime() + (8 * 60 * 60 * 1000)); // GMT+8
+    return hongKongTime.toISOString().split('T')[0];
+  };
+
   const [formData, setFormData] = useState({
     院友id: appointment?.院友id || '',
     覆診日期: appointment?.覆診日期 || getHongKongDate(),
@@ -23,13 +31,6 @@ export default function FollowUpModal({ appointment, onClose }: FollowUpModalPro
   });
 
   const [notificationMessage, setNotificationMessage] = useState('');
-
-  // 香港時區輔助函數
-  const getHongKongDate = () => {
-    const now = new Date();
-    const hongKongTime = new Date(now.getTime() + (8 * 60 * 60 * 1000)); // GMT+8
-    return hongKongTime.toISOString().split('T')[0];
-  };
 
   // 醫院名稱選項
   const hospitalOptions = [
