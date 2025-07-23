@@ -101,9 +101,11 @@ const Dashboard: React.FC = () => {
     if (timeA === timeB) {
       // 定義優先級
       const priority = {
-        '服藥前': 1,
-        '注射前': 2,
-        '定期': 3
+        '注射前': 1,
+        '服藥前': 2,
+        '社康': 3,
+        '特別關顧':4
+        '定期': 5
       };
       // 如果 notes 為空，設置最低優先級
       const priorityA = a.notes ? priority[a.notes] || 4 : 4;
