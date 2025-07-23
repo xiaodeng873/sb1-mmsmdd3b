@@ -104,7 +104,8 @@ const Dashboard: React.FC = () => {
         '注射前': 1,
         '服藥前': 2,
         '社康': 3,
-        '定期': 4
+        '特別關顧': 4,
+        '定期': 5
       };
       // 如果 notes 為空，設置最低優先級
       const priorityA = a.notes ? priority[a.notes] || 5 : 5;
