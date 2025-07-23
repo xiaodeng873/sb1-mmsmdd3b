@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { X, Pill } from 'lucide-react';
 import { usePatients } from '../context/PatientContext';
 import { getMedicationTimeColorClass } from '../utils/medicationTimeColors';
+import PatientAutocomplete from './PatientAutocomplete';
 
 interface MedicationModalProps {
   prescription?: any;
