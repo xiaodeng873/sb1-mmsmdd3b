@@ -249,7 +249,7 @@ const Dashboard: React.FC = () => {
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-gray-900">系統總覽</h1>
+        
         <div className="text-sm text-gray-500">
           最後更新: {new Date().toLocaleString('zh-TW')}
         </div>
