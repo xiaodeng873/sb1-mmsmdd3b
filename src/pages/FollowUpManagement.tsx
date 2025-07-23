@@ -15,7 +15,8 @@ import {
   ChevronUp,
   ChevronDown,
   Copy,
-  MessageSquare
+  MessageSquare,
+  X
 } from 'lucide-react';
 import { usePatients, type FollowUpAppointment } from '../context/PatientContext';
 import FollowUpModal from '../components/FollowUpModal';
