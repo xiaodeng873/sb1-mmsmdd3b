@@ -135,7 +135,7 @@ const HealthRecordModal: React.FC<HealthRecordModalProps> = ({
 
     const recordDateTime = parseHongKongDateTime(formData.記錄日期, formData.記錄時間);
     const now = new Date(new Date().getTime() + (8 * 60 * 60 * 1000)); // 香港當前時間
-    if (recordDateTime < now) {
+    if (recordDateTime > now) {
       setShowDateTimeConfirm(true);
       return;
     }
@@ -468,10 +468,10 @@ const HealthRecordModal: React.FC<HealthRecordModalProps> = ({
             <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
               <div className="bg-white rounded-lg p-6 max-w-md w-full">
                 <h3 className="text-lg font-semibold text-gray-900 mb-4">
-                  確認過去時間記錄
+                  確認未來時間記錄
                 </h3>
                 <p className="text-gray-600 mb-6">
-                  您輸入的記錄日期和時間 ({formData.記錄日期} {formData.記錄時間}) 早於當前時間。
+                  您輸入的記錄日期和時間 ({formData.記錄日期} {formData.記錄時間}) 晚於當前時間。
                   是否確認要儲存此記錄？
                 </p>
                 <div className="flex space-x-3">
