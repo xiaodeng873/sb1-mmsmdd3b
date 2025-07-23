@@ -104,12 +104,11 @@ const Dashboard: React.FC = () => {
         '注射前': 1,
         '服藥前': 2,
         '社康': 3,
-        '特別關顧':4,
-        '定期': 5
+        '定期': 4
       };
       // 如果 notes 為空，設置最低優先級
-      const priorityA = a.notes ? priority[a.notes] || 4 : 4;
-      const priorityB = b.notes ? priority[b.notes] || 4 : 4;
+      const priorityA = a.notes ? priority[a.notes] || 5 : 5;
+      const priorityB = b.notes ? priority[b.notes] || 5 : 5;
       return priorityA - priorityB;
     }
     return timeA - timeB;
@@ -215,6 +214,18 @@ const Dashboard: React.FC = () => {
     }
   };
 
+  const getTaskTimeBackgroundClass = (nextDueAt: string) => {
+    const hour = new Date(nextDueAt).getHours();
+    if (hour >= 7 && hour < 10) {
+      return 'bg-red-50 hover:bg-red-100';
+    } else if (hour >= 10 && hour < 13) {
+      return 'bg-yellow-50 hover:bg-yellow-100';
+    } else if (hour >= 13 && hour < 18) {
+      return 'bg-green-50 hover:bg-green-100';
+    }
+    return 'bg-gray-50 hover:bg-gray-100';
+  };
+
   const stats = [];
 
   const getHealthRecordData = (record: HealthRecord) => {
@@ -249,7 +260,7 @@ const Dashboard: React.FC = () => {
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        
+        <h1 className="text-2xl font-bold text-gray-900">系統總覽</h1>
         <div className="text-sm text-gray-500">
           最後更新: {new Date().toLocaleString('zh-TW')}
         </div>
@@ -297,7 +308,7 @@ const Dashboard: React.FC = () => {
                 return (
                   <div 
                     key={task.id} 
-                    className="relative flex items-center space-x-3 p-3 bg-gray-50 rounded-lg cursor-pointer hover:bg-gray-100 transition-colors"
+                    className={`relative flex items-center space-x-3 p-3 ${getTaskTimeBackgroundClass(task.next_due_at)} rounded-lg cursor-pointer transition-colors`}
                     onClick={() => handleTaskClick(task)}
                   >
                     {task.notes && isMonitoringTask(task.health_record_type) && (
