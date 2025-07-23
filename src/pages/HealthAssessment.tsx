@@ -419,7 +419,7 @@ const HealthAssessment: React.FC = () => {
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-gray-900">狀況評估</h1>
+     
         <div className="flex items-center space-x-2">
           <div className="relative group">
             <button className="btn-secondary flex items-center space-x-2">
