@@ -37,7 +37,6 @@ const HealthRecordModal: React.FC<HealthRecordModalProps> = ({
 
   const [weightChange, setWeightChange] = useState<string>('');
   const [showDateTimeConfirm, setShowDateTimeConfirm] = useState(false);
-  const [showDateTimeConfirm, setShowDateTimeConfirm] = useState(false);
 
   useEffect(() => {
     if (formData.體重 && formData.院友id && formData.記錄類型 === '體重控制') {
