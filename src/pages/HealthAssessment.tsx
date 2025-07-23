@@ -255,7 +255,7 @@ const HealthAssessment: React.FC = () => {
     }
 
     const selectedRecords = sortedRecords.filter(r => selectedRows.has(r.記錄id));
-    const confirmMessage = `確定要刪除 ${selectedRows.size} 筆健康記錄嗎？\n\n此操作無法復原。`;
+    const confirmMessage = `確定要刪除 ${selectedRows.size} 筆監測記錄嗎？\n\n此操作無法復原。`;
     
     if (!confirm(confirmMessage)) {
       return;
@@ -269,10 +269,10 @@ const HealthAssessment: React.FC = () => {
         await deleteHealthRecord(recordId);
       }
       setSelectedRows(new Set());
-      alert(`成功刪除 ${deletingArray.length} 筆健康記錄`);
+      alert(`成功刪除 ${deletingArray.length} 筆監測記錄`);
     } catch (error) {
-      console.error('批量刪除健康記錄失敗:', error);
-      alert('批量刪除健康記錄失敗，請重試');
+      console.error('批量刪除監測記錄失敗:', error);
+      alert('批量刪除監測記錄失敗，請重試');
     } finally {
       setDeletingIds(new Set());
     }
@@ -629,7 +629,7 @@ const HealthAssessment: React.FC = () => {
           )}
           
           <div className="flex items-center justify-between text-sm text-gray-600">
-            <span>顯示 {sortedRecords.length} / {healthRecords.length} 筆健康記錄</span>
+            <span>顯示 {sortedRecords.length} / {healthRecords.length} 筆監測記錄</span>
             {(searchTerm || hasAdvancedFilters()) && (
               <span className="text-blue-600">已套用篩選條件</span>
             )}
@@ -847,7 +847,7 @@ const HealthAssessment: React.FC = () => {
           <div className="text-center py-12">
             <Heart className="h-24 w-24 mx-auto mb-4 text-gray-300" />
             <h3 className="text-lg font-medium text-gray-900 mb-2">
-              {searchTerm || hasAdvancedFilters() ? '找不到符合條件的記錄' : '暫無健康記錄'}
+              {searchTerm || hasAdvancedFilters() ? '找不到符合條件的記錄' : '暫無監測記錄'}
             </h3>
             <p className="text-gray-600 mb-4">
               {searchTerm || hasAdvancedFilters() ? '請嘗試調整搜索條件' : '開始記錄院友的健康狀況'}
@@ -857,7 +857,7 @@ const HealthAssessment: React.FC = () => {
                 onClick={() => setShowModal(true)}
                 className="btn-primary"
               >
-                新增健康記錄
+                新增監測記錄
               </button>
             ) : (
               <button
