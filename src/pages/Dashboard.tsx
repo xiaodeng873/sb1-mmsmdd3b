@@ -457,7 +457,7 @@ const Dashboard: React.FC = () => {
               recentHealthRecords.map(record => {
                 const patient = patients.find(p => p.院友id === record.院友id);
                 return (
-                  <div key={record.記錄id} className="flex items-center space-x-3 p-3 bg-gray-50 rounded-lg">
+                  <div key={record.記錄id} className={`flex items-center space-x-3 p-3 ${getTaskTimeBackgroundClass(record.記錄日期 + 'T' + record.記錄時間)} rounded-lg`}>
                     <div className="w-10 h-10 bg-blue-100 rounded-full overflow-hidden flex items-center justify-center">
                       {patient?.院友相片 ? (
                         <img 

@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { X, CheckSquare, User, Calendar, Clock, Activity, Droplets, Scale, FileText, Stethoscope } from 'lucide-react';
+import PatientAutocomplete from './PatientAutocomplete';
 import { usePatients, type PatientHealthTask, type HealthTaskType, type FrequencyUnit } from '../context/PatientContext';
 import { calculateNextDueDate } from '../utils/taskScheduler';
 
@@ -196,20 +197,11 @@ const TaskModal: React.FC<TaskModalProps> = ({ task, onClose }) => {
                 <User className="h-4 w-4 inline mr-1" />
                 院友 *
               </label>
-              <select
-                name="patient_id"
+              <PatientAutocomplete
                 value={formData.patient_id}
-                onChange={handleChange}
-                className="form-input"
-                required
-              >
-                <option value="">請選擇院友</option>
-                {patients.map(patient => (
-                  <option key={patient.院友id} value={patient.院友id}>
-                    {patient.床號} - {patient.中文姓名}
-                  </option>
-                ))}
-              </select>
+                onChange={(patientId) => setFormData(prev => ({ ...prev, patient_id: patientId }))}
+                placeholder="搜索院友..."
+              />
             </div>
 
             <div>
