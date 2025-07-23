@@ -214,16 +214,16 @@ const Dashboard: React.FC = () => {
     }
   };
 
-  const getTaskTimeBackgroundClass = (nextDueAt: string) => {
+  const getTaskTimeBackgroundClass = (nextDueAt: string) => { 
     const hour = new Date(nextDueAt).getHours();
     if (hour >= 7 && hour < 10) {
-      return 'bg-red-150 hover:bg-red-200';
-    } else if (hour >= 10 && hour < 13) { 
-      return 'bg-yellow-150 hover:bg-yellow-200';
+      return 'bg-red-100 hover:bg-red-150';
+    } else if (hour >= 10 && hour < 13) {
+      return 'bg-yellow-100 hover:bg-yellow-150';
     } else if (hour >= 13 && hour < 18) {
-      return 'bg-green-150 hover:bg-green-200';
+      return 'bg-green-100 hover:bg-green-150';
     }
-    return 'bg-gray-150 hover:bg-gray-200';
+    return 'bg-gray-100 hover:bg-gray-150';
   };
 
   const stats = [];
