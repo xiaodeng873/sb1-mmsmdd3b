@@ -30,7 +30,7 @@ const Layout: React.FC<LayoutProps> = ({ children, user, onSignOut }) => {
   const location = useLocation();
 
   const navigation = [
-    { name: '今日任務', href: '/', icon: Home },
+    { name: '當日任務', href: '/', icon: Home },
     { name: '院友列表', href: '/patients', icon: Users },
     { name: 'VMO排程', href: '/scheduling', icon: Calendar },
     { name: '覆診管理', href: '/follow-up', icon: CalendarCheck },
