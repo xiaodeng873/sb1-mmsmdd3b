@@ -281,7 +281,7 @@ const Dashboard: React.FC = () => {
         {/* 監測任務 */}
         <div className="card p-6">
           <div className="flex items-center justify-between mb-4">
-            <h2 className="text-lg font-semibold text-gray-900">當日任務</h2>
+            <h2 className="text-lg font-semibold text-gray-900">監測任務</h2>
             <Link 
               to="/tasks" 
               className="text-sm text-blue-600 hover:text-blue-700 font-medium"
