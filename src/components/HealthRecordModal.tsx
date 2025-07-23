@@ -36,6 +36,7 @@ const HealthRecordModal: React.FC<HealthRecordModalProps> = ({
   });
 
   const [weightChange, setWeightChange] = useState<string>('');
+  const [showDateTimeConfirm, setShowDateTimeConfirm] = useState(false);
 
   useEffect(() => {
     if (formData.體重 && formData.院友id && formData.記錄類型 === '體重控制') {
@@ -111,9 +112,20 @@ const HealthRecordModal: React.FC<HealthRecordModalProps> = ({
         return;
       }
     }
-    // 移除生命表徵的強制數據要求，允許所有欄位為空
-    // 只要備註有值或基本欄位填寫即可儲存
 
+    // Check if record date and time is in the past
+    const recordDateTime = new Date(`${formData.記錄日期}T${formData.記錄時間}`);
+    const now = new Date();
+    if (recordDateTime < now) {
+      setShowDateTimeConfirm(true);
+      return;
+    }
+
+    // Proceed with saving if date is not in the past
+    await saveRecord();
+  };
+
+  const saveRecord = async () => {
     try {
       const recordData = {
         院友id: parseInt(formData.院友id),
@@ -153,6 +165,15 @@ const HealthRecordModal: React.FC<HealthRecordModalProps> = ({
       console.error('儲存健康記錄失敗:', error);
       alert('儲存健康記錄失敗，請重試');
     }
+  };
+
+  const handleConfirmDateTime = async () => {
+    setShowDateTimeConfirm(false);
+    await saveRecord();
+  };
+
+  const handleCancelDateTime = () => {
+    setShowDateTimeConfirm(false);
   };
 
   const getTypeIcon = (type: string) => {
@@ -443,6 +464,37 @@ const HealthRecordModal: React.FC<HealthRecordModalProps> = ({
                     </div>
                   </div>
                 )}
+              </div>
+            </div>
+          )}
+
+          {/* DateTime Confirmation Modal */}
+          {showDateTimeConfirm && (
+            <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+              <div className="bg-white rounded-lg p-6 max-w-md w-full">
+                <h3 className="text-lg font-semibold text-gray-900 mb-4">
+                  確認過去時間記錄
+                </h3>
+                <p className="text-gray-600 mb-6">
+                  您輸入的記錄日期和時間 ({formData.記錄日期} {formData.記錄時間}) 早於當前時間。
+                  是否確認要儲存此記錄？
+                </p>
+                <div className="flex space-x-3">
+                  <button
+                    type="button"
+                    onClick={handleConfirmDateTime}
+                    className="btn-primary flex-1"
+                  >
+                    確認儲存
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleCancelDateTime}
+                    className="btn-secondary flex-1"
+                  >
+                    取消
+                  </button>
+                </div>
               </div>
             </div>
           )}
