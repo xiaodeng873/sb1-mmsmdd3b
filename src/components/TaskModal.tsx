@@ -27,10 +27,23 @@ const TaskModal: React.FC<TaskModalProps> = ({ task, onClose }) => {
     specific_days_of_month: task?.specific_days_of_month || [],
     notes: task?.notes || '',
     last_completed_at: task?.last_completed_at || '',
-    start_date: task ? (task.last_completed_at ? new Date(task.last_completed_at).toISOString().split('T')[0] : '') : new Date().toISOString().split('T')[0],
-    start_time: task ? (task.last_completed_at ? new Date(task.last_completed_at).toTimeString().slice(0, 5) : '') : new Date().toTimeString().slice(0, 5)
+    start_date: task ? (task.last_completed_at ? new Date(task.last_completed_at).toISOString().split('T')[0] : '') : getHongKongDate(),
+    start_time: task ? (task.last_completed_at ? new Date(task.last_completed_at).toTimeString().slice(0, 5) : '') : getHongKongTime()
   });
   const [newTime, setNewTime] = useState('');
+
+  // 香港時區輔助函數
+  const getHongKongDate = () => {
+    const now = new Date();
+    const hongKongTime = new Date(now.getTime() + (8 * 60 * 60 * 1000)); // GMT+8
+    return hongKongTime.toISOString().split('T')[0];
+  };
+
+  const getHongKongTime = () => {
+    const now = new Date();
+    const hongKongTime = new Date(now.getTime() + (8 * 60 * 60 * 1000)); // GMT+8
+    return hongKongTime.toISOString().split('T')[1].slice(0, 5);
+  };
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value, type } = e.target;

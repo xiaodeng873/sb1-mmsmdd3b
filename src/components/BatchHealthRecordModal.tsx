@@ -30,8 +30,8 @@ const BatchHealthRecordModal: React.FC<BatchHealthRecordModalProps> = ({ onClose
     {
       id: Date.now().toString(),
       院友id: '',
-      記錄日期: new Date().toISOString().split('T')[0],
-      記錄時間: new Date().toTimeString().slice(0, 5),
+      記錄日期: getHongKongDate(),
+      記錄時間: getHongKongTime(),
       備註: '',
       記錄人員: ''
     }
@@ -40,6 +40,19 @@ const BatchHealthRecordModal: React.FC<BatchHealthRecordModalProps> = ({ onClose
   const [uploadResults, setUploadResults] = useState<{ success: number; failed: number; errors: string[] } | null>(null);
   const recordsContainerRef = useRef<HTMLDivElement>(null);
   const recordRefs = useRef<Map<string, HTMLDivElement>>(new Map());
+
+  // 香港時區輔助函數
+  const getHongKongDate = () => {
+    const now = new Date();
+    const hongKongTime = new Date(now.getTime() + (8 * 60 * 60 * 1000)); // GMT+8
+    return hongKongTime.toISOString().split('T')[0];
+  };
+
+  const getHongKongTime = () => {
+    const now = new Date();
+    const hongKongTime = new Date(now.getTime() + (8 * 60 * 60 * 1000)); // GMT+8
+    return hongKongTime.toISOString().split('T')[1].slice(0, 5);
+  };
 
   // Scroll to the top of the newest record when records change
   useEffect(() => {
@@ -77,8 +90,8 @@ const BatchHealthRecordModal: React.FC<BatchHealthRecordModalProps> = ({ onClose
     const newRecord: BatchRecord = {
       id: Date.now().toString(),
       院友id: '',
-      記錄日期: new Date().toISOString().split('T')[0],
-      記錄時間: new Date().toTimeString().slice(0, 5),
+      記錄日期: getHongKongDate(),
+      記錄時間: getHongKongTime(),
       備註: '',
       記錄人員: ''
     };

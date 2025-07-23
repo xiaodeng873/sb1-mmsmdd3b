@@ -14,7 +14,7 @@ const MedicationModal: React.FC<MedicationModalProps> = ({ prescription, onClose
   const [formData, setFormData] = useState({
     院友id: prescription?.院友id || '',
     藥物來源: prescription?.藥物來源 || '',
-    處方日期: prescription?.處方日期 || new Date().toISOString().split('T')[0],
+    處方日期: prescription?.處方日期 || getHongKongDate(),
     藥物名稱: prescription?.藥物名稱 || '',
     劑型: prescription?.劑型 || '',
     服用途徑: prescription?.服用途徑 || '',
@@ -27,6 +27,13 @@ const MedicationModal: React.FC<MedicationModalProps> = ({ prescription, onClose
   const [selectedTime, setSelectedTime] = useState('');
   const [timeInput, setTimeInput] = useState('');
   const [showTimeDropdown, setShowTimeDropdown] = useState(false);
+
+  // 香港時區輔助函數
+  const getHongKongDate = () => {
+    const now = new Date();
+    const hongKongTime = new Date(now.getTime() + (8 * 60 * 60 * 1000)); // GMT+8
+    return hongKongTime.toISOString().split('T')[0];
+  };
 
   // Debug: 檢查初始資料
   console.log('Prescription data:', prescription);

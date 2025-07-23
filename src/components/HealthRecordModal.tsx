@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { X, Heart, Activity, Droplets, Scale, User, Calendar, Clock } from 'lucide-react';
 import { usePatients, type HealthRecord } from '../context/PatientContext';
-import { formatInTimeZone, toDate } from 'date-fns-tz';
 import PatientAutocomplete from './PatientAutocomplete';
 
 interface HealthRecordModalProps {
@@ -22,8 +21,8 @@ const HealthRecordModal: React.FC<HealthRecordModalProps> = ({
   const { patients, addHealthRecord, updateHealthRecord, healthRecords } = usePatients();
   const [formData, setFormData] = useState({
     院友id: record?.院友id || '',
-    記錄日期: record?.記錄日期 || defaultRecordDate || formatInTimeZone(new Date(), 'Asia/Hong_Kong', 'yyyy-MM-dd'),
-    記錄時間: record?.記錄時間 || defaultRecordTime || formatInTimeZone(new Date(), 'Asia/Hong_Kong', 'HH:mm'),
+    記錄日期: record?.記錄日期 || defaultRecordDate || getHongKongDate(),
+    記錄時間: record?.記錄時間 || defaultRecordTime || getHongKongTime(),
     記錄類型: record?.記錄類型 || '生命表徵',
     血壓收縮壓: record?.血壓收縮壓 || '',
     血壓舒張壓: record?.血壓舒張壓 || '',
@@ -39,6 +38,26 @@ const HealthRecordModal: React.FC<HealthRecordModalProps> = ({
 
   const [weightChange, setWeightChange] = useState('');
   const [showDateTimeConfirm, setShowDateTimeConfirm] = useState(false);
+
+  // 香港時區輔助函數
+  const getHongKongDate = () => {
+    const now = new Date();
+    const hongKongTime = new Date(now.getTime() + (8 * 60 * 60 * 1000)); // GMT+8
+    return hongKongTime.toISOString().split('T')[0];
+  };
+
+  const getHongKongTime = () => {
+    const now = new Date();
+    const hongKongTime = new Date(now.getTime() + (8 * 60 * 60 * 1000)); // GMT+8
+    return hongKongTime.toISOString().split('T')[1].slice(0, 5);
+  };
+
+  const parseHongKongDateTime = (date: string, time: string) => {
+    // 將香港時間轉換為 UTC 時間
+    const dateTimeString = `${date}T${time}:00`;
+    const localDateTime = new Date(dateTimeString);
+    return new Date(localDateTime.getTime() - (8 * 60 * 60 * 1000)); // 減去8小時轉為UTC
+  };
 
   useEffect(() => {
     if (formData.體重 && formData.院友id && formData.記錄類型 === '體重控制') {
@@ -113,8 +132,8 @@ const HealthRecordModal: React.FC<HealthRecordModalProps> = ({
       }
     }
 
-    const recordDateTime = toDate(`${formData.記錄日期}T${formData.記錄時間}`, { timeZone: 'Asia/Hong_Kong' });
-    const now = new Date();
+    const recordDateTime = parseHongKongDateTime(formData.記錄日期, formData.記錄時間);
+    const now = new Date(new Date().getTime() + (8 * 60 * 60 * 1000)); // 香港當前時間
     if (recordDateTime < now) {
       setShowDateTimeConfirm(true);
       return;
@@ -152,7 +171,7 @@ const HealthRecordModal: React.FC<HealthRecordModalProps> = ({
       }
       
       if (onTaskCompleted) {
-        const recordDateTime = toDate(`${formData.記錄日期}T${formData.記錄時間}`, { timeZone: 'Asia/Hong_Kong' });
+        const recordDateTime = parseHongKongDateTime(formData.記錄日期, formData.記錄時間);
         onTaskCompleted(recordDateTime);
       }
       onClose();

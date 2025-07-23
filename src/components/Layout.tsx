@@ -29,6 +29,12 @@ const Layout: React.FC<LayoutProps> = ({ children, user, onSignOut }) => {
   const [showUserMenu, setShowUserMenu] = useState(false);
   const location = useLocation();
 
+  // 香港時區輔助函數
+  const getHongKongDate = () => {
+    const now = new Date();
+    return new Date(now.getTime() + (8 * 60 * 60 * 1000)); // GMT+8
+  };
+
   const navigation = [
     { name: '主面板', href: '/', icon: Home },
     { name: '院友列表', href: '/patients', icon: Users },
@@ -123,7 +129,7 @@ const Layout: React.FC<LayoutProps> = ({ children, user, onSignOut }) => {
           </button>
           <div className="flex items-center space-x-4">
             <span className="text-sm text-gray-500">
-              {new Date().toLocaleDateString('zh-TW', { 
+              {getHongKongDate().toLocaleDateString('zh-TW', { 
                 year: 'numeric', 
                 month: 'long', 
                 day: 'numeric',
