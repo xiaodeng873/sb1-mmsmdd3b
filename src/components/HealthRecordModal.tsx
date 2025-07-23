@@ -4,7 +4,9 @@ const HealthRecordModal: React.FC = ({  record,  onClose,  onTaskCompleted,  def
   const [weightChange, setWeightChange] = useState('');  const [showDateTimeConfirm, setShowDateTimeConfirm] = useState(false);
   useEffect(() => {    if (formData.體重 && formData.院友id && formData.記錄類型 === '體重控制') {      calculateWeightChange();    }  }, [formData.體重, formData.院友id, formData.記錄類型]);
   const calculateWeightChange = () => {    if (!formData.體重 || !formData.院友id) {      setWeightChange('');      return;    }
+
 const currentWeight = parseFloat(formData.體重);
+
 if (isNaN(currentWeight)) {
   setWeightChange('');
   return;
@@ -38,6 +40,7 @@ setWeightChange(`${sign}${difference.toFixed(1)}kg (${sign}${percentage.toFixed(
   };
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {    const { name, value } = e.target;    setFormData(prev => ({      ...prev,      [name]: value    }));  };
   const handleSubmit = async (e: React.FormEvent) => {    e.preventDefault();
+
 if (!formData.院友id || !formData.記錄日期 || !formData.記錄時間 || !formData.記錄類型) {
   alert('請填寫所有必填欄位');
   return;
@@ -66,6 +69,7 @@ await saveRecord();
 
   };
   const saveRecord = async () => {    try {      const recordData = {        院友id: parseInt(formData.院友id),        記錄日期: formData.記錄日期,        記錄時間: formData.記錄時間,        記錄類型: formData.記錄類型 as '生命表徵' | '血糖控制' | '體重控制',        血壓收縮壓: formData.血壓收縮壓 ? parseInt(formData.血壓收縮壓) : null,        血壓舒張壓: formData.血壓舒張壓 ? parseInt(formData.血壓舒張壓) : null,        脈搏: formData.脈搏 ? parseInt(formData.脈搏) : null,        體溫: formData.體溫 ? parseFloat(formData.體溫) : null,        血含氧量: formData.血含氧量 ? parseInt(formData.血含氧量) : null,        呼吸頻率: formData.呼吸頻率 ? parseInt(formData.呼吸頻率) : null,        血糖值: formData.血糖值 ? parseFloat(formData.血糖值) : null,        體重: formData.體重 ? parseFloat(formData.體重) : null,        備註: formData.備註 || null,        記錄人員: formData.記錄人員 || null      };
+
   if (record && record.記錄id && typeof record.記錄id === 'number') {
     await updateHealthRecord({
       ...recordData,
@@ -88,9 +92,9 @@ await saveRecord();
   };
   const handleConfirmDateTime = async () => {    setShowDateTimeConfirm(false);    await saveRecord();  };
   const handleCancelDateTime = () => {    setShowDateTimeConfirm(false);  };
-  const getTypeIcon = (type: string) => {    switch (type) {      case '生命表徵': return ;      case '血糖控制': return ;      case '體重控制': return ;      default: return ;    }  };
+  const getTypeIcon = (type: string) => {    switch (type) {      case '生命表徵': return <Activity className="h-5 w-5" />;      case '血糖控制': return <Droplets className="h-5 w-5" />;      case '體重控制': return <Scale className="h-5 w-5" />;      default: return <Heart className="h-5 w-5" />;    }  };
   const getColorClass = (type: string) => {    switch (type) {      case '生命表徵': return 'blue';      case '血糖控制': return 'red';      case '體重控制': return 'green';      default: return 'purple';    }  };
-  return (                                                      <div className={p-2 rounded-lg bg-${getColorClass(formData.記錄類型)}-100 text-${getColorClass(formData.記錄類型)}-600}>                {getTypeIcon(formData.記錄類型)}                                            {record ? '編輯健康記錄' : '新增健康記錄'}                                                                                  
+  return (    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">      <div className="bg-white rounded-lg shadow-xl max-w-4xl w-full max-h-[90vh] overflow-hidden">        <div className="flex items-center justify-between p-4 border-b border-gray-200">          <div className={`p-2 rounded-lg bg-${getColorClass(formData.記錄類型)}-100 text-${getColorClass(formData.記錄類型)}-600`}>                {getTypeIcon(formData.記錄類型)}          </div>          <h2 className="text-xl font-semibold text-gray-900">            {record ? '編輯健康記錄' : '新增健康記錄'}          </h2>          <button            onClick={onClose}            className="p-2 hover:bg-gray-100 rounded-lg transition-colors"          >            <X className="h-5 w-5" />          </button>        </div>                                                                                  
     <form onSubmit={handleSubmit} className="p-6 space-y-6">
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         <div>
