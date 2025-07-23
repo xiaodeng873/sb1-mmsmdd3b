@@ -32,7 +32,9 @@ const Layout: React.FC<LayoutProps> = ({ children, user, onSignOut }) => {
   // 香港時區輔助函數
   const getHongKongDate = () => {
     const now = new Date();
-    return new Date(now.getTime() + (8 * 60 * 60 * 1000)); // GMT+8
+    // 使用 toLocaleString 直接獲取香港時區的時間
+    const hongKongTime = new Date(now.toLocaleString("en-US", {timeZone: "Asia/Hong_Kong"}));
+    return hongKongTime;
   };
 
   const navigation = [
