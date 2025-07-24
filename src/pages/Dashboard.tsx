@@ -101,7 +101,7 @@ const Dashboard: React.FC = () => {
     if (timeA === timeB) {
       const priority = {
         '注射前': 1,
-        '服藥前': 2,
+        '服藥': 2,
         '社康': 3,
         '特別關顧': 4,
         '定期': 5
