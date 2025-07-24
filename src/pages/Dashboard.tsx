@@ -214,8 +214,8 @@ const Dashboard: React.FC = () => {
       case '血糖控制': return <Droplets className="h-4 w-4" />;
       case '體重控制': return <Scale className="h-4 w-4" />;
       case '約束物品同意書': return <FileText className="h-4 w-4" />;
-      case '度體檢': return <Stethoscope className="h-4 w-4" />;
-      default: return <CheckSquare className="h-4 w-4" />;
+      case '年度體檢': return <Stethoscope className="h-4 w-4" />;
+      default: return <CheckSquare className="h-4 w-4" />; 
     }
   };
 
