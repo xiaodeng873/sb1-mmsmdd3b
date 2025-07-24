@@ -58,6 +58,7 @@ const HealthRecordModal: React.FC<HealthRecordModalProps> = ({
     const dateTimeString = `${date}T${time}:00`;
     // 直接創建本地時間對象，不需要時區轉換
     return new Date(dateTimeString);
+  }
 
   useEffect(() => {
     if (formData.體重 && formData.院友id && formData.記錄類型 === '體重控制') {
