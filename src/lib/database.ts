@@ -153,7 +153,7 @@ const HealthRecordModal: React.FC<HealthRecordModalProps> = ({
       console.log('觸發未來時間確認對話框');
       setShowDateTimeConfirm(true);
       return;
-   
+    } else { 
       console.log('記錄時間不是未來時間，直接儲存');
     } else {
       console.log('記錄時間不是未來時間，直接儲存');
@@ -192,7 +192,7 @@ const HealthRecordModal: React.FC<HealthRecordModalProps> = ({
       
       // 如果有任務完成回調，傳遞記錄的實際日期時間
       if (onTaskCompleted) {
-    from('templates_metadata')
+    .from('templates_metadata')
     .delete()
     .eq('id', id);
 
