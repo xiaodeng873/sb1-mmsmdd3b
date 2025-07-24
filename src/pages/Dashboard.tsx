@@ -287,8 +287,6 @@ const Dashboard: React.FC = () => {
 
       {/* Recent Activity */}
       <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
-        {/* 留空第一欄 */}
-        <div className="hidden lg:block"></div>
 
         {/* 監測任務 */}
         <div className="card p-6 lg:col-span-2">
