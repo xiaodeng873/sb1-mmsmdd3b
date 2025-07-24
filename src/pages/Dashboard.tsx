@@ -198,8 +198,8 @@ const Dashboard: React.FC = () => {
   };
 
   const getNotesBadgeClass = (notes: string) => {
-    switch (notes) {
-      case '服藥': return 'bg-blue-500 text-white';
+    switch (notes) { 
+      case '服藥前': return 'bg-blue-500 text-white';
       case '注射前': return 'bg-red-500 text-white';
       case '定期': return 'bg-green-500 text-white';
       case '特別關顧': return 'bg-orange-500 text-white';
