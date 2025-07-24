@@ -385,10 +385,8 @@ export const PatientProvider: React.FC<{ children: React.ReactNode }> = ({ child
     try {
       console.log('Updating patient health task:', task);
       console.log('=== PatientContext updatePatientHealthTask 開始 ===');
-      if (error) {
-        console.error('Supabase 更新錯誤:', error);
-        throw error;
-      }
+      
+      await db.updatePatientHealthTask(task);
       
       console.log('Patient health task updated successfully, refreshing data...');
       console.log('=== 資料庫更新成功，開始刷新資料 ===');
