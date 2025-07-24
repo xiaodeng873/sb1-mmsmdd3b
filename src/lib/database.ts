@@ -153,7 +153,6 @@ const HealthRecordModal: React.FC<HealthRecordModalProps> = ({
       console.log('觸發未來時間確認對話框');
       setShowDateTimeConfirm(true);
       return;
-    } else { 
       console.log('記錄時間不是未來時間，直接儲存');
     } else {
       console.log('記錄時間不是未來時間，直接儲存');
