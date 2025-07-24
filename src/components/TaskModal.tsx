@@ -15,49 +15,63 @@ const TaskModal: React.FC<TaskModalProps> = ({ task, onClose }) => {
   // 香港時區輔助函數
   const getHongKongDate = () => {
     const now = new Date();
-    const hongKongTime = new Date(now.getTime() + (8 * 60 * 60 * 1000)); // GMT+8
+    const hongKongTime = new Date(now.getTime() + (8 * 60 * 60 * 1000));
     return hongKongTime.toISOString().split('T')[0];
   };
 
   const getHongKongTime = () => {
     const now = new Date();
-    const hongKongTime = new Date(now.getTime() + (8 * 60 * 60 * 1000)); // GMT+8
+    const hongKongTime = new Date(now.getTime() + (8 * 60 * 60 * 1000));
     return hongKongTime.toISOString().split('T')[1].slice(0, 5);
   };
 
+  // 根據任務類型設置默認頻率
+  const getDefaultFrequency = (type: HealthTaskType): { unit: FrequencyUnit; value: number } => {
+    switch (type) {
+      case '生命表徵':
+      case '血糖控制':
+      case '體重控制':
+        return { unit: 'daily', value: 1 };
+      case '年度體檢':
+        return { unit: 'yearly', value: 1 };
+      case '約束物品同意書':
+        return { unit: 'monthly', value: 6 };
+      default:
+        return { unit: 'monthly', value: 1 };
+    }
+  };
+
+  const defaultFrequency = getDefaultFrequency(task?.health_record_type || '生命表徵');
   const [formData, setFormData] = useState({
     patient_id: task?.patient_id || '',
-    frequency_unit: task?.frequency_unit || 'monthly' as FrequencyUnit,
-    frequency_value: task?.frequency_value || 12,
     health_record_type: task?.health_record_type || '生命表徵' as HealthTaskType,
-    frequency_unit: task?.frequency_unit || 'weekly' as FrequencyUnit,
-    frequency_value: task?.frequency_value || 1,
-    health_record_type: task?.health_record_type || '年度體檢' as HealthTaskType,
-    health_record_type: task?.health_record_type || '約束物品同意書' as HealthTaskType,
-    frequency_unit: task?.frequency_unit || 'monthly' as FrequencyUnit,
-    frequency_value: task?.frequency_value || 6,
+    frequency_unit: task?.frequency_unit || defaultFrequency.unit,
+    frequency_value: task?.frequency_value || defaultFrequency.value,
     specific_times: task?.specific_times || [],
     specific_days_of_week: task?.specific_days_of_week || [],
     specific_days_of_month: task?.specific_days_of_month || [],
     notes: task?.notes || '',
     last_completed_at: task?.last_completed_at || '',
-    start_date: task ? (task.last_completed_at ? new Date(task.last_completed_at).toISOString().split('T')[0] : '') : getHongKongDate(),
-    start_time: task ? (task.last_completed_at ? new Date(task.last_completed_at).toTimeString().slice(0, 5) : '') : getHongKongTime()
+    start_date: task?.last_completed_at
+      ? new Date(task.last_completed_at).toISOString().split('T')[0]
+      : getHongKongDate(),
+    start_time: task?.last_completed_at
+      ? new Date(task.last_completed_at).toTimeString().slice(0, 5)
+      : getHongKongTime(),
   });
   const [newTime, setNewTime] = useState('');
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value, type } = e.target;
-    
     if (type === 'number') {
       setFormData(prev => ({
         ...prev,
-        [name]: parseInt(value) || 1
+        [name]: parseInt(value) || 1,
       }));
     } else {
       setFormData(prev => ({
         ...prev,
-        [name]: value
+        [name]: value,
       }));
     }
   };
@@ -66,7 +80,7 @@ const TaskModal: React.FC<TaskModalProps> = ({ task, onClose }) => {
     if (newTime && !formData.specific_times.includes(newTime)) {
       setFormData(prev => ({
         ...prev,
-        specific_times: [...prev.specific_times, newTime].sort()
+        specific_times: [...prev.specific_times, newTime].sort(),
       }));
       setNewTime('');
     }
@@ -75,7 +89,7 @@ const TaskModal: React.FC<TaskModalProps> = ({ task, onClose }) => {
   const removeTime = (timeToRemove: string) => {
     setFormData(prev => ({
       ...prev,
-      specific_times: prev.specific_times.filter(time => time !== timeToRemove)
+      specific_times: prev.specific_times.filter(time => time !== timeToRemove),
     }));
   };
 
@@ -84,7 +98,7 @@ const TaskModal: React.FC<TaskModalProps> = ({ task, onClose }) => {
       ...prev,
       specific_days_of_week: checked
         ? [...prev.specific_days_of_week, day].sort()
-        : prev.specific_days_of_week.filter(d => d !== day)
+        : prev.specific_days_of_week.filter(d => d !== day),
     }));
   };
 
@@ -93,7 +107,7 @@ const TaskModal: React.FC<TaskModalProps> = ({ task, onClose }) => {
       ...prev,
       specific_days_of_month: checked
         ? [...prev.specific_days_of_month, day].sort()
-        : prev.specific_days_of_month.filter(d => d !== day)
+        : prev.specific_days_of_month.filter(d => d !== day),
     }));
   };
 
@@ -107,18 +121,19 @@ const TaskModal: React.FC<TaskModalProps> = ({ task, onClose }) => {
 
     try {
       // 準備基準日期時間
-      let baseDateTime: Date | undefined;
-      let lastCompletedAt: string | null = null;
+      let baseDateTime: Date;
+      let lastCompletedAt: string;
       
       if (formData.start_date && formData.start_time) {
-        baseDateTime = new Date(`${formData.start_date}T${formData.start_time}`);
+        baseDateTime = new Date(`${formData.start_date}T${formData.start_time}:00+08:00`);
         lastCompletedAt = baseDateTime.toISOString();
-      } else if (task?.last_completed_at) {
-        baseDateTime = new Date(task.last_completed_at);
-        lastCompletedAt = task.last_completed_at;
+      } else {
+        baseDateTime = new Date();
+        baseDateTime.setTime(baseDateTime.getTime() + 8 * 60 * 60 * 1000);
+        lastCompletedAt = baseDateTime.toISOString();
       }
       
-      // 計算下次到期時間
+      // 創建 mockTask 用於計算下次到期日
       const mockTask: PatientHealthTask = {
         id: '',
         patient_id: parseInt(formData.patient_id),
@@ -131,7 +146,7 @@ const TaskModal: React.FC<TaskModalProps> = ({ task, onClose }) => {
         last_completed_at: lastCompletedAt,
         next_due_at: '',
         created_at: '',
-        updated_at: ''
+        updated_at: '',
       };
 
       const nextDueAt = calculateNextDueDate(mockTask, baseDateTime);
@@ -145,13 +160,13 @@ const TaskModal: React.FC<TaskModalProps> = ({ task, onClose }) => {
         specific_days_of_month: formData.specific_days_of_month,
         last_completed_at: lastCompletedAt,
         next_due_at: nextDueAt.toISOString(),
-        notes: formData.notes || null
+        notes: formData.notes || null,
       };
 
       if (task) {
         await updatePatientHealthTask({
           ...task,
-          ...taskData
+          ...taskData,
         });
       } else {
         await addPatientHealthTask(taskData);
@@ -180,7 +195,7 @@ const TaskModal: React.FC<TaskModalProps> = ({ task, onClose }) => {
       case '生命表徵': return 'text-blue-600';
       case '血糖控制': return 'text-red-600';
       case '體重控制': return 'text-green-600';
-      case '約束物品同意書': return 'text-white-600';
+      case '約束物品同意書': return 'text-gray-600';
       case '年度體檢': return 'text-yellow-600';
       default: return 'text-purple-600';
     }
@@ -305,6 +320,7 @@ const TaskModal: React.FC<TaskModalProps> = ({ task, onClose }) => {
               </div>
             </div>
           )}
+
           {/* 頻率設定 */}
           <div className="space-y-4">
             <h3 className="text-lg font-medium text-gray-900">頻率設定</h3>
@@ -322,6 +338,7 @@ const TaskModal: React.FC<TaskModalProps> = ({ task, onClose }) => {
                   <option value="daily">每天</option>
                   <option value="weekly">每週</option>
                   <option value="monthly">每月</option>
+                  <option value="yearly">每年</option>
                 </select>
               </div>
 
@@ -338,9 +355,9 @@ const TaskModal: React.FC<TaskModalProps> = ({ task, onClose }) => {
                 />
                 <p className="text-xs text-gray-500 mt-1">
                   例如：每 {formData.frequency_value} {
-                    formData.frequency_unit === 'hourly' ? '小時' :
                     formData.frequency_unit === 'daily' ? '天' :
-                    formData.frequency_unit === 'weekly' ? '週' : '月'
+                    formData.frequency_unit === 'weekly' ? '週' :
+                    formData.frequency_unit === 'monthly' ? '月' : '年'
                   }
                 </p>
               </div>
@@ -398,88 +415,4 @@ const TaskModal: React.FC<TaskModalProps> = ({ task, onClose }) => {
 
             {/* 特定星期幾設定 */}
             {formData.frequency_unit === 'weekly' && 
-             (formData.health_record_type === '生命表徵' || formData.health_record_type === '血糖控制' || formData.health_record_type === '體重控制') && (
-              <div>
-                <label className="form-label">特定星期幾</label>
-                <div className="grid grid-cols-7 gap-2">
-                  {dayNames.map((dayName, index) => {
-                    const dayValue = index + 1; // 1=週一, 7=週日
-                    return (
-                      <label key={dayValue} className="flex items-center space-x-2">
-                        <input
-                          type="checkbox"
-                          checked={formData.specific_days_of_week.includes(dayValue)}
-                          onChange={(e) => handleDayOfWeekChange(dayValue, e.target.checked)}
-                          className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
-                        />
-                        <span className="text-sm text-gray-700">{dayName}</span>
-                      </label>
-                    );
-                  })}
-                </div>
-              </div>
-            )}
-
-            {/* 特定日期設定 */}
-            {formData.frequency_unit === 'monthly' && 
-             (formData.health_record_type === '生命表徵' || formData.health_record_type === '血糖控制' || formData.health_record_type === '體重控制') && (
-              <div>
-                <label className="form-label">特定日期</label>
-                <div className="grid grid-cols-7 gap-2">
-                  {Array.from({ length: 31 }, (_, i) => i + 1).map(day => (
-                    <label key={day} className="flex items-center space-x-2">
-                      <input
-                        type="checkbox"
-                        checked={formData.specific_days_of_month.includes(day)}
-                        onChange={(e) => handleDayOfMonthChange(day, e.target.checked)}
-                        className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
-                      />
-                      <span className="text-sm text-gray-700">{day}號</span>
-                    </label>
-                  ))}
-                </div>
-              </div>
-            )}
-          </div>
-
-          {/* 備註 */}
-          <div>
-            <label className="form-label">備註</label>
-            <select
-              name="notes"
-              value={formData.notes || ''}
-              onChange={handleChange}
-              className="form-input"
-            >
-              <option value="">請選擇備註</option>
-              <option value="服藥前">服藥前</option>
-              <option value="注射前">注射前</option>
-              <option value="定期">定期</option>
-              <option value="特別關顧">特別關顧</option>
-              <option value="社康">社康</option>
-            </select>
-          </div>
-
-          {/* 提交按鈕 */}
-          <div className="flex space-x-3 pt-4 border-t border-gray-200">
-            <button
-              type="submit"
-              className="btn-primary flex-1"
-            >
-              {task ? '更新任務' : '建立任務'}
-            </button>
-            <button
-              type="button"
-              onClick={onClose}
-              className="btn-secondary flex-1"
-            >
-              取消
-            </button>
-          </div>
-        </form>
-      </div>
-    </div>
-  );
-};
-
-export default TaskModal; 
+             (formData.health_record_type
