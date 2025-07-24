@@ -1,861 +1,572 @@
-import React, { useState } from 'react';
-import { 
-  Users, Plus, Edit3, Trash2, Search, Filter, User, Calendar, Shield, AlertTriangle, Pill,
-  Grid3X3, List, ChevronUp, ChevronDown, Download, X
-} from 'lucide-react';
-import { usePatients } from '../context/PatientContext';
-import PatientModal from '../components/PatientModal';
+import React, { useState, useEffect } from 'react';
+import { X, Heart, Activity, Droplets, Scale, User, Calendar, Clock } from 'lucide-react';
+import { usePatients, type HealthRecord } from '../context/PatientContext';
+import PatientAutocomplete from './PatientAutocomplete';
 
-type ViewMode = 'cards' | 'table';
-type SortField = '床號' | '中文姓名' | '性別' | '出生日期' | '身份證號碼';
-type SortDirection = 'asc' | 'desc';
+interface HealthRecordModalProps {
+  record?: HealthRecord;
+  onClose: () => void;
+  onTaskCompleted?: (recordDateTime: Date) => void;
+  defaultRecordDate?: string;
+  defaultRecordTime?: string;
+}
 
-const PatientRecords: React.FC = () => {
-  const { patients, deletePatient, loading } = usePatients();
-  const [showModal, setShowModal] = useState(false);
-  const [selectedPatient, setSelectedPatient] = useState<any>(null);
-  const [searchTerm, setSearchTerm] = useState('');
-  const [filterGender, setFilterGender] = useState('');
-  const [viewMode, setViewMode] = useState<ViewMode>('cards');
-  const [selectedRows, setSelectedRows] = useState<Set<number>>(new Set());
-  const [sortField, setSortField] = useState<SortField>('床號');
-  const [sortDirection, setSortDirection] = useState<SortDirection>('asc');
-  const [showAdvancedSearch, setShowAdvancedSearch] = useState(false);
-  const [advancedFilters, setAdvancedFilters] = useState({
-    床號: '',
-    中文姓名: '',
-    英文姓名: '',
-    性別: '',
-    身份證號碼: '',
-    出生日期: '',
-    藥物敏感: '',
-    不良藥物反應: '',
-    感染控制: ''
+const HealthRecordModal: React.FC<HealthRecordModalProps> = ({
+  record,
+  onClose,
+  onTaskCompleted,
+  defaultRecordDate,
+  defaultRecordTime
+}) => {
+  const { patients, addHealthRecord, updateHealthRecord, healthRecords } = usePatients();
+
+  // 香港時區輔助函數
+  const getHongKongDate = () => {
+    const now = new Date();
+    const hongKongTime = new Date(now.getTime() + (8 * 60 * 60 * 1000)); // GMT+8
+    return hongKongTime.toISOString().split('T')[0];
+  };
+
+  const getHongKongTime = () => {
+    const now = new Date();
+    const hongKongTime = new Date(now.getTime() + (8 * 60 * 60 * 1000)); // GMT+8
+    return hongKongTime.toISOString().split('T')[1].slice(0, 5);
+  };
+
+  const [formData, setFormData] = useState({
+    院友id: record?.院友id || '',
+    記錄日期: record?.記錄日期 || defaultRecordDate || getHongKongDate(),
+    記錄時間: record?.記錄時間 || defaultRecordTime || getHongKongTime(),
+    記錄類型: record?.記錄類型 || '生命表徵',
+    血壓收縮壓: record?.血壓收縮壓 || '',
+    血壓舒張壓: record?.血壓舒張壓 || '',
+    脈搏: record?.脈搏 || '',
+    體溫: record?.體溫 || '',
+    血含氧量: record?.血含氧量 || '',
+    呼吸頻率: record?.呼吸頻率 || '',
+    血糖值: record?.血糖值 || '',
+    體重: record?.體重 || '',
+    備註: record?.備註 || '',
+    記錄人員: record?.記錄人員 || ''
   });
 
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center min-h-64">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-          <p className="text-gray-600">載入中...</p>
-        </div>
-      </div>
-    );
-  }
+  const [weightChange, setWeightChange] = useState('');
+  const [showDateTimeConfirm, setShowDateTimeConfirm] = useState(false);
 
-  const filteredPatients = patients.filter(patient => {
-    let matchesSearch = true;
-    if (searchTerm) {
-      matchesSearch = patient.中文姓名.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                      patient.床號.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                      (patient.英文姓名?.toLowerCase().includes(searchTerm.toLowerCase()) || false) ||
-                      patient.身份證號碼.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                      patient.出生日期.includes(searchTerm) ||
-                      (patient.藥物敏感 && Array.isArray(patient.藥物敏感) && 
-                       patient.藥物敏感.some(allergy => allergy.toLowerCase().includes(searchTerm.toLowerCase()))) ||
-                      (patient.不良藥物反應 && Array.isArray(patient.不良藥物反應) && 
-                       patient.不良藥物反應.some(reaction => reaction.toLowerCase().includes(searchTerm.toLowerCase()))) ||
-                      (patient.感染控制 && Array.isArray(patient.感染控制) && 
-                       patient.感染控制.some(control => control.toLowerCase().includes(searchTerm.toLowerCase())));
-    }
-    
-    let matchesAdvanced = true;
-    if (showAdvancedSearch) {
-      if (advancedFilters.床號 && !patient.床號.toLowerCase().includes(advancedFilters.床號.toLowerCase())) {
-        matchesAdvanced = false;
-      }
-      if (advancedFilters.中文姓名 && !patient.中文姓名.toLowerCase().includes(advancedFilters.中文姓名.toLowerCase())) {
-        matchesAdvanced = false;
-      }
-      if (advancedFilters.英文姓名 && (!patient.英文姓名 || !patient.英文姓名.toLowerCase().includes(advancedFilters.英文姓名.toLowerCase()))) {
-        matchesAdvanced = false;
-      }
-      if (advancedFilters.身份證號碼 && !patient.身份證號碼.toLowerCase().includes(advancedFilters.身份證號碼.toLowerCase())) {
-        matchesAdvanced = false;
-      }
-      if (advancedFilters.出生日期 && !patient.出生日期.includes(advancedFilters.出生日期)) {
-        matchesAdvanced = false;
-      }
-      if (advancedFilters.藥物敏感 && (!patient.藥物敏感 || !Array.isArray(patient.藥物敏感) || 
-          !patient.藥物敏感.some(allergy => allergy.toLowerCase().includes(advancedFilters.藥物敏感.toLowerCase())))) {
-        matchesAdvanced = false;
-      }
-      if (advancedFilters.不良藥物反應 && (!patient.不良藥物反應 || !Array.isArray(patient.不良藥物反應) || 
-          !patient.不良藥物反應.some(reaction => reaction.toLowerCase().includes(advancedFilters.不良藥物反應.toLowerCase())))) {
-        matchesAdvanced = false;
-      }
-      if (advancedFilters.感染控制 && (!patient.感染控制 || !Array.isArray(patient.感染控制) || 
-          !patient.感染控制.some(control => control.toLowerCase().includes(advancedFilters.感染控制.toLowerCase())))) {
-        matchesAdvanced = false;
-      }
-    }
-    
-    const matchesGender = filterGender === '' || patient.性別 === filterGender;
-    return matchesSearch && matchesAdvanced && matchesGender;
-  });
+  const parseHongKongDateTime = (date: string, time: string) => {
+    // 創建香港時區的日期時間對象
+    const dateTimeString = `${date}T${time}:00`;
+    // 直接創建本地時間對象，不需要時區轉換
+    return new Date(dateTimeString);
 
-  const sortedPatients = [...filteredPatients].sort((a, b) => {
-    let valueA: string | number = '';
-    let valueB: string | number = '';
-    
-    switch (sortField) {
-      case '床號':
-        valueA = a.床號;
-        valueB = b.床號;
-        break;
-      case '中文姓名':
-        valueA = a.中文姓名;
-        valueB = b.中文姓名;
-        break;
-      case '性別':
-        valueA = a.性別;
-        valueB = b.性別;
-        break;
-      case '出生日期':
-        valueA = new Date(a.出生日期).getTime();
-        valueB = new Date(b.出生日期).getTime();
-        break;
-      case '身份證號碼':
-        valueA = a.身份證號碼;
-        valueB = b.身份證號碼;
-        break;
+  useEffect(() => {
+    if (formData.體重 && formData.院友id && formData.記錄類型 === '體重控制') {
+      calculateWeightChange();
     }
-    
-    if (typeof valueA === 'string' && typeof valueB === 'string') {
-      valueA = valueA.toLowerCase();
-      valueB = valueB.toLowerCase();
-    }
-    
-    if (sortDirection === 'asc') {
-      return valueA < valueB ? -1 : valueA > valueB ? 1 : 0;
-    } else {
-      return valueA > valueB ? -1 : valueA < valueB ? 1 : 0;
-    }
-  });
+  }, [formData.體重, formData.院友id, formData.記錄類型]);
 
-  const handleEdit = (patient: any) => {
-    setSelectedPatient(patient);
-    setShowModal(true);
-  };
-
-  const handleDelete = (id: number) => {
-    if (confirm('確定要刪除此院友記錄嗎？')) {
-      deletePatient(id);
-    }
-  };
-
-  const handleSort = (field: SortField) => {
-    if (sortField === field) {
-      setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
-    } else {
-      setSortField(field);
-      setSortDirection('asc');
-    }
-  };
-
-  const handleSelectRow = (patientId: number) => {
-    const newSelected = new Set(selectedRows);
-    if (newSelected.has(patientId)) {
-      newSelected.delete(patientId);
-    } else {
-      newSelected.add(patientId);
-    }
-    setSelectedRows(newSelected);
-  };
-
-  const handleSelectAll = () => {
-    if (selectedRows.size === sortedPatients.length) {
-      setSelectedRows(new Set());
-    } else {
-      setSelectedRows(new Set(sortedPatients.map(p => p.院友id)));
-    }
-  };
-
-  const handleInvertSelection = () => {
-    const newSelected = new Set<number>();
-    sortedPatients.forEach(patient => {
-      if (!selectedRows.has(patient.院友id)) {
-        newSelected.add(patient.院友id);
-      }
-    });
-    setSelectedRows(newSelected);
-  };
-
-  const handleExportSelected = () => {
-    const selectedPatients = sortedPatients.filter(p => selectedRows.has(p.院友id));
-    
-    if (selectedPatients.length === 0) {
-      alert('請先選擇要匯出的記錄');
+  const calculateWeightChange = () => {
+    if (!formData.體重 || !formData.院友id) {
+      setWeightChange('');
       return;
     }
 
-    const exportData = selectedPatients.map(patient => ({
-      床號: patient.床號,
-      中文姓名: patient.中文姓名,
-      英文姓名: patient.英文姓名 || '',
-      性別: patient.性別,
-      身份證號碼: patient.身份證號碼,
-      出生日期: new Date(patient.出生日期).toLocaleDateString('zh-TW'),
-      年齡: calculateAge(patient.出生日期),
-      藥物敏感: patient.藥物敏感 || '無',
-      不良藥物反應: patient.不良藥物反應 || '無',
-      感染控制: patient.感染控制 || '無'
-    }));
+    const currentWeight = parseFloat(formData.體重);
 
-    const headers = ['床號', '中文姓名', '英文姓名', '性別', '身份證號碼', '出生日期', '年齡', '藥物敏感', '不良藥物反應', '感染控制'];
-    const csvContent = [
-      headers.join(','),
-      ...exportData.map(row => headers.map(header => `"${row[header as keyof typeof row]}"`).join(','))
-    ].join('\n');
-
-    const blob = new Blob(['\uFEFF' + csvContent], { type: 'text/csv;charset=utf-8;' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `院友記錄_${new Date().toISOString().split('T')[0]}.csv`;
-    a.click();
-    URL.revokeObjectURL(url);
-  };
-
-  const calculateAge = (birthDate: string) => {
-    const today = new Date();
-    const birth = new Date(birthDate);
-    let age = today.getFullYear() - birth.getFullYear();
-    const monthDiff = today.getMonth() - birth.getMonth();
-    
-    if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birth.getDate())) {
-      age--;
+    if (isNaN(currentWeight)) {
+      setWeightChange('');
+      return;
     }
+
+    const patientWeightRecords = healthRecords
+      .filter(r => 
+        r.院友id === parseInt(formData.院友id) && 
+        r.體重 && 
+        (record ? r.記錄id !== record.記錄id : true)
+      )
+      .sort((a, b) => new Date(`${b.記錄日期} ${b.記錄時間}`).getTime() - new Date(`${a.記錄日期} ${a.記錄時間}`).getTime());
+
+    if (patientWeightRecords.length === 0) {
+      setWeightChange('首次記錄');
+      return;
+    }
+
+    const lastWeight = parseFloat(patientWeightRecords[0].體重);
+    const difference = currentWeight - lastWeight;
+    const percentage = (difference / lastWeight) * 100;
+
+    if (Math.abs(percentage) < 0.1) {
+      setWeightChange('無變化');
+      return;
+    }
+
+    const sign = difference > 0 ? '+' : '';
+    setWeightChange(`${sign}${difference.toFixed(1)}kg (${sign}${percentage.toFixed(1)}%)`);
+  };
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
+    const { name, value } = e.target;
+    setFormData(prev => ({
+      ...prev,
+      [name]: value
+    }));
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+
+    if (!formData.院友id || !formData.記錄日期 || !formData.記錄時間 || !formData.記錄類型) {
+      alert('請填寫所有必填欄位');
+      return;
+    }
+
+    if (formData.記錄類型 === '血糖控制') {
+      if (!formData.血糖值) {
+        alert('血糖控制記錄需要填寫血糖值');
+        return;
+      }
+    } else if (formData.記錄類型 === '體重控制') {
+      if (!formData.體重) {
+        alert('體重控制記錄需要填寫體重');
+        return;
+      }
+    }
+
+    // 創建記錄時間對象
+    const recordDateTime = new Date(`${formData.記錄日期}T${formData.記錄時間}:00`);
+    const now = new Date(); // 使用本地當前時間
     
-    return age;
+    console.log('=== 日期時間驗證 ===');
+    console.log('輸入的記錄日期:', formData.記錄日期);
+    console.log('輸入的記錄時間:', formData.記錄時間);
+    console.log('組合的日期時間字串:', `${formData.記錄日期}T${formData.記錄時間}:00`);
+    console.log('解析後的記錄時間:', recordDateTime);
+    console.log('當前時間:', now);
+    console.log('記錄時間毫秒:', recordDateTime.getTime());
+    console.log('當前時間毫秒:', now.getTime());
+    console.log('時間差(分鐘):', (recordDateTime.getTime() - now.getTime()) / (1000 * 60));
+    // 創建記錄時間對象
+    const recordDateTime = new Date(`${formData.記錄日期}T${formData.記錄時間}:00`);
+    const now = new Date(); // 使用本地當前時間
+    
+    console.log('=== 日期時間驗證 ===');
+    console.log('輸入的記錄日期:', formData.記錄日期);
+    console.log('輸入的記錄時間:', formData.記錄時間);
+    console.log('解析後的記錄時間:', recordDateTime);
+    console.log('當前時間:', now);
+    console.log('記錄時間是否晚於當前時間:', recordDateTime > now);
+    
+    if (recordDateTime > now) {
+      console.log('觸發未來時間確認對話框');
+      console.log('觸發未來時間確認對話框');
+      setShowDateTimeConfirm(true);
+      return;
+    } else {
+      console.log('記錄時間不是未來時間，直接儲存');
+    } else {
+      console.log('記錄時間不是未來時間，直接儲存');
+    }
+
+    await saveRecord();
   };
 
-  const clearAllFilters = () => {
-    setSearchTerm('');
-    setFilterGender('');
-    setAdvancedFilters({
-      床號: '',
-      中文姓名: '',
-      英文姓名: '',
-      性別: '',
-      身份證號碼: '',
-      出生日期: '',
-      藥物敏感: '',
-      不良藥物反應: '',
-      感染控制: ''
-    });
-  };
+  const saveRecord = async () => {
+    try {
+      const recordData = {
+        院友id: parseInt(formData.院友id),
+        記錄日期: formData.記錄日期,
+        記錄時間: formData.記錄時間,
+        記錄類型: formData.記錄類型 as '生命表徵' | '血糖控制' | '體重控制',
+        血壓收縮壓: formData.血壓收縮壓 ? parseInt(formData.血壓收縮壓) : null,
+        血壓舒張壓: formData.血壓舒張壓 ? parseInt(formData.血壓舒張壓) : null,
+        脈搏: formData.脈搏 ? parseInt(formData.脈搏) : null,
+        體溫: formData.體溫 ? parseFloat(formData.體溫) : null,
+        血含氧量: formData.血含氧量 ? parseInt(formData.血含氧量) : null,
+        呼吸頻率: formData.呼吸頻率 ? parseInt(formData.呼吸頻率) : null,
+        血糖值: formData.血糖值 ? parseFloat(formData.血糖值) : null,
+        體重: formData.體重 ? parseFloat(formData.體重) : null,
+        備註: formData.備註 || null,
+        記錄人員: formData.記錄人員 || null
+      };
 
-  const hasActiveFilters = () => {
-    return searchTerm || filterGender || 
-           Object.values(advancedFilters).some(value => value !== '');
-  };
-
-  const SortableHeader: React.FC<{ field: SortField; children: React.ReactNode }> = ({ field, children }) => (
-    <th 
-      className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100 select-none"
-      onClick={() => handleSort(field)}
-    >
-      <div className="flex items-center space-x-1">
-        <span>{children}</span>
-        {sortField === field && (
-          sortDirection === 'asc' ? 
-            <ChevronUp className="h-4 w-4" /> : 
-            <ChevronDown className="h-4 w-4" />
-        )}
-      </div>
-    </th>
-  );
-
-  return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-gray-900">院友記錄</h1>
-        <div className="flex items-center space-x-2">
-          {viewMode === 'table' && selectedRows.size > 0 && (
-            <button
-              onClick={handleExportSelected}
-              className="btn-secondary flex items-center space-x-2"
-            >
-              <Download className="h-4 w-4" />
-              <span>匯出選定記錄</span>
-            </button>
-          )}
-          <button
-            onClick={() => {
-              setSelectedPatient(null);
-              setShowModal(true);
-            }}
-            className="btn-primary flex items-center space-x-2"
-          >
-            <Plus className="h-4 w-4" />
-            <span>新增院友</span>
-          </button>
-        </div>
-      </div>
-
-      <div className="card p-4">
-        <div className="space-y-4">
-          <div className="flex flex-col lg:flex-row space-y-2 lg:space-y-0 lg:space-x-4 lg:items-center">
-            <div className="flex-1 relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-              <input
-                type="text"
-                placeholder="搜索院友姓名、床號、身份證號碼、出生日期、藥物敏感、不良藥物反應、感染控制..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="form-input pl-10"
-              />
-            </div>
-            
-            <div className="flex space-x-2">
-              <button
-                onClick={() => setShowAdvancedSearch(!showAdvancedSearch)}
-                className={`btn-secondary flex items-center space-x-2 ${showAdvancedSearch ? 'bg-blue-50 text-blue-700' : ''}`}
-              >
-                <Filter className="h-4 w-4" />
-                <span>進階篩選</span>
-              </button>
-              
-              {hasActiveFilters() && (
-                <button
-                  onClick={clearAllFilters}
-                  className="btn-secondary flex items-center space-x-2 text-red-600 hover:text-red-700"
-                >
-                  <X className="h-4 w-4" />
-                  <span>清除</span>
-                </button>
-              )}
-            </div>
-          </div>
-          
-          {showAdvancedSearch && (
-            <div className="border-t border-gray-200 pt-4">
-              <h3 className="text-sm font-medium text-gray-900 mb-3">進階篩選</h3>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                <div>
-                  <label className="form-label">床號</label>
-                  <input
-                    type="text"
-                    value={advancedFilters.床號}
-                    onChange={(e) => setAdvancedFilters(prev => ({ ...prev, 床號: e.target.value }))}
-                    className="form-input"
-                    placeholder="搜索床號..."
-                  />
-                </div>
-                
-                <div>
-                  <label className="form-label">中文姓名</label>
-                  <input
-                    type="text"
-                    value={advancedFilters.中文姓名}
-                    onChange={(e) => setAdvancedFilters(prev => ({ ...prev, 中文姓名: e.target.value }))}
-                    className="form-input"
-                    placeholder="搜索中文姓名..."
-                  />
-                </div>
-                
-                <div>
-                  <label className="form-label">英文姓名</label>
-                  <input
-                    type="text"
-                    value={advancedFilters.英文姓名}
-                    onChange={(e) => setAdvancedFilters(prev => ({ ...prev, 英文姓名: e.target.value }))}
-                    className="form-input"
-                    placeholder="搜索英文姓名..."
-                  />
-                </div>
-                
-                <div>
-                  <label className="form-label">身份證號碼</label>
-                  <input
-                    type="text"
-                    value={advancedFilters.身份證號碼}
-                    onChange={(e) => setAdvancedFilters(prev => ({ ...prev, 身份證號碼: e.target.value }))}
-                    className="form-input"
-                    placeholder="搜索身份證號碼..."
-                  />
-                </div>
-                
-                <div>
-                  <label className="form-label">出生日期</label>
-                  <input
-                    type="date"
-                    value={advancedFilters.出生日期}
-                    onChange={(e) => setAdvancedFilters(prev => ({ ...prev, 出生日期: e.target.value }))}
-                    className="form-input"
-                  />
-                </div>
-                
-                <div>
-                  <label className="form-label">性別</label>
-                  <select
-                    value={advancedFilters.性別}
-                    onChange={(e) => setAdvancedFilters(prev => ({ ...prev, 性別: e.target.value }))}
+      if (record && record.記錄id && typeof record.記錄id === 'number') {
+        await updateHealthRecord({
+          ...recordData,
+          記錄id: record.記錄id
+        });
+      } else {
+        await addHealthRecord(recordData);
+      }
+      
+      // 如果有任務完成回調，傳遞記錄的實際日期時間
+      if (onTaskCompleted) {
                     className="form-input"
                   >
-                    <option value="">所有性別</option>
-                    <option value="男">男</option>
-                    <option value="女">女</option>
+                    <option value="">所有類型</option>
+                    <option value="私位">私位</option>
+                    <option value="買位">買位</option>
+                    <option value="院舍卷">院舍卷</option>
+                    <option value="暫住">暫住</option>
                   </select>
                 </div>
                 
                 <div>
-                  <label className="form-label">藥物敏感</label>
-                  <input
-                    type="text"
-                    value={advancedFilters.藥物敏感}
-                    onChange={(e) => setAdvancedFilters(prev => ({ ...prev, 藥物敏感: e.target.value }))}
+                  <label className="form-label">在住狀態</label>
+                  <select
+                    value={advancedFilters.在住狀態}
+                    onChange={(e) => setAdvancedFilters(prev => ({ ...prev, 在住狀態: e.target.value }))}
                     className="form-input"
-                    placeholder="搜索藥物敏感..."
-                  />
+                  >
+                    <option value="在住">僅在住院友</option>
+                    <option value="已退住">僅已退住院友</option>
+                    <option value="">全部院友</option>
+                  </select>
                 </div>
-                
-                <div>
-                  <label className="form-label">不良藥物反應</label>
-                  <input
-                    type="text"
-                    value={advancedFilters.不良藥物反應}
-                    onChange={(e) => setAdvancedFilters(prev => ({ ...prev, 不良藥物反應: e.target.value }))}
-                    className="form-input"
-                    placeholder="搜索不良藥物反應..."
-                  />
-                </div>
-                
-                <div>
-                  <label className="form-label">感染控制</label>
-                  <input
-                    type="text"
-                    value={advancedFilters.感染控制}
-                    onChange={(e) => setAdvancedFilters(prev => ({ ...prev, 感染控制: e.target.value }))}
-                    className="form-input"
-                    placeholder="搜索感染控制項目"
-                  />
-                </div>
-              </div>
-            </div>
-          )}
-        
-          <div className="flex items-center justify-between text-sm text-gray-600 mt-4">
-            <span>顯示 {filteredPatients.length} / {patients.length} 位院友</span>
-            {hasActiveFilters() && (
-              <button
-                onClick={clearAllFilters}
-                className="btn-secondary"
-              >
-                清除所有篩選
-              </button>
-            )}
+        const recordDateTime = new Date(`${formData.記錄日期}T${formData.記錄時間}:00`);
+        console.log('=== HealthRecordModal 任務完成回調 ===');
+        console.log('記錄日期:', formData.記錄日期);
+        console.log('記錄時間:', formData.記錄時間);
+        console.log('轉換後的記錄時間:', recordDateTime);
+        onTaskCompleted(recordDateTime);
+      }
+      onClose();
+    } catch (error) {
+      console.error('儲存健康記錄失敗:', error);
+      alert('儲存健康記錄失敗，請重試');
+    }
+  };
+
+  const handleConfirmDateTime = async () => {
+    setShowDateTimeConfirm(false);
+    await saveRecord();
+  };
+
+  const handleCancelDateTime = () => {
+    setShowDateTimeConfirm(false);
+  };
+
+  const getTypeIcon = (type: string) => {
+    switch (type) {
+      case '生命表徵': return <Activity className="h-5 w-5" />;
+      case '血糖控制': return <Droplets className="h-5 w-5" />;
+      case '體重控制': return <Scale className="h-5 w-5" />;
+      default: return <Heart className="h-5 w-5" />;
+    }
+  };
+
+  const getColorClass = (type: string) => {
+    switch (type) {
+      case '生命表徵': return 'blue';
+      case '血糖控制': return 'red';
+      case '體重控制': return 'green';
+      default: return 'purple';
+    }
+  };
+
+  return (
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+      <div className="bg-white rounded-lg shadow-xl max-w-4xl w-full max-h-[90vh] overflow-hidden">
+        <div className="flex items-center justify-between p-4 border-b border-gray-200">
+          <div className={`p-2 rounded-lg bg-${getColorClass(formData.記錄類型)}-100 text-${getColorClass(formData.記錄類型)}-600`}>
+                {getTypeIcon(formData.記錄類型)}
           </div>
+          <h2 className="text-xl font-semibold text-gray-900">
+            {record ? '編輯健康記錄' : '新增健康記錄'}
+          </h2>
+          <button
+            onClick={onClose}
+            className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+          >
+            <X className="h-5 w-5" />
+          </button>
         </div>
-        
-        <div className="flex justify-end">
-          <div className="flex bg-gray-100 rounded-lg p-1">
-            <button
-              onClick={() => setViewMode('cards')}
-              className={`flex items-center space-x-2 px-3 py-2 rounded-md text-sm font-medium transition-colors ${
-                viewMode === 'cards' 
-                  ? 'bg-white text-blue-600 shadow-sm' 
-                  : 'text-gray-600 hover:text-gray-900'
-              }`}
-            >
-              <Grid3X3 className="h-4 w-4" />
-              <span>卡片</span>
-            </button>
-            <button
-              onClick={() => setViewMode('table')}
-              className={`flex items-center space-x-2 px-3 py-2 rounded-md text-sm font-medium transition-colors ${
-                viewMode === 'table' 
-                  ? 'bg-white text-blue-600 shadow-sm' 
-                  : 'text-gray-600 hover:text-gray-900'
-              }`}
-            >
-              <List className="h-4 w-4" />
-              <span>表格</span>
-            </button>
-          </div>
-        </div>
-      </div>
-
-      {viewMode === 'table' && sortedPatients.length > 0 && (
-        <div className="card p-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-4">
-              <button
-                onClick={handleSelectAll}
-                className="text-sm text-blue-600 hover:text-blue-700 font-medium"
-              >
-                {selectedRows.size === sortedPatients.length ? '取消全選' : '全選'}
-              </button>
-              <button
-                onClick={handleInvertSelection}
-                className="text-sm text-blue-600 hover:text-blue-700 font-medium"
-              >
-                反選
-              </button>
+                                                                                  
+        <form onSubmit={handleSubmit} className="p-6 space-y-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            <div>
+              <label className="form-label">
+                <User className="h-4 w-4 inline mr-1" />
+                院友 *
+              </label>
+              <PatientAutocomplete
+                value={formData.院友id}
+                onChange={(patientId) => setFormData(prev => ({ ...prev, 院友id: patientId }))}
+                placeholder="搜索院友..."
+              />
             </div>
-            <div className="text-sm text-gray-600">
-              已選擇 {selectedRows.size} / {sortedPatients.length} 筆記錄
+
+            <div>
+              <label className="form-label">
+                <Calendar className="h-4 w-4 inline mr-1" />
+                記錄日期 *
+              </label>
+              <input
+                type="date"
+                name="記錄日期"
+                value={formData.記錄日期}
+                onChange={handleChange}
+                className="form-input"
+                required
+              />
+            </div>
+
+            <div>
+              <label className="form-label">
+                <Clock className="h-4 w-4 inline mr-1" />
+                記錄時間 *
+              </label>
+              <input
+                type="time"
+                name="記錄時間"
+                value={formData.記錄時間}
+                onChange={handleChange}
+                className="form-input"
+                required
+              />
+            </div>
+
+            <div>
+              <label className="form-label">記錄類型 *</label>
+              <select
+                name="記錄類型"
+                value={formData.記錄類型}
+                onChange={handleChange}
+                className="form-input"
+                required
+              >
+                <option value="生命表徵">生命表徵</option>
+                <option value="血糖控制">血糖控制</option>
+                <option value="體重控制">體重控制</option>
+              </select>
             </div>
           </div>
-        </div>
-      )}
 
-      {viewMode === 'cards' ? (
-        <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
-          {sortedPatients.length > 0 ? (
-            sortedPatients.map(patient => (
-              <div key={patient.院友id} className="card hover-scale overflow-hidden">
-               <div 
-                 className="cursor-pointer" 
-                 onDoubleClick={() => handleEdit(patient)}
-               >
-                <div className="relative bg-gradient-to-r from-blue-50 to-indigo-50 p-6">
-                  <div className="flex items-start space-x-4">
-                    <div className="w-20 h-20 bg-white rounded-xl shadow-sm overflow-hidden flex items-center justify-center flex-shrink-0">
-                      {patient.院友相片 ? (
-                        <img 
-                          src={patient.院友相片} 
-                          alt={patient.中文姓名} 
-                          className="w-full h-full object-cover"
-                        />
-                      ) : (
-                        <User className="h-10 w-10 text-gray-400" />
-                      )}
-                    </div>
-                    
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center justify-between mb-2">
-                        <div className="bg-blue-600 text-white px-3 py-1 rounded-full text-sm font-medium">
-                          {patient.床號}
-                        </div>
-                        <div className="flex space-x-1">
-                          <button
-                            onClick={() => handleEdit(patient)}
-                            className="p-1.5 text-blue-600 hover:bg-blue-100 rounded-lg transition-colors"
-                            title="編輯"
-                          >
-                            <Edit3 className="h-4 w-4" />
-                          </button>
-                          <button
-                            onClick={() => handleDelete(patient.院友id)}
-                            className="p-1.5 text-red-600 hover:bg-red-100 rounded-lg transition-colors"
-                            title="刪除"
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </button>
-                        </div>
-                      </div>
-                      
-                      <h3 className="text-lg font-semibold text-gray-900 mb-1 truncate">
-                        {patient.中文姓名}
-                      </h3>
-                      
-                      {patient.英文姓名 && (
-                        <p className="text-sm text-gray-600 truncate mb-2">
-                          {patient.英文姓名}
-                        </p>
-                      )}
-                      
-                      <div className="flex items-center space-x-3 text-xs text-gray-500">
-                        <span className={`px-2 py-1 rounded-full ${
-                          patient.性別 === '男' ? 'bg-blue-100 text-blue-700' : 'bg-pink-100 text-pink-700'
-                        }`}>
-                          {patient.性別}
-                        </span>
-                        <span className="flex items-center">
-                          <Calendar className="h-3 w-3 mr-1" />
-                          {calculateAge(patient.出生日期)}歲
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-               </div>
-
-                <div className="p-6 space-y-4">
-                  <div className="space-y-2">
-                    <div className="flex items-center text-sm">
-                      <span className="text-gray-500 w-20 flex-shrink-0">身份證:</span>
-                      <span className="text-gray-900 font-mono">{patient.身份證號碼}</span>
-                    </div>
-                    <div className="flex items-center text-sm">
-                      <span className="text-gray-500 w-20 flex-shrink-0">出生日期:</span>
-                      <span className="text-gray-900">
-                        {new Date(patient.出生日期).toLocaleDateString('zh-TW')}
-                      </span>
-                    </div>
-                  </div>
-
-                  <div className="border-t border-gray-200 pt-4">
-                    <div className="space-y-2">
-                      {patient.藥物敏感?.length > 0 && (
-                        <div className="bg-orange-50 border border-orange-200 rounded-lg p-3">
-                          <div className="flex items-start space-x-2">
-                            <Pill className="h-4 w-4 text-orange-600 mt-0.5 flex-shrink-0" />
-                            <div className="min-w-0">
-                              <p className="text-xs font-medium text-orange-800 mb-1">藥物敏感</p>
-                              <div className="flex flex-wrap gap-1">
-                                {patient.藥物敏感.map((allergy, index) => (
-                                  <span key={index} className="text-xs text-orange-700 bg-orange-100 px-1 rounded">
-                                    {allergy}
-                                  </span>
-                                ))}
-                              </div>
-                            </div>
-                          </div>
-                        </div>
-                      )}
-                      
-                      {patient.不良藥物反應?.length > 0 && (
-                        <div className="bg-red-50 border border-red-200 rounded-lg p-3">
-                          <div className="flex items-start space-x-2">
-                            <Pill className="h-4 w-4 text-red-600 mt-0.5 flex-shrink-0" />
-                            <div className="min-w-0">
-                              <p className="text-xs font-medium text-red-800 mb-1">不良藥物反應</p>
-                              <div className="flex flex-wrap gap-1">
-                                {patient.不良藥物反應.map((reaction, index) => (
-                                  <span key={index} className="text-xs text-red-700 bg-red-100 px-1 rounded">
-                                    {reaction}
-                                  </span>
-                                ))}
-                              </div>
-                            </div>
-                          </div>
-                        </div>
-                      )}
-                      
-                      {(!patient.藥物敏感?.length && !patient.不良藥物反應?.length) && (
-                        <div className="bg-green-50 border border-green-200 rounded-lg p-3">
-                          <div className="flex items-center space-x-2">
-                            <Shield className="h-4 w-4 text-green-600" />
-                            <p className="text-xs text-green-700">無已知藥物敏感、不良藥物反應</p>
-                          </div>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-
-                  {patient.感染控制?.length > 0 && (
-                    <div className="border-t border-gray-200 pt-4">
-                      <div className="bg-purple-50 border border-purple-200 rounded-lg p-3">
-                        <div className="flex items-start space-x-2">
-                          <AlertTriangle className="h-4 w-4 text-purple-600 mt-0.5 flex-shrink-0" />
-                          <div className="min-w-0">
-                            <p className="text-xs font-medium text-purple-800 mb-1">感染控制</p>
-                            <div className="flex flex-wrap gap-1">
-                              {patient.感染控制.map((control, index) => (
-                                <span key={index} className="text-xs text-purple-700 bg-purple-100 px-1 rounded">
-                                  {control}
-                                </span>
-                              ))}
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  )}
-                </div>
-              </div>
-            ))
-          ) : (
-            <div className="col-span-full text-center py-12">
-              <Users className="h-24 w-24 mx-auto mb-4 text-gray-300" />
-              <h3 className="text-lg font-medium text-gray-900 mb-2">
-                {hasActiveFilters() ? '找不到符合條件的院友' : '暫無院友記錄'}
+          {formData.記錄類型 === '生命表徵' && (
+            <div className="space-y-4">
+              <h3 className="text-lg font-medium text-blue-600 flex items-center">
+                <Activity className="h-5 w-5 mr-2" />
+                生命表徵數據
               </h3>
-              <p className="text-gray-600 mb-4">
-                {hasActiveFilters() ? '請嘗試調整搜索條件' : '開始新增院友資料'}
-              </p>
-              {!hasActiveFilters() && (
-                <button
-                  onClick={() => setShowModal(true)}
-                  className="btn-primary"
-                >
-                  新增院友
-                </button>
-              )}
-            </div>
-          )}
-        </div>
-      ) : (
-        <div className="card overflow-hidden">
-          {sortedPatients.length > 0 ? (
-            <div className="overflow-x-auto">
-              <table className="min-w-full divide-y divide-gray-200">
-                <thead className="bg-gray-50">
-                  <tr>
-                    <th className="px-4 py-3 text-left">
+              
+              <div className="space-y-4">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div>
+                    <label className="form-label">血壓 (mmHg)</label>
+                    <div className="flex space-x-2">
                       <input
-                        type="checkbox"
-                        checked={selectedRows.size === sortedPatients.length && sortedPatients.length > 0}
-                        onChange={handleSelectAll}
-                        className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                        type="number"
+                        name="血壓收縮壓"
+                        value={formData.血壓收縮壓}
+                        onChange={handleChange}
+                        className="form-input"
+                        placeholder="120"
+                        min="0"
+                        max="300"
                       />
-                    </th>
-                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      照片
-                    </th>
-                    <SortableHeader field="床號">床號</SortableHeader>
-                    <SortableHeader field="中文姓名">中文姓名</SortableHeader>
-                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      英文姓名
-                    </th>
-                    <SortableHeader field="性別">性別</SortableHeader>
-                    <SortableHeader field="身份證號碼">身份證號碼</SortableHeader>
-                    <SortableHeader field="出生日期">出生日期</SortableHeader>
-                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      年齡
-                    </th>
-                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      醫療警示
-                    </th>
-                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      操作
-                    </th>
-                  </tr>
-                </thead>
-                <tbody className="bg-white divide-y divide-gray-200">
-                  {sortedPatients.map(patient => (
-                    <tr 
-                      key={patient.院友id} 
-                      className={`hover:bg-gray-50 ${selectedRows.has(patient.院友id) ? 'bg-blue-50' : ''}`}
-                     onDoubleClick={() => handleEdit(patient)}
-                    >
-                      <td className="px-4 py-4 whitespace-nowrap">
-                        <input
-                          type="checkbox"
-                          checked={selectedRows.has(patient.院友id)}
-                          onChange={() => handleSelectRow(patient.院友id)}
-                          className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
-                        />
-                      </td>
-                      <td className="px-4 py-4 whitespace-nowrap">
-                        <div className="w-10 h-10 bg-gray-100 rounded-full overflow-hidden flex items-center justify-center">
-                          {patient.院友相片 ? (
-                            <img 
-                              src={patient.院友相片} 
-                              alt={patient.中文姓名} 
-                              className="w-full h-full object-cover"
-                            />
-                          ) : (
-                            <User className="h-5 w-5 text-gray-400" />
-                          )}
-                        </div>
-                      </td>
-                      <td className="px-4 py-4 whitespace-nowrap">
-                        <span className="bg-blue-600 text-white px-2 py-1 rounded-full text-xs font-medium">
-                          {patient.床號}
-                        </span>
-                      </td>
-                      <td className="px-4 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                        {patient.中文姓名}
-                      </td>
-                      <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900">
-                        {patient.英文姓名 || '-'}
-                      </td>
-                      <td className="px-4 py-4 whitespace-nowrap">
-                        <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                          patient.性別 === '男' ? 'bg-blue-100 text-blue-700' : 'bg-pink-100 text-pink-700'
-                        }`}>
-                          {patient.性別}
-                        </span>
-                      </td>
-                      <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900 font-mono">
-                        {patient.身份證號碼}
-                      </td>
-                      <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900">
-                        {new Date(patient.出生日期).toLocaleDateString('zh-TW')}
-                      </td>
-                      <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900">
-                        {calculateAge(patient.出生日期)}歲
-                      </td>
-                      <td className="px-4 py-4 whitespace-nowrap">
-                        <div className="flex space-x-1">
-                          {patient.藥物敏感?.length > 0 && (
-                            <span className="inline-flex items-center px-2 py-1 rounded-full text-xs bg-orange-100 text-orange-800">
-                              <Pill className="h-3 w-3 mr-1" />
-                              DA
-                            </span>
-                          )}
-                          {patient.不良藥物反應?.length > 0 && (
-                            <span className="inline-flex items-center px-2 py-1 rounded-full text-xs bg-red-100 text-red-800">
-                              <Pill className="h-3 w-3 mr-1" />
-                              ADR
-                            </span>
-                          )}
-                          {(!patient.藥物敏感?.length && !patient.不良藥物反應?.length) && (
-                            <span className="inline-flex items-center px-2 py-1 rounded-full text-xs bg-green-100 text-green-800">
-                              <Shield className="h-3 w-3 mr-1" />
-                              NKDA
-                            </span>
-                          )}
-                          {patient.感染控制?.length > 0 && (
-                            <span className="inline-flex items-center px-2 py-1 rounded-full text-xs bg-purple-100 text-purple-800">
-                              <AlertTriangle className="h-3 w-3 mr-1" />
-                              {/* 顯示所有感染控制內容，以逗號分隔，例如 MRSA, VRE */}
-                              {patient.感染控制.join(', ')}
-                            </span>
-                          )}
-                        </div>
-                      </td>
-                      <td className="px-4 py-4 whitespace-nowrap text-sm font-medium">
-                        <div className="flex space-x-2">
-                          <button
-                            onClick={() => handleEdit(patient)}
-                            className="text-blue-600 hover:text-blue-900"
-                            title="編輯"
-                          >
-                            <Edit3 className="h-4 w-4" />
-                          </button>
-                          <button
-                            onClick={() => handleDelete(patient.院友id)}
-                            className="text-red-600 hover:text-red-900"
-                            title="刪除"
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          ) : (
-            <div className="text-center py-12">
-              <Users className="h-24 w-24 mx-auto mb-4 text-gray-300" />
-              <h3 className="text-lg font-medium text-gray-900 mb-2">
-                {hasActiveFilters() ? '找不到符合條件的院友' : '暫無院友記錄'}
-              </h3>
-              <p className="text-gray-600 mb-4">
-                {hasActiveFilters() ? '請嘗試調整搜索條件' : '開始新增院友資料'}
-              </p>
-              {!hasActiveFilters() && (
-                <button
-                  onClick={() => setShowModal(true)}
-                  className="btn-primary"
-                >
-                  新增院友
-                </button>
-              )}
+                      <span className="flex items-center text-gray-500">/</span>
+                      <input
+                        type="number"
+                        name="血壓舒張壓"
+                        value={formData.血壓舒張壓}
+                        onChange={handleChange}
+                        className="form-input"
+                        placeholder="80"
+                        min="0"
+                        max="200"
+                      />
+                    </div>
+                  </div>
+                  <div>
+                    <label className="form-label">脈搏 (每分鐘)</label>
+                    <input
+                      type="number"
+                      name="脈搏"
+                      value={formData.脈搏}
+                      onChange={handleChange}
+                      className="form-input"
+                      placeholder="60-100"
+                      min="0"
+                      max="300"
+                    />
+                  </div>
+                  <div>
+                    <label className="form-label">體溫 (°C)</label>
+                    <input
+                      type="number"
+                      name="體溫"
+                      value={formData.體溫}
+                      onChange={handleChange}
+                      className="form-input"
+                      placeholder="36.5"
+                      min="30"
+                      max="45"
+                      step="0.1"
+                    />
+                  </div>
+                </div>
+                
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div>
+                    <label className="form-label">血含氧量 (%)</label>
+                    <input
+                      type="number"
+                      name="血含氧量"
+                      value={formData.血含氧量}
+                      onChange={handleChange}
+                      className="form-input"
+                      placeholder="95-100"
+                      min="0"
+                      max="100"
+                    />
+                  </div>
+                  <div>
+                    <label className="form-label">呼吸頻率 (每分鐘)</label>
+                    <input
+                      type="number"
+                      name="呼吸頻率"
+                      value={formData.呼吸頻率}
+                      onChange={handleChange}
+                      className="form-input"
+                      placeholder="12-20"
+                      min="0"
+                      max="100"
+                    />
+                  </div>
+                  <div>
+                    <label className="form-label">備註</label>
+                    <textarea
+                      name="備註"
+                      value={formData.備註}
+                      onChange={handleChange}
+                      className="form-input"
+                      rows={1}
+                      placeholder="其他備註資訊..."
+                    />
+                  </div>
+                </div>
+              </div>
             </div>
           )}
-        </div>
-      )}
 
-      {showModal && (
-        <PatientModal
-          patient={selectedPatient}
-          onClose={() => {
-            setShowModal(false);
-            setSelectedPatient(null);
-          }}
-        />
-      )}
+          {formData.記錄類型 === '血糖控制' && (
+            <div className="space-y-4">
+              <h3 className="text-lg font-medium text-red-600 flex items-center">
+                <Droplets className="h-5 w-5 mr-2" />
+                血糖控制數據
+              </h3>
+              
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="form-label">血糖值 (mmol/L) *</label>
+                  <input
+                    type="number"
+                    name="血糖值"
+                    value={formData.血糖值}
+                    onChange={handleChange}
+                    className="form-input"
+                    placeholder="4.0-7.0"
+                    min="0"
+                    max="50"
+                    step="0.1"
+                    required={formData.記錄類型 === '血糖控制'}
+                  />
+                  <p className="text-xs text-gray-500 mt-1">
+                    正常範圍：空腹 4.0-6.1，餐後 4.4-7.8
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {formData.記錄類型 === '體重控制' && (
+            <div className="space-y-4">
+              <h3 className="text-lg font-medium text-green-600 flex items-center">
+                <Scale className="h-5 w-5 mr-2" />
+                體重控制數據
+              </h3>
+              
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="form-label">體重 (kg) *</label>
+                  <input
+                    type="number"
+                    name="體重"
+                    value={formData.體重}
+                    onChange={handleChange}
+                    className="form-input"
+                    placeholder="50.0"
+                    min="0"
+                    max="300"
+                    step="0.1"
+                    required={formData.記錄類型 === '體重控制'}
+                  />
+                </div>
+                
+                {weightChange && (
+                  <div>
+                    <label className="form-label">與上次比較</label>
+                    <div className={`p-3 rounded-lg border ${
+                      weightChange.startsWith('+') ? 'bg-red-50 border-red-200 text-red-800' :
+                      weightChange.startsWith('-') ? 'bg-green-50 border-green-200 text-green-800' :
+                      'bg-gray-50 border-gray-200 text-gray-800'
+                    }`}>
+                      <div className="font-medium">{weightChange}</div>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+
+          {showDateTimeConfirm && (
+            <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+              <div className="bg-white rounded-lg p-6 max-w-md w-full">
+                <h3 className="text-lg font-semibold text-gray-900 mb-4">
+                  確認未來時間記錄
+                </h3>
+                <p className="text-gray-600 mb-6">
+                  您輸入的記錄日期和時間 ({new Date(formData.記錄日期).toLocaleDateString('zh-TW')} {formData.記錄時間}) 晚於當前時間 ({new Date().toLocaleDateString('zh-TW')} {new Date().toTimeString().slice(0,5)})。
+                  是否確認要儲存此記錄？
+                </p>
+                <div className="flex space-x-3">
+                  <button
+                    type="button"
+                    onClick={handleConfirmDateTime}
+                    className="btn-primary flex-1"
+                  >
+                    確認儲存
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleCancelDateTime}
+                    className="btn-secondary flex-1"
+                  >
+                    取消
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+
+          <div className="flex space-x-3 pt-4 border-t border-gray-200">
+            <button
+              type="submit"
+              className="btn-primary flex-1"
+            >
+              {record ? '更新記錄' : '新增記錄'}
+            </button>
+            <button
+              type="button"
+              onClick={onClose}
+              className="btn-secondary flex-1"
+            >
+              取消
+            </button>
+          </div>
+        </form>
+      </div>
     </div>
   );
 };
 
-export default PatientRecords;
+export default HealthRecordModal;

@@ -1,900 +1,550 @@
-import { supabase } from '../context/AuthContext';
+import React, { useState, useEffect } from 'react';
+import { X, Heart, Activity, Droplets, Scale, User, Calendar, Clock } from 'lucide-react';
+import { usePatients, type HealthRecord } from '../context/PatientContext';
+import PatientAutocomplete from './PatientAutocomplete';
 
-// Template metadata interface
-export interface TemplateMetadata {
-  id: number;
-  name: string;
-  type: 'waiting-list' | 'prescription' | 'medication-record' | 'consent-form';
-  original_name: string;
-  storage_path: string;
-  upload_date: string;
-  file_size: number;
-  description: string;
-  extracted_format: any;
+interface HealthRecordModalProps {
+  record?: HealthRecord;
+  onClose: () => void;
+  onTaskCompleted?: (recordDateTime: Date) => void;
+  defaultRecordDate?: string;
+  defaultRecordTime?: string;
 }
 
-const TEMPLATES_BUCKET = 'templates';
+const HealthRecordModal: React.FC<HealthRecordModalProps> = ({
+  record,
+  onClose,
+  onTaskCompleted,
+  defaultRecordDate,
+  defaultRecordTime
+}) => {
+  const { patients, addHealthRecord, updateHealthRecord, healthRecords } = usePatients();
 
-export interface Patient {
-  院友id: number;
-  床號: string;
-  中文姓名: string;
-  英文姓名?: string;
-  性別: '男' | '女';
-  身份證號碼: string;
-  藥物敏感?: string[];
-  不良藥物反應?: string[];
-  感染控制?: string[];
-  出生日期: string;
-  院友相片?: string;
-}
+  // 香港時區輔助函數
+  const getHongKongDate = () => {
+    const now = new Date();
+    const hongKongTime = new Date(now.getTime() + (8 * 60 * 60 * 1000)); // GMT+8
+    return hongKongTime.toISOString().split('T')[0];
+  };
 
-export interface Schedule {
-  排程id: number;
-  到診日期: string;
-}
+  const getHongKongTime = () => {
+    const now = new Date();
+    const hongKongTime = new Date(now.getTime() + (8 * 60 * 60 * 1000)); // GMT+8
+    return hongKongTime.toISOString().split('T')[1].slice(0, 5);
+  };
 
-export interface ScheduleDetail {
-  細項id: number;
-  排程id: number;
-  院友id: number;
-  症狀說明?: string;
-  備註?: string;
-  院友: Patient;
-  看診原因: string[];
-}
+  const [formData, setFormData] = useState({
+    院友id: record?.院友id || '',
+    記錄日期: record?.記錄日期 || defaultRecordDate || getHongKongDate(),
+    記錄時間: record?.記錄時間 || defaultRecordTime || getHongKongTime(),
+    記錄類型: record?.記錄類型 || '生命表徵',
+    血壓收縮壓: record?.血壓收縮壓 || '',
+    血壓舒張壓: record?.血壓舒張壓 || '',
+    脈搏: record?.脈搏 || '',
+    體溫: record?.體溫 || '',
+    血含氧量: record?.血含氧量 || '',
+    呼吸頻率: record?.呼吸頻率 || '',
+    血糖值: record?.血糖值 || '',
+    體重: record?.體重 || '',
+    備註: record?.備註 || '',
+    記錄人員: record?.記錄人員 || ''
+  });
 
-export interface ServiceReason {
-  原因id: number;
-  原因名稱: string;
-}
+  const [weightChange, setWeightChange] = useState('');
+  const [showDateTimeConfirm, setShowDateTimeConfirm] = useState(false);
 
-export interface Prescription {
-  處方id: number;
-  院友id: number;
-  藥物來源: string;
-  處方日期: string;
-  藥物名稱: string;
-  劑型?: string;
-  服用途徑?: string;
-  服用份量?: string;
-  服用次數?: string;
-  服用日數?: string;
-  需要時?: boolean;
-  服用時間?: string[];
-}
+  const parseHongKongDateTime = (date: string, time: string) => {
+    // 創建香港時區的日期時間對象
+    const dateTimeString = `${date}T${time}:00`;
+    // 直接創建本地時間對象，不需要時區轉換
+    return new Date(dateTimeString);
 
-export interface HealthRecord {
-  記錄id: number;
-  院友id: number;
-  記錄日期: string;
-  記錄時間: string;
-  記錄類型: '生命表徵' | '血糖控制' | '體重控制';
-  血壓收縮壓?: number;
-  血壓舒張壓?: number;
-  脈搏?: number;
-  體溫?: number;
-  血含氧量?: number;
-  呼吸頻率?: number;
-  血糖值?: number;
-  體重?: number;
-  備註?: string;
-  記錄人員?: string;
-}
-
-export interface FollowUpAppointment {
-  覆診id: string;
-  院友id: number;
-  覆診日期: string;
-  出發時間?: string;
-  覆診時間?: string;
-  覆診地點?: string;
-  覆診專科?: string;
-  交通安排?: string;
-  陪診人員?: string;
-  備註?: string;
-  狀態: '尚未安排' | '已安排' | '已完成' | '改期' | '取消';
-  狀態: '尚未安排' | '已安排' | '已完成' | '改期' | '取消';
-  創建時間: string;
-  更新時間: string;
-}
-
-export type HealthTaskType = '生命表徵' | '血糖控制' | '體重控制';
-export type HealthTaskType = '生命表徵' | '血糖控制' | '體重控制' | '約束物品同意書' | '年度體檢';
-export type FrequencyUnit = 'hourly' | 'daily' | 'weekly' | 'monthly';
-
-export interface PatientHealthTask {
-  id: string;
-  patient_id: number;
-  health_record_type: HealthTaskType;
-  frequency_unit: FrequencyUnit;
-  frequency_value: number;
-  specific_times: string[];
-  specific_days_of_week: number[];
-  specific_days_of_month: number[];
-  last_completed_at?: string;
-  next_due_at: string;
-  notes?: string;
-  created_at: string;
-  updated_at: string;
-}
-
-// Patient operations
-export async function getPatients(): Promise<Patient[]> {
-  try {
-    console.log('Fetching patients from database...');
-    const { data, error } = await supabase
-      .from('院友主表')
-      .select('*')
-      .order('床號');
-    
-    if (error) {
-      console.error('Error fetching patients:', error);
-      throw error;
+  useEffect(() => {
+    if (formData.體重 && formData.院友id && formData.記錄類型 === '體重控制') {
+      calculateWeightChange();
     }
-    console.log(`Successfully fetched ${data?.length || 0} patients`);
-    return data as Patient[];
-  } catch (error) {
-    console.error('Error fetching patients:', error);
-    throw error; // 重新拋出錯誤而不是返回空陣列
-  }
-}
+  }, [formData.體重, formData.院友id, formData.記錄類型]);
 
-// Template storage operations
-export async function uploadTemplateFile(file: File, path: string): Promise<string | null> {
-  try {
-    const { data, error } = await supabase.storage
-      .from(TEMPLATES_BUCKET)
-      .upload(path, file, {
-        cacheControl: '3600',
-        upsert: false,
-      });
-
-    if (error) {
-      if (error.message.includes('Bucket not found')) {
-        throw new Error(`儲存桶 '${TEMPLATES_BUCKET}' 不存在。請先在 Supabase Dashboard 中建立此儲存桶。`);
-      }
-      throw error;
+  const calculateWeightChange = () => {
+    if (!formData.體重 || !formData.院友id) {
+      setWeightChange('');
+      return;
     }
-    return data.path;
-  } catch (error) {
-    console.error('Error uploading template file:', error);
-    throw error; // Re-throw to let the caller handle it
-  }
-}
 
-export function getPublicTemplateUrl(path: string): string {
-  const { data } = supabase.storage
-    .from(TEMPLATES_BUCKET)
-    .getPublicUrl(path);
-  return data.publicUrl;
-}
+    const currentWeight = parseFloat(formData.體重);
 
-export async function deleteTemplateFile(path: string): Promise<boolean> {
-  try {
-    const { error } = await supabase.storage
-      .from(TEMPLATES_BUCKET)
-      .remove([path]);
-
-    if (error) throw error;
-    return true;
-  } catch (error) {
-    console.error('Error deleting template file from storage:', error);
-    return false;
-  }
-}
-
-// Template metadata operations
-export async function getTemplatesMetadata(): Promise<TemplateMetadata[]> {
-  try {
-    const { data, error } = await supabase
-      .from('templates_metadata')
-      .select('*')
-      .order('upload_date', { ascending: false });
-
-    if (error) throw error;
-    return data as TemplateMetadata[];
-  } catch (error) {
-    console.error('Error fetching templates metadata:', error);
-    return [];
-  }
-}
-
-export async function createTemplateMetadata(metadata: Omit<TemplateMetadata, 'id' | 'upload_date'>): Promise<TemplateMetadata | null> {
-  try {
-    const { data, error } = await supabase
-      .from('templates_metadata')
-      .insert(metadata)
-      .select()
-      .single();
-
-    if (error) throw error;
-    return data as TemplateMetadata;
-  } catch (error) {
-    console.error('Error creating template metadata:', error);
-    return null;
-  }
-}
-
-export async function deleteTemplateMetadata(id: number): Promise<boolean> {
-  try {
-    const { error } = await supabase
-      .from('templates_metadata')
-      .delete()
-      .eq('id', id);
-
-    if (error) throw error;
-    return true;
-  } catch (error) {
-    console.error('Error deleting template metadata:', error);
-    return false;
-  }
-}
-
-export async function createPatient(patient: Omit<Patient, '院友id'>): Promise<Patient | null> {
-  try {
-    const { data, error } = await supabase
-      .from('院友主表')
-      .insert(patient)
-      .select()
-      .single();
-    
-    if (error) throw error;
-    return data as Patient;
-  } catch (error) {
-    console.error('Error creating patient:', error);
-    return null;
-  }
-}
-
-export async function updatePatient(patient: Patient): Promise<Patient | null> {
-  try {
-    const { data, error } = await supabase
-      .from('院友主表')
-      .update({
-        床號: patient.床號,
-        中文姓名: patient.中文姓名,
-        英文姓名: patient.英文姓名,
-        性別: patient.性別,
-        身份證號碼: patient.身份證號碼,
-        藥物敏感: patient.藥物敏感,
-        不良藥物反應: patient.不良藥物反應,
-        感染控制: patient.感染控制,
-        出生日期: patient.出生日期,
-        院友相片: patient.院友相片
-      })
-      .eq('院友id', patient.院友id)
-      .select()
-      .single();
-    
-    if (error) throw error;
-    return data as Patient;
-  } catch (error) {
-    console.error('Error updating patient:', error);
-    return null;
-  }
-}
-
-export async function deletePatient(id: number): Promise<boolean> {
-  try {
-    const { error } = await supabase
-      .from('院友主表')
-      .delete()
-      .eq('院友id', id);
-    
-    if (error) throw error;
-    return true;
-  } catch (error) {
-    console.error('Error deleting patient:', error);
-    return false;
-  }
-}
-
-// Schedule operations
-export async function getSchedules(): Promise<Schedule[]> {
-  try {
-    console.log('Fetching schedules from database...');
-    const { data, error } = await supabase
-      .from('到診排程主表')
-      .select('*')
-      .order('到診日期', { ascending: false });
-    
-    if (error) {
-      console.error('Error fetching schedules:', error);
-      throw error;
+    if (isNaN(currentWeight)) {
+      setWeightChange('');
+      return;
     }
-    console.log(`Successfully fetched ${data?.length || 0} schedules`);
-    return data as Schedule[];
-  } catch (error) {
-    console.error('Error fetching schedules:', error);
-    throw error; // 重新拋出錯誤而不是返回空陣列
-  }
-}
 
-export async function createSchedule(schedule: Omit<Schedule, '排程id'>): Promise<Schedule | null> {
-  try {
-    const { data, error } = await supabase
-      .from('到診排程主表')
-      .insert(schedule)
-      .select()
-      .single();
-    
-    if (error) throw error;
-    return data as Schedule;
-  } catch (error) {
-    console.error('Error creating schedule:', error);
-    return null;
-  }
-}
+    const patientWeightRecords = healthRecords
+      .filter(r => 
+        r.院友id === parseInt(formData.院友id) && 
+        r.體重 && 
+        (record ? r.記錄id !== record.記錄id : true)
+      )
+      .sort((a, b) => new Date(`${b.記錄日期} ${b.記錄時間}`).getTime() - new Date(`${a.記錄日期} ${a.記錄時間}`).getTime());
 
-export async function updateSchedule(schedule: Schedule): Promise<Schedule | null> {
-  try {
-    const { data, error } = await supabase
-      .from('到診排程主表')
-      .update({
-        到診日期: schedule.到診日期
-      })
-      .eq('排程id', schedule.排程id)
-      .select()
-      .single();
-    
-    if (error) throw error;
-    return data as Schedule;
-  } catch (error) {
-    console.error('Error updating schedule:', error);
-    return null;
-  }
-}
+    if (patientWeightRecords.length === 0) {
+      setWeightChange('首次記錄');
+      return;
+    }
 
-export async function deleteSchedule(id: number): Promise<boolean> {
-  try {
-    const { error } = await supabase
-      .from('到診排程主表')
-      .delete()
-      .eq('排程id', id);
-    
-    if (error) throw error;
-    return true;
-  } catch (error) {
-    console.error('Error deleting schedule:', error);
-    return false;
-  }
-}
+    const lastWeight = parseFloat(patientWeightRecords[0].體重);
+    const difference = currentWeight - lastWeight;
+    const percentage = (difference / lastWeight) * 100;
 
-// Schedule details operations
-export async function getScheduleDetails(scheduleId: number): Promise<ScheduleDetail[]> {
-  try {
-    // 首先獲取細項資料
-    const { data: detailsData, error: detailsError } = await supabase
-      .from('看診院友細項')
-      .select(`
-        細項id, 排程id, 院友id, 症狀說明, 備註,
-        院友主表 (院友id, 床號, 中文姓名, 英文姓名, 性別, 身份證號碼, 藥物敏感, 不良藥物反應, 出生日期, 院友相片)
-      `)
-      .eq('排程id', scheduleId)
-      .order('細項id');
-    
-    if (detailsError) throw detailsError;
-    
-    // 獲取所有細項的看診原因
-    const detailIds = detailsData.map(detail => detail.細項id);
-    
-    const { data: reasonsData, error: reasonsError } = await supabase
-      .from('到診院友_看診原因')
-      .select(`
-        細項id,
-        看診原因選項 (原因名稱)
-      `)
-      .in('細項id', detailIds);
-    
-    if (reasonsError) throw reasonsError;
-    
-    // 組織看診原因資料
-    const reasonsByDetailId: Record<number, string[]> = {};
-    reasonsData.forEach(item => {
-      if (!reasonsByDetailId[item.細項id]) {
-        reasonsByDetailId[item.細項id] = [];
-      }
-      reasonsByDetailId[item.細項id].push(item.看診原因選項.原因名稱);
-    });
-    
-    // 組合最終結果
-    return detailsData.map(detail => ({
-      細項id: detail.細項id,
-      排程id: detail.排程id,
-      院友id: detail.院友id,
-      症狀說明: detail.症狀說明,
-      備註: detail.備註,
-      院友: detail.院友主表,
-      看診原因: reasonsByDetailId[detail.細項id] || []
+    if (Math.abs(percentage) < 0.1) {
+      setWeightChange('無變化');
+      return;
+    }
+
+    const sign = difference > 0 ? '+' : '';
+    setWeightChange(`${sign}${difference.toFixed(1)}kg (${sign}${percentage.toFixed(1)}%)`);
+  };
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
+    const { name, value } = e.target;
+    setFormData(prev => ({
+      ...prev,
+      [name]: value
     }));
-  } catch (error) {
-    console.error('Error fetching schedule details:', error);
-    return [];
-  }
-}
+  };
 
-export async function addPatientToSchedule(
-  scheduleId: number, 
-  patientId: number, 
-  symptoms: string, 
-  notes: string, 
-  reasons: string[]
-): Promise<boolean> {
-  try {
-    // Insert schedule detail
-    const { data: detailData, error: detailError } = await supabase
-      .from('看診院友細項')
-      .insert({
-        排程id: scheduleId,
-        院友id: patientId,
-        症狀說明: symptoms,
-        備註: notes
-      })
-      .select()
-      .single();
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+
+    if (!formData.院友id || !formData.記錄日期 || !formData.記錄時間 || !formData.記錄類型) {
+      alert('請填寫所有必填欄位');
+      return;
+    }
+
+    if (formData.記錄類型 === '血糖控制') {
+      if (!formData.血糖值) {
+        alert('血糖控制記錄需要填寫血糖值');
+        return;
+      }
+    } else if (formData.記錄類型 === '體重控制') {
+      if (!formData.體重) {
+        alert('體重控制記錄需要填寫體重');
+        return;
+      }
+    }
+
+    // 創建記錄時間對象
+    const recordDateTime = new Date(`${formData.記錄日期}T${formData.記錄時間}:00`);
+    const now = new Date(); // 使用本地當前時間
     
-    if (detailError) throw detailError;
+    console.log('=== 日期時間驗證 ===');
+    console.log('輸入的記錄日期:', formData.記錄日期);
+    console.log('輸入的記錄時間:', formData.記錄時間);
+    console.log('組合的日期時間字串:', `${formData.記錄日期}T${formData.記錄時間}:00`);
+    console.log('解析後的記錄時間:', recordDateTime);
+    console.log('當前時間:', now);
+    console.log('記錄時間毫秒:', recordDateTime.getTime());
+    console.log('當前時間毫秒:', now.getTime());
+    console.log('時間差(分鐘):', (recordDateTime.getTime() - now.getTime()) / (1000 * 60));
+    // 創建記錄時間對象
+    const recordDateTime = new Date(`${formData.記錄日期}T${formData.記錄時間}:00`);
+    const now = new Date(); // 使用本地當前時間
     
-    const detailId = detailData.細項id;
+    console.log('=== 日期時間驗證 ===');
+    console.log('輸入的記錄日期:', formData.記錄日期);
+    console.log('輸入的記錄時間:', formData.記錄時間);
+    console.log('解析後的記錄時間:', recordDateTime);
+    console.log('當前時間:', now);
+    console.log('記錄時間是否晚於當前時間:', recordDateTime > now);
     
-    // Insert service reasons
-    for (const reason of reasons) {
-      const { data: reasonData, error: reasonError } = await supabase
-        .from('看診原因選項')
-        .select('原因id')
-        .eq('原因名稱', reason)
-        .single();
-      
-      if (reasonError) continue;
-      
-      await supabase
-        .from('到診院友_看診原因')
-        .insert({
-          細項id: detailId,
-          原因id: reasonData.原因id
+    if (recordDateTime > now) {
+      console.log('觸發未來時間確認對話框');
+      console.log('觸發未來時間確認對話框');
+      setShowDateTimeConfirm(true);
+      return;
+    } else {
+      console.log('記錄時間不是未來時間，直接儲存');
+    } else {
+      console.log('記錄時間不是未來時間，直接儲存');
+    }
+
+    await saveRecord();
+  };
+
+  const saveRecord = async () => {
+    try {
+      const recordData = {
+        院友id: parseInt(formData.院友id),
+        記錄日期: formData.記錄日期,
+        記錄時間: formData.記錄時間,
+        記錄類型: formData.記錄類型 as '生命表徵' | '血糖控制' | '體重控制',
+        血壓收縮壓: formData.血壓收縮壓 ? parseInt(formData.血壓收縮壓) : null,
+        血壓舒張壓: formData.血壓舒張壓 ? parseInt(formData.血壓舒張壓) : null,
+        脈搏: formData.脈搏 ? parseInt(formData.脈搏) : null,
+        體溫: formData.體溫 ? parseFloat(formData.體溫) : null,
+        血含氧量: formData.血含氧量 ? parseInt(formData.血含氧量) : null,
+        呼吸頻率: formData.呼吸頻率 ? parseInt(formData.呼吸頻率) : null,
+        血糖值: formData.血糖值 ? parseFloat(formData.血糖值) : null,
+        體重: formData.體重 ? parseFloat(formData.體重) : null,
+        備註: formData.備註 || null,
+        記錄人員: formData.記錄人員 || null
+      };
+
+      if (record && record.記錄id && typeof record.記錄id === 'number') {
+        await updateHealthRecord({
+          ...recordData,
+          記錄id: record.記錄id
         });
-    }
-    
-    return true;
-  } catch (error) {
-    console.error('Error adding patient to schedule:', error);
-    return false;
-  }
-}
-
-export async function updateScheduleDetail(detail: any): Promise<boolean> {
-  try {
-    // Update schedule detail
-    const { error: detailError } = await supabase
-      .from('看診院友細項')
-      .update({
-        症狀說明: detail.症狀說明,
-        備註: detail.備註
-      })
-      .eq('細項id', detail.細項id);
-    
-    if (detailError) throw detailError;
-    
-    // Delete existing reasons
-    await supabase
-      .from('到診院友_看診原因')
-      .delete()
-      .eq('細項id', detail.細項id);
-    
-    // Insert new reasons
-    for (const reason of detail.看診原因) {
-      const { data: reasonData, error: reasonError } = await supabase
-        .from('看診原因選項')
-        .select('原因id')
-        .eq('原因名稱', reason)
-        .single();
+      } else {
+        await addHealthRecord(recordData);
+      }
       
-      if (reasonError) continue;
-      
-      await supabase
-        .from('到診院友_看診原因')
-        .insert({
-          細項id: detail.細項id,
-          原因id: reasonData.原因id
-        });
+      // 如果有任務完成回調，傳遞記錄的實際日期時間
+      if (onTaskCompleted) {
+        const recordDateTime = new Date(`${formData.記錄日期}T${formData.記錄時間}:00`);
+        console.log('=== HealthRecordModal 任務完成回調 ===');
+        console.log('記錄日期:', formData.記錄日期);
+        console.log('記錄時間:', formData.記錄時間);
+        console.log('轉換後的記錄時間:', recordDateTime);
+        onTaskCompleted(recordDateTime);
+      }
+      onClose();
+    } catch (error) {
+      console.error('儲存健康記錄失敗:', error);
+      alert('儲存健康記錄失敗，請重試');
     }
-    
-    return true;
-  } catch (error) {
-    console.error('Error updating schedule detail:', error);
-    return false;
-  }
-}
+  };
 
-export async function deleteScheduleDetail(detailId: number): Promise<boolean> {
-  try {
-    const { error } = await supabase
-      .from('看診院友細項')
-      .delete()
-      .eq('細項id', detailId);
-    
-    if (error) throw error;
-    return true;
-  } catch (error) {
-    console.error('Error deleting schedule detail:', error);
-    return false;
-  }
-}
-// Service reasons
-export async function getServiceReasons(): Promise<ServiceReason[]> {
-  try {
-    console.log('Fetching service reasons from database...');
-    const { data, error } = await supabase
-      .from('看診原因選項')
-      .select('*')
-      .order('原因id');
-    
-    if (error) {
-      console.error('Error fetching service reasons:', error);
-      throw error;
+  const handleConfirmDateTime = async () => {
+    setShowDateTimeConfirm(false);
+    await saveRecord();
+  };
+
+  const handleCancelDateTime = () => {
+    setShowDateTimeConfirm(false);
+  };
+
+  const getTypeIcon = (type: string) => {
+    switch (type) {
+      case '生命表徵': return <Activity className="h-5 w-5" />;
+      case '血糖控制': return <Droplets className="h-5 w-5" />;
+      case '體重控制': return <Scale className="h-5 w-5" />;
+      default: return <Heart className="h-5 w-5" />;
     }
-    console.log(`Successfully fetched ${data?.length || 0} service reasons`);
-    return data as ServiceReason[];
-  } catch (error) {
-    console.error('Error fetching service reasons:', error);
-    throw error; // 重新拋出錯誤而不是返回空陣列
-  }
-}
+  };
 
-// Prescription operations
-export async function getPrescriptions(): Promise<Prescription[]> {
-  try {
-    console.log('Fetching prescriptions...');
-    const { data, error } = await supabase
-      .from('處方主表')
-      .select('*')
-      .order('處方日期', { ascending: false });
-    
-    if (error) throw error;
-    console.log('Prescriptions fetched:', data.length, 'records');
-    return data as Prescription[];
-  } catch (error) {
-    console.error('Error fetching prescriptions:', error);
-    return [];
-  }
-}
-
-export async function createPrescription(prescription: Omit<Prescription, '處方id'>): Promise<Prescription | null> {
-  try {
-    console.log('Creating prescription with data:', prescription);
-    
-    // 檢查院友是否存在
-    const { data: patientData, error: patientError } = await supabase
-      .from('院友主表')
-      .select('院友id, 中文姓名, 床號')
-      .eq('院友id', prescription.院友id)
-      .single();
-    
-    if (patientError || !patientData) {
-      throw new Error(`院友ID ${prescription.院友id} 不存在`);
+  const getColorClass = (type: string) => {
+    switch (type) {
+      case '生命表徵': return 'blue';
+      case '血糖控制': return 'red';
+      case '體重控制': return 'green';
+      default: return 'purple';
     }
-    
-    console.log('Patient found:', patientData);
-    
-    const { data, error } = await supabase
-      .from('處方主表')
-      .insert(prescription)
-      .select()
-      .single();
-    
-    if (error) throw error;
-    
-    console.log('Prescription created successfully:', data);
-    return data as Prescription;
-  } catch (error) {
-    console.error('Error creating prescription:', error);
-    throw error; // 重新拋出錯誤以便上層處理
-  }
-}
+  };
 
-export async function updatePrescription(prescription: Prescription): Promise<Prescription | null> {
-  try {
-    console.log('Updating prescription in database:', prescription);
-    
-    const { data, error } = await supabase
-      .from('處方主表')
-      .update({
-        院友id: prescription.院友id,
-        藥物來源: prescription.藥物來源,
-        處方日期: prescription.處方日期,
-        藥物名稱: prescription.藥物名稱,
-        劑型: prescription.劑型,
-        服用途徑: prescription.服用途徑,
-        服用份量: prescription.服用份量,
-        服用次數: prescription.服用次數,
-        服用日數: prescription.服用日數,
-        需要時: prescription.需要時,
-        服用時間: prescription.服用時間
-      })
-      .eq('處方id', prescription.處方id)
-      .select()
-      .single();
-    
-    if (error) throw error;
-    console.log('Prescription updated successfully:', data);
-    return data as Prescription;
-  } catch (error) {
-    console.error('Error updating prescription:', error);
-    throw error;
-  }
-}
+  return (
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+      <div className="bg-white rounded-lg shadow-xl max-w-4xl w-full max-h-[90vh] overflow-hidden">
+        <div className="flex items-center justify-between p-4 border-b border-gray-200">
+          <div className={`p-2 rounded-lg bg-${getColorClass(formData.記錄類型)}-100 text-${getColorClass(formData.記錄類型)}-600`}>
+                {getTypeIcon(formData.記錄類型)}
+          </div>
+          <h2 className="text-xl font-semibold text-gray-900">
+            {record ? '編輯健康記錄' : '新增健康記錄'}
+          </h2>
+          <button
+            onClick={onClose}
+            className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+          >
+            <X className="h-5 w-5" />
+          </button>
+        </div>
+                                                                                  
+        <form onSubmit={handleSubmit} className="p-6 space-y-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            <div>
+              <label className="form-label">
+                <User className="h-4 w-4 inline mr-1" />
+                院友 *
+              </label>
+              <PatientAutocomplete
+                value={formData.院友id}
+                onChange={(patientId) => setFormData(prev => ({ ...prev, 院友id: patientId }))}
+                placeholder="搜索院友..."
+              />
+            </div>
 
-export async function deletePrescription(id: number): Promise<boolean> {
-  try {
-    console.log('Deleting prescription with ID:', id);
-    
-    const { error } = await supabase
-      .from('處方主表')
-      .delete()
-      .eq('處方id', id);
-    
-    if (error) throw error;
-    
-    console.log('Prescription deleted successfully');
-    return true;
-  } catch (error) {
-    console.error('Error deleting prescription:', error);
-    throw error;
-  }
-}
+            <div>
+              <label className="form-label">
+                <Calendar className="h-4 w-4 inline mr-1" />
+                記錄日期 *
+              </label>
+              <input
+                type="date"
+                name="記錄日期"
+                value={formData.記錄日期}
+                onChange={handleChange}
+                className="form-input"
+                required
+              />
+            </div>
 
-// Initialize database tables if they don't exist
-export async function initializeDatabase(): Promise<void> {
-  console.log('使用 Supabase 不需要手動初始化資料庫，已通過遷移檔案設定');
-  return;
-}
+            <div>
+              <label className="form-label">
+                <Clock className="h-4 w-4 inline mr-1" />
+                記錄時間 *
+              </label>
+              <input
+                type="time"
+                name="記錄時間"
+                value={formData.記錄時間}
+                onChange={handleChange}
+                className="form-input"
+                required
+              />
+            </div>
 
-// Health record operations
-export async function getHealthRecords(): Promise<HealthRecord[]> {
-  try {
-    const { data, error } = await supabase
-      .from('健康記錄主表')
-      .select('*')
-      .order('記錄日期', { ascending: false })
-      .order('記錄時間', { ascending: false });
-    
-    if (error) throw error;
-    return data as HealthRecord[];
-  } catch (error) {
-    console.error('Error fetching health records:', error);
-    return [];
-  }
-}
+            <div>
+              <label className="form-label">記錄類型 *</label>
+              <select
+                name="記錄類型"
+                value={formData.記錄類型}
+                onChange={handleChange}
+                className="form-input"
+                required
+              >
+                <option value="生命表徵">生命表徵</option>
+                <option value="血糖控制">血糖控制</option>
+                <option value="體重控制">體重控制</option>
+              </select>
+            </div>
+          </div>
 
-export async function createHealthRecord(record: Omit<HealthRecord, '記錄id'>): Promise<HealthRecord | null> {
-  try {
-    const { data, error } = await supabase
-      .from('健康記錄主表')
-      .insert(record)
-      .select()
-      .single();
-    
-    if (error) throw error;
-    return data as HealthRecord;
-  } catch (error) {
-    console.error('Error creating health record:', error);
-    return null;
-  }
-}
+          {formData.記錄類型 === '生命表徵' && (
+            <div className="space-y-4">
+              <h3 className="text-lg font-medium text-blue-600 flex items-center">
+                <Activity className="h-5 w-5 mr-2" />
+                生命表徵數據
+              </h3>
+              
+              <div className="space-y-4">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div>
+                    <label className="form-label">血壓 (mmHg)</label>
+                    <div className="flex space-x-2">
+                      <input
+                        type="number"
+                        name="血壓收縮壓"
+                        value={formData.血壓收縮壓}
+                        onChange={handleChange}
+                        className="form-input"
+                        placeholder="120"
+                        min="0"
+                        max="300"
+                      />
+                      <span className="flex items-center text-gray-500">/</span>
+                      <input
+                        type="number"
+                        name="血壓舒張壓"
+                        value={formData.血壓舒張壓}
+                        onChange={handleChange}
+                        className="form-input"
+                        placeholder="80"
+                        min="0"
+                        max="200"
+                      />
+                    </div>
+                  </div>
+                  <div>
+                    <label className="form-label">脈搏 (每分鐘)</label>
+                    <input
+                      type="number"
+                      name="脈搏"
+                      value={formData.脈搏}
+                      onChange={handleChange}
+                      className="form-input"
+                      placeholder="60-100"
+                      min="0"
+                      max="300"
+                    />
+                  </div>
+                  <div>
+                    <label className="form-label">體溫 (°C)</label>
+                    <input
+                      type="number"
+                      name="體溫"
+                      value={formData.體溫}
+                      onChange={handleChange}
+                      className="form-input"
+                      placeholder="36.5"
+                      min="30"
+                      max="45"
+                      step="0.1"
+                    />
+                  </div>
+                </div>
+                
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div>
+                    <label className="form-label">血含氧量 (%)</label>
+                    <input
+                      type="number"
+                      name="血含氧量"
+                      value={formData.血含氧量}
+                      onChange={handleChange}
+                      className="form-input"
+                      placeholder="95-100"
+                      min="0"
+                      max="100"
+                    />
+                  </div>
+                  <div>
+                    <label className="form-label">呼吸頻率 (每分鐘)</label>
+                    <input
+                      type="number"
+                      name="呼吸頻率"
+                      value={formData.呼吸頻率}
+                      onChange={handleChange}
+                      className="form-input"
+                      placeholder="12-20"
+                      min="0"
+                      max="100"
+                    />
+                  </div>
+                  <div>
+                    <label className="form-label">備註</label>
+                    <textarea
+                      name="備註"
+                      value={formData.備註}
+                      onChange={handleChange}
+                      className="form-input"
+                      rows={1}
+                      placeholder="其他備註資訊..."
+                    />
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
 
-export async function updateHealthRecord(record: HealthRecord): Promise<HealthRecord | null> {
-  try {
-    const { data, error } = await supabase
-      .from('健康記錄主表')
-      .update({
-        院友id: record.院友id,
-        記錄日期: record.記錄日期,
-        記錄時間: record.記錄時間,
-        記錄類型: record.記錄類型,
-        血壓收縮壓: record.血壓收縮壓,
-        血壓舒張壓: record.血壓舒張壓,
-        脈搏: record.脈搏,
-        體溫: record.體溫,
-        血含氧量: record.血含氧量,
-        呼吸頻率: record.呼吸頻率,
-        血糖值: record.血糖值,
-        體重: record.體重,
-        備註: record.備註,
-        記錄人員: record.記錄人員
-      })
-      .eq('記錄id', record.記錄id)
-      .select()
-      .single();
-    
-    if (error) throw error;
-    return data as HealthRecord;
-  } catch (error) {
-    console.error('Error updating health record:', error);
-    return null;
-  }
-}
+          {formData.記錄類型 === '血糖控制' && (
+            <div className="space-y-4">
+              <h3 className="text-lg font-medium text-red-600 flex items-center">
+                <Droplets className="h-5 w-5 mr-2" />
+                血糖控制數據
+              </h3>
+              
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="form-label">血糖值 (mmol/L) *</label>
+                  <input
+                    type="number"
+                    name="血糖值"
+                    value={formData.血糖值}
+                    onChange={handleChange}
+                    className="form-input"
+                    placeholder="4.0-7.0"
+                    min="0"
+                    max="50"
+                    step="0.1"
+                    required={formData.記錄類型 === '血糖控制'}
+                  />
+                  <p className="text-xs text-gray-500 mt-1">
+                    正常範圍：空腹 4.0-6.1，餐後 4.4-7.8
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
 
-export async function deleteHealthRecord(id: number): Promise<boolean> {
-  try {
-    const { error } = await supabase
-      .from('健康記錄主表')
-      .delete()
-      .eq('記錄id', id);
-    
-    if (error) throw error;
-    return true;
-  } catch (error) {
-    console.error('Error deleting health record:', error);
-    return false;
-  }
-}
+          {formData.記錄類型 === '體重控制' && (
+            <div className="space-y-4">
+              <h3 className="text-lg font-medium text-green-600 flex items-center">
+                <Scale className="h-5 w-5 mr-2" />
+                體重控制數據
+              </h3>
+              
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="form-label">體重 (kg) *</label>
+                  <input
+                    type="number"
+                    name="體重"
+                    value={formData.體重}
+                    onChange={handleChange}
+                    className="form-input"
+                    placeholder="50.0"
+                    min="0"
+                    max="300"
+                    step="0.1"
+                    required={formData.記錄類型 === '體重控制'}
+                  />
+                </div>
+                
+                {weightChange && (
+                  <div>
+                    <label className="form-label">與上次比較</label>
+                    <div className={`p-3 rounded-lg border ${
+                      weightChange.startsWith('+') ? 'bg-red-50 border-red-200 text-red-800' :
+                      weightChange.startsWith('-') ? 'bg-green-50 border-green-200 text-green-800' :
+                      'bg-gray-50 border-gray-200 text-gray-800'
+                    }`}>
+                      <div className="font-medium">{weightChange}</div>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
 
-// Follow-up appointment operations
-export async function getFollowUpAppointments(): Promise<FollowUpAppointment[]> {
-  try {
-    const { data, error } = await supabase
-      .from('覆診安排主表')
-      .select('*')
-      .order('覆診日期', { ascending: true })
-      .order('覆診時間', { ascending: true });
-    
-    if (error) throw error;
-    return data as FollowUpAppointment[];
-  } catch (error) {
-    console.error('Error fetching follow-up appointments:', error);
-    return [];
-  }
-}
+          {showDateTimeConfirm && (
+            <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+              <div className="bg-white rounded-lg p-6 max-w-md w-full">
+                <h3 className="text-lg font-semibold text-gray-900 mb-4">
+                  確認未來時間記錄
+                </h3>
+                <p className="text-gray-600 mb-6">
+                  您輸入的記錄日期和時間 ({new Date(formData.記錄日期).toLocaleDateString('zh-TW')} {formData.記錄時間}) 晚於當前時間 ({new Date().toLocaleDateString('zh-TW')} {new Date().toTimeString().slice(0,5)})。
+                  是否確認要儲存此記錄？
+                </p>
+                <div className="flex space-x-3">
+                  <button
+                    type="button"
+                    onClick={handleConfirmDateTime}
+                    className="btn-primary flex-1"
+                  >
+                    確認儲存
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleCancelDateTime}
+                    className="btn-secondary flex-1"
+                  >
+                    取消
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
 
-export async function createFollowUpAppointment(appointment: Omit<FollowUpAppointment, '覆診id' | '創建時間' | '更新時間'>): Promise<FollowUpAppointment | null> {
-  try {
-    const { data, error } = await supabase
-      .from('覆診安排主表')
-      .insert(appointment)
-      .select()
-      .single();
-    
-    if (error) throw error;
-    return data as FollowUpAppointment;
-  } catch (error) {
-    console.error('Error creating follow-up appointment:', error);
-    return null;
-  }
-}
+          <div className="flex space-x-3 pt-4 border-t border-gray-200">
+            <button
+              type="submit"
+              className="btn-primary flex-1"
+            >
+              {record ? '更新記錄' : '新增記錄'}
+            </button>
+            <button
+              type="button"
+              onClick={onClose}
+              className="btn-secondary flex-1"
+            >
+              取消
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+};
 
-export async function updateFollowUpAppointment(appointment: FollowUpAppointment): Promise<FollowUpAppointment | null> {
-  try {
-    const { data, error } = await supabase
-      .from('覆診安排主表')
-      .update({
-        院友id: appointment.院友id,
-        覆診日期: appointment.覆診日期,
-        出發時間: appointment.出發時間,
-        覆診時間: appointment.覆診時間,
-        覆診地點: appointment.覆診地點,
-        覆診專科: appointment.覆診專科,
-        交通安排: appointment.交通安排,
-        陪診人員: appointment.陪診人員,
-        備註: appointment.備註,
-        狀態: appointment.狀態
-      })
-      .eq('覆診id', appointment.覆診id)
-      .select()
-      .single();
-    
-    if (error) throw error;
-    return data as FollowUpAppointment;
-  } catch (error) {
-    console.error('Error updating follow-up appointment:', error);
-    return null;
-  }
-}
-
-export async function deleteFollowUpAppointment(id: string): Promise<boolean> {
-  try {
-    const { error } = await supabase
-      .from('覆診安排主表')
-      .delete()
-      .eq('覆診id', id);
-    
-    if (error) throw error;
-    return true;
-  } catch (error) {
-    console.error('Error deleting follow-up appointment:', error);
-    return false;
-  }
-}
-
-// Patient Health Tasks operations
-export async function getPatientHealthTasks(): Promise<PatientHealthTask[]> {
-  try {
-    console.log('Fetching patient health tasks...');
-    const { data, error } = await supabase
-      .from('patient_health_tasks')
-      .select('*')
-      .order('next_due_at', { ascending: true });
-    
-    if (error) throw error;
-    console.log('Patient health tasks fetched:', data.length, 'records');
-    return data as PatientHealthTask[];
-  } catch (error) {
-    console.error('Error fetching patient health tasks:', error);
-    return [];
-  }
-}
-
-export async function createPatientHealthTask(task: Omit<PatientHealthTask, 'id' | 'created_at' | 'updated_at'>): Promise<PatientHealthTask | null> {
-  try {
-    console.log('Creating patient health task:', task);
-    
-    const { data, error } = await supabase
-      .from('patient_health_tasks')
-      .insert(task)
-      .select()
-      .single();
-    
-    if (error) throw error;
-    console.log('Patient health task created successfully:', data);
-    return data as PatientHealthTask;
-  } catch (error) {
-    console.error('Error creating patient health task:', error);
-    return null;
-  }
-}
-
-export async function updatePatientHealthTask(task: PatientHealthTask): Promise<PatientHealthTask | null> {
-  try {
-    console.log('Updating patient health task:', task);
-    console.log('=== database.ts updatePatientHealthTask 開始 ===');
-    
-    // Exclude automatically managed fields from update payload
-    const { id, created_at, updated_at, ...updateData } = task;
-    
-    console.log('任務ID:', id);
-    console.log('更新資料:', updateData);
-    
-    const { data, error } = await supabase
-      .from('patient_health_tasks')
-      .update(updateData)
-      .eq('id', id)
-      .select()
-      .single();
-    
-    if (error) {
-      console.error('Supabase 更新失敗:', error);
-      console.error('錯誤詳情:', error.message, error.details, error.hint);
-      throw error;
-    }
-    
-    if (!data) {
-      console.error('更新成功但沒有返回資料');
-      throw new Error('更新成功但沒有返回資料');
-    }
-    
-    console.log('Patient health task updated successfully:', data);
-    console.log('=== database.ts updatePatientHealthTask 完成 ===');
-    return data as PatientHealthTask;
-  } catch (error) {
-    console.error('Error updating patient health task:', error);
-    throw error; // 重新拋出錯誤而不是返回 null
-  }
-}
-
-export async function deletePatientHealthTask(id: string): Promise<boolean> {
-  try {
-    console.log('Deleting patient health task:', id);
-    
-    const { error } = await supabase
-      .from('patient_health_tasks')
-      .delete()
-      .eq('id', id);
-    
-    if (error) throw error;
-    console.log('Patient health task deleted successfully');
-    return true;
-  } catch (error) {
-    console.error('Error deleting patient health task:', error);
-    return false;
-  }
-}
+export default HealthRecordModal;
