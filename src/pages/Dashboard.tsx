@@ -118,13 +118,15 @@ const Dashboard: React.FC = () => {
     const hour = new Date(task.next_due_at).getHours();
     if (hour >= 7 && hour < 10) return '早餐';
     if (hour >= 10 && hour < 13) return '午餐';
-    if (hour >= 13 && hour <= 20) return '晚餐';
+    if (hour >= 13 && hour < 18) return '晚餐';
+    if (hour >= 18 && hour <= 20) return '夜宵';
     return '其他';
   };
 
   const breakfastTasks = urgentMonitoringTasks.filter(task => categorizeTaskByTime(task) === '早餐');
   const lunchTasks = urgentMonitoringTasks.filter(task => categorizeTaskByTime(task) === '午餐');
   const dinnerTasks = urgentMonitoringTasks.filter(task => categorizeTaskByTime(task) === '晚餐');
+  const snackTasks = urgentMonitoringTasks.filter(task => categorizeTaskByTime(task) === '夜宵');
 
   // 文件任務：包含逾期、未完成和即將到期
   const overdueDocumentTasks = documentTasks.filter(task => isTaskOverdue(task));
@@ -234,6 +236,8 @@ const Dashboard: React.FC = () => {
       return 'bg-yellow-50 hover:bg-yellow-100';
     } else if (hour >= 13 && hour < 18) {
       return 'bg-green-50 hover:bg-green-100';
+    } else if (hour >= 18 && hour <= 20) {
+      return 'bg-purple-50 hover:bg-purple-100';
     }
     return 'bg-gray-50 hover:bg-gray-100';
   };
@@ -442,7 +446,7 @@ const Dashboard: React.FC = () => {
             )}
             {dinnerTasks.length > 0 && (
               <div>
-                <h3 className="text-md font-medium text-gray-700 mb-2">晚餐 (13:00 - 20:00)</h3>
+                <h3 className="text-md font-medium text-gray-700 mb-2">晚餐 (13:00 - 17:59)</h3>
                 <div className="flex flex-wrap -mx-1.5">
                   {dinnerTasks.map((task) => {
                     const patient = patients.find(p => p.院友id === task.patient_id);
@@ -504,7 +508,71 @@ const Dashboard: React.FC = () => {
                 </div>
               </div>
             )}
-            {breakfastTasks.length === 0 && lunchTasks.length === 0 && dinnerTasks.length === 0 && (
+            {snackTasks.length > 0 && (
+              <div>
+                <h3 className="text-md font-medium text-gray-700 mb-2">夜宵 (18:00 - 20:00)</h3>
+                <div className="flex flex-wrap -mx-1.5">
+                  {snackTasks.map((task) => {
+                    const patient = patients.find(p => p.院友id === task.patient_id);
+                    const status = getTaskStatus(task);
+                    return (
+                      <div 
+                        key={task.id} 
+                        className={`relative flex items-center space-x-3 p-3 ${getTaskTimeBackgroundClass(task.next_due_at)} rounded-lg cursor-pointer transition-colors w-[48%] mx-1.5 mb-3`}
+                        onClick={() => handleTaskClick(task)}
+                      >
+                        {task.notes && isMonitoringTask(task.health_record_type) && (
+                          <div className={`absolute top-2 right-2 px-2 py-1 rounded-full text-xs font-medium ${getNotesBadgeClass(task.notes)}`}>
+                            {task.notes}
+                          </div>
+                        )}
+                        <div className="w-10 h-10 bg-blue-100 rounded-full overflow-hidden flex items-center justify-center">
+                          {patient?.院友相片 ? (
+                            <img 
+                              src={patient.院友相片} 
+                              alt={patient.中文姓名} 
+                              className="w-full h-full object-cover"
+                            />
+                          ) : (
+                            <User className="h-5 w-5 text-blue-600" />
+                          )}
+                        </div>
+                        <div className="flex-1">
+                          <div className="flex items-center space-x-2">
+                            <p className="font-medium text-gray-900">{patient?.中文姓名}</p>
+                            <span className="text-xs text-gray-500">({patient?.床號})</span>
+                          </div>
+                          <div className="flex items-center space-x-2 mt-1">
+                            {getTaskTypeIcon(task.health_record_type)}
+                            <p className="text-sm text-gray-600">{task.health_record_type}</p>
+                          </div>
+                          {task.notes && (
+                            <p className="text-xs text-gray-500 mt-1">{task.notes}</p>
+                          )}
+                          <p className="text-xs text-gray-500">
+                            {isDocumentTask(task.health_record_type)
+                              ? new Date(task.next_due_at).toLocaleDateString('zh-TW')
+                              : new Date(task.next_due_at).toLocaleString('zh-TW')}
+                          </p>
+                        </div>
+                        <span className={`status-badge flex-shrink-0 ${
+                          status === 'overdue' ? 'bg-red-100 text-red-800' : 
+                          status === 'pending' ? 'bg-green-100 text-green-800' :
+                          status === 'due_soon' ? 'bg-orange-100 text-orange-800' :
+                          'bg-purple-100 text-purple-800'
+                        }`}>
+                          {status === 'overdue' ? '逾期' : 
+                           status === 'pending' ? '未完成' :
+                           status === 'due_soon' ? '即將到期' :
+                           '排程中'}
+                        </span>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+            {breakfastTasks.length === 0 && lunchTasks.length === 0 && dinnerTasks.length === 0 && snackTasks.length === 0 && (
               <div className="text-center py-8 text-gray-500">
                 <CheckSquare className="h-12 w-12 mx-auto mb-2 text-gray-300" />
                 <p>無待處理任務</p>
