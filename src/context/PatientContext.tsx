@@ -9,6 +9,8 @@ interface HealthRecordModalProps {
   onTaskCompleted?: (recordDateTime: Date) => void;
   defaultRecordDate?: string;
   defaultRecordTime?: string;
+  includeDischargedPatients: boolean;
+  setIncludeDischargedPatients: (include: boolean) => void;
 }
 
 const HealthRecordModal: React.FC<HealthRecordModalProps> = ({
