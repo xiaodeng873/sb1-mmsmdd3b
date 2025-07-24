@@ -846,9 +846,13 @@ export async function createPatientHealthTask(task: Omit<PatientHealthTask, 'id'
 export async function updatePatientHealthTask(task: PatientHealthTask): Promise<PatientHealthTask | null> {
   try {
     console.log('Updating patient health task:', task);
+    console.log('=== database.ts updatePatientHealthTask 開始 ===');
     
     // Exclude automatically managed fields from update payload
     const { id, created_at, updated_at, ...updateData } = task;
+    
+    console.log('任務ID:', id);
+    console.log('更新資料:', updateData);
     
     const { data, error } = await supabase
       .from('patient_health_tasks')
@@ -857,12 +861,23 @@ export async function updatePatientHealthTask(task: PatientHealthTask): Promise<
       .select()
       .single();
     
-    if (error) throw error;
+    if (error) {
+      console.error('Supabase 更新失敗:', error);
+      console.error('錯誤詳情:', error.message, error.details, error.hint);
+      throw error;
+    }
+    
+    if (!data) {
+      console.error('更新成功但沒有返回資料');
+      throw new Error('更新成功但沒有返回資料');
+    }
+    
     console.log('Patient health task updated successfully:', data);
+    console.log('=== database.ts updatePatientHealthTask 完成 ===');
     return data as PatientHealthTask;
   } catch (error) {
     console.error('Error updating patient health task:', error);
-    return null;
+    throw error; // 重新拋出錯誤而不是返回 null
   }
 }
 

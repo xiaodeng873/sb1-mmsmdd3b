@@ -11,14 +11,20 @@ export function isMonitoringTask(taskType: string): boolean {
 }
 
 export function calculateNextDueDate(task: PatientHealthTask, fromDate?: Date): Date {
+  console.log('=== calculateNextDueDate 開始 ===');
+  console.log('輸入任務:', task);
+  console.log('基準日期:', fromDate);
+  
   let baseDate: Date;
   
   if (isDocumentTask(task.health_record_type)) {
+    console.log('這是文件任務');
     // 文件任務：使用 last_completed_at 作為基準日期，如果沒有則使用當前日期
     baseDate = fromDate || (task.last_completed_at ? new Date(task.last_completed_at) : new Date());
     // 清除時間部分
     baseDate.setHours(0, 0, 0, 0);
   } else {
+    console.log('這是監測任務');
     // 監測任務：使用 next_due_at 或當前日期
     if (fromDate) {
       baseDate = new Date(fromDate);
@@ -30,17 +36,23 @@ export function calculateNextDueDate(task: PatientHealthTask, fromDate?: Date): 
     }
   }
   
+  console.log('基準日期設定為:', baseDate);
+  
   const nextDue = new Date(baseDate);
 
   // Default time to 08:00 for monitoring tasks
   const defaultHours = 8;
   const defaultMinutes = 0;
   let hasSpecificTime = false;
+  
+  console.log('頻率單位:', task.frequency_unit, '頻率值:', task.frequency_value);
 
   switch (task.frequency_unit) {
     case 'daily':
+      console.log('處理每日任務');
       // Add frequency_value days
       nextDue.setDate(nextDue.getDate() + task.frequency_value);
+      console.log('加上', task.frequency_value, '天後:', nextDue);
       
       // Set specific time if available
       if (task.specific_times.length > 0 && !isDocumentTask(task.health_record_type)) {
@@ -48,31 +60,41 @@ export function calculateNextDueDate(task: PatientHealthTask, fromDate?: Date): 
         const time = parseTimeString(timeStr);
         nextDue.setHours(time.hours, time.minutes, 0, 0);
         hasSpecificTime = true;
+        console.log('設定特定時間:', timeStr, '轉換為:', time);
       }
       break;
 
     case 'weekly':
+      console.log('處理每週任務');
       if (task.specific_days_of_week.length > 0 && !isDocumentTask(task.health_record_type)) {
         const targetDay = task.specific_days_of_week[0];
         const adjustedTargetDay = targetDay === 7 ? 0 : targetDay;
         const currentDay = nextDue.getDay();
         let dayDiff = adjustedTargetDay - currentDay;
         
+        console.log('目標星期:', targetDay, '調整後:', adjustedTargetDay);
+        console.log('當前星期:', currentDay, '天數差:', dayDiff);
+        
         // 如果是同一天，則移到下一週的同一天
         if (dayDiff === 0) {
           dayDiff = 7;
+          console.log('同一天，移到下週，天數差改為:', dayDiff);
         } else if (dayDiff < 0) {
           dayDiff = dayDiff + 7;
+          console.log('負數天數差，調整為:', dayDiff);
         }
         
         // 應用 frequency_value（多週間隔）
         if (task.frequency_value > 1) {
           nextDue.setDate(nextDue.getDate() + (task.frequency_value - 1) * 7);
+          console.log('多週間隔，加上', (task.frequency_value - 1) * 7, '天');
         }
         nextDue.setDate(nextDue.getDate() + dayDiff);
+        console.log('最終週任務日期:', nextDue);
       } else {
         // 無特定星期，僅加週數
         nextDue.setDate(nextDue.getDate() + task.frequency_value * 7);
+        console.log('無特定星期，加上', task.frequency_value * 7, '天');
       }
       
       // Set specific time if available
@@ -81,12 +103,15 @@ export function calculateNextDueDate(task: PatientHealthTask, fromDate?: Date): 
         const time = parseTimeString(timeStr);
         nextDue.setHours(time.hours, time.minutes, 0, 0);
         hasSpecificTime = true;
+        console.log('週任務設定特定時間:', timeStr);
       }
       break;
 
     case 'monthly':
+      console.log('處理每月任務');
       // Add months interval
       nextDue.setMonth(nextDue.getMonth() + task.frequency_value);
+      console.log('加上', task.frequency_value, '個月後:', nextDue);
       
       // For document tasks, preserve the original day of the month
       if (isDocumentTask(task.health_record_type)) {
@@ -95,11 +120,13 @@ export function calculateNextDueDate(task: PatientHealthTask, fromDate?: Date): 
         nextDue.setDate(Math.min(originalDay, daysInMonth));
         // 清除時間部分
         nextDue.setHours(0, 0, 0, 0);
+        console.log('文件任務保持原日期:', originalDay, '最終日期:', nextDue);
       } else {
         // Set specific day of month if provided
         if (task.specific_days_of_month.length > 0) {
           const targetDay = Math.min(task.specific_days_of_month[0], new Date(nextDue.getFullYear(), nextDue.getMonth() + 1, 0).getDate());
           nextDue.setDate(targetDay);
+          console.log('監測任務設定特定日期:', targetDay);
         }
         
         // Set specific time if available
@@ -108,31 +135,63 @@ export function calculateNextDueDate(task: PatientHealthTask, fromDate?: Date): 
           const time = parseTimeString(timeStr);
           nextDue.setHours(time.hours, time.minutes, 0, 0);
           hasSpecificTime = true;
+          console.log('月任務設定特定時間:', timeStr);
+        }
+      }
+      break;
+      
+    case 'yearly':
+      console.log('處理每年任務');
+      // Add years interval
+      nextDue.setFullYear(nextDue.getFullYear() + task.frequency_value);
+      console.log('加上', task.frequency_value, '年後:', nextDue);
+      
+      // For document tasks, preserve the original date
+      if (isDocumentTask(task.health_record_type)) {
+        // 清除時間部分
+        nextDue.setHours(0, 0, 0, 0);
+        console.log('年度文件任務最終日期:', nextDue);
+      } else {
+        // Set specific time if available
+        if (task.specific_times.length > 0) {
+          const timeStr = task.specific_times[0];
+          const time = parseTimeString(timeStr);
+          nextDue.setHours(time.hours, time.minutes, 0, 0);
+          hasSpecificTime = true;
+          console.log('年度監測任務設定特定時間:', timeStr);
         }
       }
       break;
 
     default:
+      console.error('未知的頻率單位:', task.frequency_unit);
       throw new Error('未知的頻率單位');
   }
 
   // Apply default time of 08:00 for monitoring tasks if no specific time was set
   if (!hasSpecificTime && !isDocumentTask(task.health_record_type)) {
     nextDue.setHours(defaultHours, defaultMinutes, 0, 0);
+    console.log('應用預設時間 08:00');
   }
 
+  console.log('最終計算結果:', nextDue);
+  console.log('=== calculateNextDueDate 結束 ===');
   return nextDue;
 }
 
 // 解析時間字串（支援 HH:MM 和 藥物時間格式如 7A, 12N, 6P）
 function parseTimeString(timeStr: string): { hours: number; minutes: number } {
+  console.log('解析時間字串:', timeStr);
+  
   // 先嘗試標準 HH:MM 格式
   const standardMatch = timeStr.match(/^(\d{1,2}):(\d{2})$/);
   if (standardMatch) {
-    return {
+    const result = {
       hours: parseInt(standardMatch[1]),
       minutes: parseInt(standardMatch[2])
     };
+    console.log('標準格式解析結果:', result);
+    return result;
   }
   
   // 嘗試藥物時間格式 (如 7A, 12N, 6P)
@@ -147,7 +206,9 @@ function parseTimeString(timeStr: string): { hours: number; minutes: number } {
     if (period === 'P' && hours !== 12) hours += 12; // xP = (x+12):xx (除了12P)
     if (period === 'N') hours = 12; // 12N = 12:xx
     
-    return { hours, minutes };
+    const result = { hours, minutes };
+    console.log('藥物格式解析結果:', result);
+    return result;
   }
   
   // 如果都無法解析，返回預設時間 08:00

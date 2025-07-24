@@ -165,19 +165,42 @@ const Dashboard: React.FC = () => {
   const handleTaskCompleted = async (taskId: string, recordDateTime: Date) => {
     const task = patientHealthTasks.find(t => t.id === taskId);
     if (task) {
+      console.log('=== 任務完成處理開始 ===');
+      console.log('任務ID:', taskId);
+      console.log('記錄時間:', recordDateTime);
+      console.log('原任務資料:', task);
+      
       const { calculateNextDueDate } = await import('../utils/taskScheduler');
       
       // 使用記錄時間作為基準計算下次到期時間
-      const nextDueAt = calculateNextDueDate({
+      const updatedTask = {
         ...task,
         last_completed_at: recordDateTime.toISOString()
-      }, recordDateTime);
+      };
+      
+      console.log('更新後任務資料:', updatedTask);
+      
+      const nextDueAt = calculateNextDueDate(updatedTask, recordDateTime);
+      
+      console.log('計算出的下次到期時間:', nextDueAt);
 
-      await updatePatientHealthTask({
+      const finalTaskData = {
         ...task,
         last_completed_at: recordDateTime.toISOString(),
         next_due_at: nextDueAt.toISOString()
-      });
+      };
+      
+      console.log('最終要更新的任務資料:', finalTaskData);
+      
+      try {
+        await updatePatientHealthTask(finalTaskData);
+        console.log('任務更新成功');
+      } catch (error) {
+        console.error('任務更新失敗:', error);
+        throw error;
+      }
+      
+      console.log('=== 任務完成處理結束 ===');
     }
     setShowHealthModal(false);
     setSelectedTaskForRecord(null);

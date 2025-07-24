@@ -173,7 +173,12 @@ const HealthRecordModal: React.FC<HealthRecordModalProps> = ({
       
       // 如果有任務完成回調，傳遞記錄的實際日期時間
       if (onTaskCompleted) {
-        const recordDateTime = parseHongKongDateTime(formData.記錄日期, formData.記錄時間);
+        // 使用香港時區的記錄時間
+        const recordDateTime = new Date(`${formData.記錄日期}T${formData.記錄時間}:00+08:00`);
+        console.log('=== HealthRecordModal 任務完成回調 ===');
+        console.log('記錄日期:', formData.記錄日期);
+        console.log('記錄時間:', formData.記錄時間);
+        console.log('轉換後的記錄時間:', recordDateTime);
         onTaskCompleted(recordDateTime);
       }
       onClose();

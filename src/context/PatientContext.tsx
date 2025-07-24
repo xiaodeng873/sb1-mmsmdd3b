@@ -375,6 +375,8 @@ export const PatientProvider: React.FC<{ children: React.ReactNode }> = ({ child
       console.log('Data refreshed successfully');
     } catch (error) {
       console.error('Error adding patient health task:', error);
+      
+      console.log('更新資料 (排除自動管理欄位):', updateData);
       throw error;
     }
   };
@@ -382,9 +384,18 @@ export const PatientProvider: React.FC<{ children: React.ReactNode }> = ({ child
   const updatePatientHealthTask = async (task: db.PatientHealthTask) => {
     try {
       console.log('Updating patient health task:', task);
-      await db.updatePatientHealthTask(task);
+      console.log('=== PatientContext updatePatientHealthTask 開始 ===');
+      if (error) {
+        console.error('Supabase 更新錯誤:', error);
+        throw error;
+      }
+      
       console.log('Patient health task updated successfully, refreshing data...');
+      console.log('=== 資料庫更新成功，開始刷新資料 ===');
+      
       await refreshData();
+      
+      console.log('=== PatientContext updatePatientHealthTask 完成 ===');
       console.log('Data refreshed successfully');
     } catch (error) {
       console.error('Error updating patient health task:', error);
