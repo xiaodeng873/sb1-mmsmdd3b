@@ -60,7 +60,7 @@ const Dashboard: React.FC = () => {
     return (
       <div className="flex items-center justify-center min-h-64">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-5"></div>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
           <p className="text-gray-600">載入中...</p>
         </div>
       </div>
@@ -99,7 +99,6 @@ const Dashboard: React.FC = () => {
     const timeB = new Date(b.next_due_at).getTime();
 
     if (timeA === timeB) {
-      // 定義優先級
       const priority = {
         '注射前': 1,
         '服藥前': 2,
@@ -107,7 +106,6 @@ const Dashboard: React.FC = () => {
         '特別關顧': 4,
         '定期': 5
       };
-      // 如果 notes 為空，設置最低優先級
       const priorityA = a.notes ? priority[a.notes] || 5 : 5;
       const priorityB = b.notes ? priority[b.notes] || 5 : 5;
       return priorityA - priorityB;
@@ -288,9 +286,12 @@ const Dashboard: React.FC = () => {
       </div>
 
       {/* Recent Activity */}
-      <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
+        {/* 留空第一欄 */}
+        <div className="hidden lg:block"></div>
+
         {/* 監測任務 */}
-        <div className="card p-6">
+        <div className="card p-6 lg:col-span-2">
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-lg font-semibold text-gray-900">監測任務</h2>
             <Link 
@@ -302,14 +303,15 @@ const Dashboard: React.FC = () => {
           </div>
           <div className="space-y-3">
             {urgentMonitoringTasks.length > 0 ? (
-              urgentMonitoringTasks.map(task => {
+              urgentMonitoringTasks.map((task, index) => {
                 const patient = patients.find(p => p.院友id === task.patient_id);
                 const status = getTaskStatus(task);
                 return (
                   <div 
                     key={task.id} 
-                    className={`relative flex items-center space-x-3 p-3 ${getTaskTimeBackgroundClass(task.next_due_at)} rounded-lg cursor-pointer transition-colors`}
+                    className={`relative flex items-center space-x-3 p-3 ${getTaskTimeBackgroundClass(task.next_due_at)} rounded-lg cursor-pointer transition-colors ${index % 4 === 0 || index % 4 === 1 ? 'lg:mr-3' : ''}`}
                     onClick={() => handleTaskClick(task)}
+                    style={{ width: index % 4 < 2 ? '48%' : '100%', display: 'inline-block', verticalAlign: 'top' }}
                   >
                     {task.notes && isMonitoringTask(task.health_record_type) && (
                       <div className={`absolute top-2 right-2 px-2 py-1 rounded-full text-xs font-medium ${getNotesBadgeClass(task.notes)}`}>
@@ -728,4 +730,4 @@ const DocumentTaskModal: React.FC<{
   );
 }; 
  
-export default Dashboard; 
+export default Dashboard;
