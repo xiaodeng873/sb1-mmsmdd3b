@@ -192,7 +192,7 @@ const HealthRecordModal: React.FC<HealthRecordModalProps> = ({
       
       // 如果有任務完成回調，傳遞記錄的實際日期時間
       if (onTaskCompleted) {
-    .from('templates_metadata')
+    from('templates_metadata')
     .delete()
     .eq('id', id);
 
