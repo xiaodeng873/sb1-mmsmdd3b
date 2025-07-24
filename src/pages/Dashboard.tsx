@@ -319,7 +319,7 @@ const Dashboard: React.FC = () => {
             {breakfastTasks.length > 0 && (
               <div>
                 <h3 className="text-md font-medium text-gray-700 mb-2">早餐 (07:00 - 09:59)</h3>
-                <div className="grid grid-cols-1 lg:grid-cols-3 gap-3">
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
                   {breakfastTasks.map((task) => {
                     const patient = patients.find(p => p.院友id === task.patient_id);
                     const status = getTaskStatus(task);
@@ -383,7 +383,7 @@ const Dashboard: React.FC = () => {
             {lunchTasks.length > 0 && (
               <div>
                 <h3 className="text-md font-medium text-gray-700 mb-2">午餐 (10:00 - 12:59)</h3>
-                <div className="grid grid-cols-1 lg:grid-cols-4 gap-3">
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
                   {lunchTasks.map((task) => {
                     const patient = patients.find(p => p.院友id === task.patient_id);
                     const status = getTaskStatus(task);
@@ -447,7 +447,7 @@ const Dashboard: React.FC = () => {
             {dinnerTasks.length > 0 && (
               <div>
                 <h3 className="text-md font-medium text-gray-700 mb-2">晚餐 (13:00 - 17:59)</h3>
-                <div className="grid grid-cols-1 lg:grid-cols-4 gap-3">
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
                   {dinnerTasks.map((task) => {
                     const patient = patients.find(p => p.院友id === task.patient_id);
                     const status = getTaskStatus(task);
@@ -511,7 +511,7 @@ const Dashboard: React.FC = () => {
             {snackTasks.length > 0 && (
               <div>
                 <h3 className="text-md font-medium text-gray-700 mb-2">夜宵 (18:00 - 20:00)</h3>
-                <div className="grid grid-cols-1 lg:grid-cols-4 gap-3">
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
                   {snackTasks.map((task) => {
                     const patient = patients.find(p => p.院友id === task.patient_id);
                     const status = getTaskStatus(task);
