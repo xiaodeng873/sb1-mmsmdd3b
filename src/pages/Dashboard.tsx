@@ -198,7 +198,7 @@ const Dashboard: React.FC = () => {
   };
 
   const getNotesBadgeClass = (notes: string) => {
-    switch (notes) { 
+    switch (notes) {
       case '服藥前': return 'bg-blue-500 text-white';
       case '注射前': return 'bg-red-500 text-white';
       case '定期': return 'bg-green-500 text-white';
@@ -215,7 +215,7 @@ const Dashboard: React.FC = () => {
       case '體重控制': return <Scale className="h-4 w-4" />;
       case '約束物品同意書': return <FileText className="h-4 w-4" />;
       case '年度體檢': return <Stethoscope className="h-4 w-4" />;
-      default: return <CheckSquare className="h-4 w-4" />; 
+      default: return <CheckSquare className="h-4 w-4" />;
     }
   };
 
@@ -319,14 +319,14 @@ const Dashboard: React.FC = () => {
             {breakfastTasks.length > 0 && (
               <div>
                 <h3 className="text-md font-medium text-gray-700 mb-2">早餐 (07:00 - 09:59)</h3>
-                <div className="flex flex-wrap -mx-1.5">
+                <div className="grid grid-cols-2 gap-3">
                   {breakfastTasks.map((task) => {
                     const patient = patients.find(p => p.院友id === task.patient_id);
                     const status = getTaskStatus(task);
                     return (
                       <div 
                         key={task.id} 
-                        className={`relative flex items-center space-x-3 p-3 ${getTaskTimeBackgroundClass(task.next_due_at)} rounded-lg cursor-pointer transition-colors w-[48%] mx-1.5 mb-3`}
+                        className={`relative flex items-center space-x-3 p-3 ${getTaskTimeBackgroundClass(task.next_due_at)} rounded-lg cursor-pointer transition-colors`}
                         onClick={() => handleTaskClick(task)}
                       >
                         {task.notes && isMonitoringTask(task.health_record_type) && (
@@ -383,14 +383,14 @@ const Dashboard: React.FC = () => {
             {lunchTasks.length > 0 && (
               <div>
                 <h3 className="text-md font-medium text-gray-700 mb-2">午餐 (10:00 - 12:59)</h3>
-                <div className="flex flex-wrap -mx-1.5">
+                <div className="grid grid-cols-2 gap-3">
                   {lunchTasks.map((task) => {
                     const patient = patients.find(p => p.院友id === task.patient_id);
                     const status = getTaskStatus(task);
                     return (
                       <div 
                         key={task.id} 
-                        className={`relative flex items-center space-x-3 p-3 ${getTaskTimeBackgroundClass(task.next_due_at)} rounded-lg cursor-pointer transition-colors w-[48%] mx-1.5 mb-3`}
+                        className={`relative flex items-center space-x-3 p-3 ${getTaskTimeBackgroundClass(task.next_due_at)} rounded-lg cursor-pointer transition-colors`}
                         onClick={() => handleTaskClick(task)}
                       >
                         {task.notes && isMonitoringTask(task.health_record_type) && (
@@ -447,14 +447,14 @@ const Dashboard: React.FC = () => {
             {dinnerTasks.length > 0 && (
               <div>
                 <h3 className="text-md font-medium text-gray-700 mb-2">晚餐 (13:00 - 17:59)</h3>
-                <div className="flex flex-wrap -mx-1.5">
+                <div className="grid grid-cols-2 gap-3">
                   {dinnerTasks.map((task) => {
                     const patient = patients.find(p => p.院友id === task.patient_id);
                     const status = getTaskStatus(task);
                     return (
                       <div 
                         key={task.id} 
-                        className={`relative flex items-center space-x-3 p-3 ${getTaskTimeBackgroundClass(task.next_due_at)} rounded-lg cursor-pointer transition-colors w-[48%] mx-1.5 mb-3`}
+                        className={`relative flex items-center space-x-3 p-3 ${getTaskTimeBackgroundClass(task.next_due_at)} rounded-lg cursor-pointer transition-colors`}
                         onClick={() => handleTaskClick(task)}
                       >
                         {task.notes && isMonitoringTask(task.health_record_type) && (
@@ -511,14 +511,14 @@ const Dashboard: React.FC = () => {
             {snackTasks.length > 0 && (
               <div>
                 <h3 className="text-md font-medium text-gray-700 mb-2">夜宵 (18:00 - 20:00)</h3>
-                <div className="flex flex-wrap -mx-1.5">
+                <div className="grid grid-cols-2 gap-3">
                   {snackTasks.map((task) => {
                     const patient = patients.find(p => p.院友id === task.patient_id);
                     const status = getTaskStatus(task);
                     return (
                       <div 
                         key={task.id} 
-                        className={`relative flex items-center space-x-3 p-3 ${getTaskTimeBackgroundClass(task.next_due_at)} rounded-lg cursor-pointer transition-colors w-[48%] mx-1.5 mb-3`}
+                        className={`relative flex items-center space-x-3 p-3 ${getTaskTimeBackgroundClass(task.next_due_at)} rounded-lg cursor-pointer transition-colors`}
                         onClick={() => handleTaskClick(task)}
                       >
                         {task.notes && isMonitoringTask(task.health_record_type) && (
