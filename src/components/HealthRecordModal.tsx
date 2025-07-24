@@ -54,10 +54,9 @@ const HealthRecordModal: React.FC<HealthRecordModalProps> = ({
   const [showDateTimeConfirm, setShowDateTimeConfirm] = useState(false);
 
   const parseHongKongDateTime = (date: string, time: string) => {
-    // 將香港時間轉換為 UTC 時間
+    // 創建本地日期時間對象
     const dateTimeString = `${date}T${time}:00`;
-    const localDateTime = new Date(dateTimeString);
-    return new Date(localDateTime.getTime() - (8 * 60 * 60 * 1000)); // 減去8小時轉為UTC
+    return new Date(dateTimeString);
   };
 
   useEffect(() => {
@@ -133,11 +132,27 @@ const HealthRecordModal: React.FC<HealthRecordModalProps> = ({
       }
     }
 
-    const recordDateTime = parseHongKongDateTime(formData.記錄日期, formData.記錄時間);
-    const now = new Date(new Date().getTime() + (8 * 60 * 60 * 1000)); // 香港當前時間
+    // 創建記錄時間對象
+    const recordDateTime = new Date(`${formData.記錄日期}T${formData.記錄時間}:00`);
+    const now = new Date(); // 使用本地當前時間
+    
+    console.log('=== 日期時間驗證 ===');
+    console.log('輸入的記錄日期:', formData.記錄日期);
+    console.log('輸入的記錄時間:', formData.記錄時間);
+    console.log('組合的日期時間字串:', `${formData.記錄日期}T${formData.記錄時間}:00`);
+    console.log('解析後的記錄時間:', recordDateTime);
+    console.log('當前時間:', now);
+    console.log('記錄時間毫秒:', recordDateTime.getTime());
+    console.log('當前時間毫秒:', now.getTime());
+    console.log('時間差(分鐘):', (recordDateTime.getTime() - now.getTime()) / (1000 * 60));
+    console.log('記錄時間是否晚於當前時間:', recordDateTime > now);
+    
     if (recordDateTime > now) {
+      console.log('觸發未來時間確認對話框');
       setShowDateTimeConfirm(true);
       return;
+    } else {
+      console.log('記錄時間不是未來時間，直接儲存');
     }
 
     await saveRecord();
@@ -173,8 +188,8 @@ const HealthRecordModal: React.FC<HealthRecordModalProps> = ({
       
       // 如果有任務完成回調，傳遞記錄的實際日期時間
       if (onTaskCompleted) {
-        // 使用香港時區的記錄時間
-        const recordDateTime = new Date(`${formData.記錄日期}T${formData.記錄時間}:00+08:00`);
+        // 使用本地時區的記錄時間
+        const recordDateTime = new Date(`${formData.記錄日期}T${formData.記錄時間}:00`);
         console.log('=== HealthRecordModal 任務完成回調 ===');
         console.log('記錄日期:', formData.記錄日期);
         console.log('記錄時間:', formData.記錄時間);
@@ -477,7 +492,7 @@ const HealthRecordModal: React.FC<HealthRecordModalProps> = ({
                   確認未來時間記錄
                 </h3>
                 <p className="text-gray-600 mb-6">
-                  您輸入的記錄日期和時間 ({formData.記錄日期} {formData.記錄時間}) 晚於當前時間。
+                  您輸入的記錄日期和時間 ({new Date(formData.記錄日期).toLocaleDateString('zh-TW')} {formData.記錄時間}) 晚於當前時間 ({new Date().toLocaleDateString('zh-TW')} {new Date().toTimeString().slice(0,5)})。
                   是否確認要儲存此記錄？
                 </p>
                 <div className="flex space-x-3">
