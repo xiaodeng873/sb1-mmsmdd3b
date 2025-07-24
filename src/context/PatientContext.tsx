@@ -1,538 +1,547 @@
-import React, { useState, useEffect } from 'react';
-import { X, Heart, Activity, Droplets, Scale, User, Calendar, Clock } from 'lucide-react';
-import { usePatients, type HealthRecord } from '../context/PatientContext';
-import PatientAutocomplete from './PatientAutocomplete';
+import React, { createContext, useContext, useState, useEffect } from 'react';
+import { supabase } from '../lib/database';
 
-interface HealthRecordModalProps {
-  record?: HealthRecord;
-  onClose: () => void;
-  onTaskCompleted?: (recordDateTime: Date) => void;
-  defaultRecordDate?: string;
-  defaultRecordTime?: string;
+export interface Patient {
+  院友id: number;
+  床號: string;
+  中文姓名: string;
+  英文姓名?: string;
+  性別: '男' | '女';
+  身份證號碼?: string;
+  出生日期?: string;
+  院友相片?: string;
+  藥物敏感?: string[];
+  不良藥物反應?: string[];
+  感染控制?: any;
+  入住日期?: string;
+  退住日期?: string;
+  護理等級?: '全護理' | '半護理' | '自理';
+  入住類型?: '私位' | '買位' | '院舍卷' | '暫住';
+  社會福利?: {
+    主要類型?: '綜合社會保障援助' | '公共福利金計劃';
+    子類型?: '長者生活津貼' | '普通傷殘津貼' | '高額傷殘津貼';
+  };
+  在住狀態?: '在住' | '已退住';
 }
 
-const HealthRecordModal: React.FC<HealthRecordModalProps> = ({
-  record,
-  onClose,
-  onTaskCompleted,
-  defaultRecordDate,
-  defaultRecordTime
-}) => {
-  const { patients, addHealthRecord, updateHealthRecord, healthRecords } = usePatients();
+export interface HealthRecord {
+  記錄id?: number;
+  院友id: number;
+  記錄日期: string;
+  記錄時間: string;
+  記錄類型: '生命表徵' | '血糖控制' | '體重控制';
+  血壓收縮壓?: number;
+  血壓舒張壓?: number;
+  脈搏?: number;
+  體溫?: number;
+  血含氧量?: number;
+  呼吸頻率?: number;
+  血糖值?: number;
+  體重?: number;
+  備註?: string;
+  記錄人員?: string;
+}
 
-  // 香港時區輔助函數
-  const getHongKongDate = () => {
-    const now = new Date();
-    const hongKongTime = new Date(now.getTime() + (8 * 60 * 60 * 1000)); // GMT+8
-    return hongKongTime.toISOString().split('T')[0];
+export interface Prescription {
+  處方id?: number;
+  院友id: number;
+  藥物來源: string;
+  處方日期: string;
+  藥物名稱: string;
+  劑型?: string;
+  服用途徑?: string;
+  服用份量?: string;
+  服用次數?: string;
+  服用日數?: string;
+  需要時?: boolean;
+  服用時間?: string[];
+}
+
+export interface FollowUpAppointment {
+  覆診id?: string;
+  院友id: number;
+  覆診日期: string;
+  出發時間?: string;
+  覆診時間?: string;
+  覆診地點?: string;
+  覆診專科?: string;
+  交通安排?: string;
+  陪診人員?: string;
+  備註?: string;
+  狀態?: '尚未安排' | '已安排' | '已完成' | '改期' | '取消';
+  創建時間?: string;
+  更新時間?: string;
+}
+
+export interface PatientHealthTask {
+  id?: string;
+  patient_id: number;
+  health_record_type: '生命表徵' | '血糖控制' | '體重控制' | '約束物品同意書' | '年度體檢';
+  frequency_unit: 'hourly' | 'daily' | 'weekly' | 'monthly' | 'yearly';
+  frequency_value: number;
+  specific_times?: string[];
+  specific_days_of_week?: number[];
+  specific_days_of_month?: number[];
+  last_completed_at?: string;
+  next_due_at: string;
+  created_at?: string;
+  updated_at?: string;
+  notes?: '注射前' | '服藥前' | '定期' | '特別關顧' | '社康';
+}
+
+interface PatientContextType {
+  patients: Patient[];
+  healthRecords: HealthRecord[];
+  prescriptions: Prescription[];
+  followUpAppointments: FollowUpAppointment[];
+  patientHealthTasks: PatientHealthTask[];
+  loading: boolean;
+  addPatient: (patient: Omit<Patient, '院友id'>) => Promise<void>;
+  updatePatient: (patient: Patient) => Promise<void>;
+  deletePatient: (id: number) => Promise<void>;
+  addHealthRecord: (record: Omit<HealthRecord, '記錄id'>) => Promise<void>;
+  updateHealthRecord: (record: HealthRecord) => Promise<void>;
+  deleteHealthRecord: (id: number) => Promise<void>;
+  addPrescription: (prescription: Omit<Prescription, '處方id'>) => Promise<void>;
+  updatePrescription: (prescription: Prescription) => Promise<void>;
+  deletePrescription: (id: number) => Promise<void>;
+  addFollowUpAppointment: (appointment: Omit<FollowUpAppointment, '覆診id'>) => Promise<void>;
+  updateFollowUpAppointment: (appointment: FollowUpAppointment) => Promise<void>;
+  deleteFollowUpAppointment: (id: string) => Promise<void>;
+  addPatientHealthTask: (task: Omit<PatientHealthTask, 'id'>) => Promise<void>;
+  updatePatientHealthTask: (task: PatientHealthTask) => Promise<void>;
+  deletePatientHealthTask: (id: string) => Promise<void>;
+  refreshData: () => Promise<void>;
+  dischargePatient: (patientId: number, dischargeDate: string) => Promise<void>;
+  cancelDischarge: (patientId: number) => Promise<void>;
+}
+
+const PatientContext = createContext<PatientContextType | undefined>(undefined);
+
+export const usePatients = () => {
+  const context = useContext(PatientContext);
+  if (context === undefined) {
+    throw new Error('usePatients must be used within a PatientProvider');
+  }
+  return context;
+};
+
+export const PatientProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const [patients, setPatients] = useState<Patient[]>([]);
+  const [healthRecords, setHealthRecords] = useState<HealthRecord[]>([]);
+  const [prescriptions, setPrescriptions] = useState<Prescription[]>([]);
+  const [followUpAppointments, setFollowUpAppointments] = useState<FollowUpAppointment[]>([]);
+  const [patientHealthTasks, setPatientHealthTasks] = useState<PatientHealthTask[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  const fetchPatients = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('院友主表')
+        .select('*')
+        .order('院友id', { ascending: true });
+
+      if (error) throw error;
+      setPatients(data || []);
+    } catch (error) {
+      console.error('Error fetching patients:', error);
+    }
   };
 
-  const getHongKongTime = () => {
-    const now = new Date();
-    const hongKongTime = new Date(now.getTime() + (8 * 60 * 60 * 1000)); // GMT+8
-    return hongKongTime.toISOString().split('T')[1].slice(0, 5);
+  const fetchHealthRecords = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('健康記錄主表')
+        .select('*')
+        .order('記錄日期', { ascending: false });
+
+      if (error) throw error;
+      setHealthRecords(data || []);
+    } catch (error) {
+      console.error('Error fetching health records:', error);
+    }
   };
 
-  const [formData, setFormData] = useState({
-    院友id: record?.院友id || '',
-    記錄日期: record?.記錄日期 || defaultRecordDate || getHongKongDate(),
-    記錄時間: record?.記錄時間 || defaultRecordTime || getHongKongTime(),
-    記錄類型: record?.記錄類型 || '生命表徵',
-    血壓收縮壓: record?.血壓收縮壓 || '',
-    血壓舒張壓: record?.血壓舒張壓 || '',
-    脈搏: record?.脈搏 || '',
-    體溫: record?.體溫 || '',
-    血含氧量: record?.血含氧量 || '',
-    呼吸頻率: record?.呼吸頻率 || '',
-    血糖值: record?.血糖值 || '',
-    體重: record?.體重 || '',
-    備註: record?.備註 || '',
-    記錄人員: record?.記錄人員 || ''
-  });
+  const fetchPrescriptions = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('處方主表')
+        .select('*')
+        .order('處方日期', { ascending: false });
 
-  const [weightChange, setWeightChange] = useState('');
-  const [showDateTimeConfirm, setShowDateTimeConfirm] = useState(false);
+      if (error) throw error;
+      setPrescriptions(data || []);
+    } catch (error) {
+      console.error('Error fetching prescriptions:', error);
+    }
+  };
 
-  const parseHongKongDateTime = (date: string, time: string) => {
-    // 創建香港時區的日期時間對象
-    const dateTimeString = `${date}T${time}:00`;
-    // 直接創建本地時間對象，不需要時區轉換
-    return new Date(dateTimeString);
+  const fetchFollowUpAppointments = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('覆診安排主表')
+        .select('*')
+        .order('覆診日期', { ascending: false });
+
+      if (error) throw error;
+      setFollowUpAppointments(data || []);
+    } catch (error) {
+      console.error('Error fetching follow-up appointments:', error);
+    }
+  };
+
+  const fetchPatientHealthTasks = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('patient_health_tasks')
+        .select('*')
+        .order('next_due_at', { ascending: true });
+
+      if (error) throw error;
+      setPatientHealthTasks(data || []);
+    } catch (error) {
+      console.error('Error fetching patient health tasks:', error);
+    }
+  };
+
+  const refreshData = async () => {
+    setLoading(true);
+    await Promise.all([
+      fetchPatients(),
+      fetchHealthRecords(),
+      fetchPrescriptions(),
+      fetchFollowUpAppointments(),
+      fetchPatientHealthTasks()
+    ]);
+    setLoading(false);
   };
 
   useEffect(() => {
-    if (formData.體重 && formData.院友id && formData.記錄類型 === '體重控制') {
-      calculateWeightChange();
-    }
-  }, [formData.體重, formData.院友id, formData.記錄類型]);
+    refreshData();
+  }, []);
 
-  const calculateWeightChange = () => {
-    if (!formData.體重 || !formData.院友id) {
-      setWeightChange('');
-      return;
-    }
-
-    const currentWeight = parseFloat(formData.體重);
-
-    if (isNaN(currentWeight)) {
-      setWeightChange('');
-      return;
-    }
-
-    const patientWeightRecords = healthRecords
-      .filter(r => 
-        r.院友id === parseInt(formData.院友id) && 
-        r.體重 && 
-        (record ? r.記錄id !== record.記錄id : true)
-      )
-      .sort((a, b) => new Date(`${b.記錄日期} ${b.記錄時間}`).getTime() - new Date(`${a.記錄日期} ${a.記錄時間}`).getTime());
-
-    if (patientWeightRecords.length === 0) {
-      setWeightChange('首次記錄');
-      return;
-    }
-
-    const lastWeight = parseFloat(patientWeightRecords[0].體重);
-    const difference = currentWeight - lastWeight;
-    const percentage = (difference / lastWeight) * 100;
-
-    if (Math.abs(percentage) < 0.1) {
-      setWeightChange('無變化');
-      return;
-    }
-
-    const sign = difference > 0 ? '+' : '';
-    setWeightChange(`${sign}${difference.toFixed(1)}kg (${sign}${percentage.toFixed(1)}%)`);
-  };
-
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
-    const { name, value } = e.target;
-    setFormData(prev => ({
-      ...prev,
-      [name]: value
-    }));
-  };
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-
-    if (!formData.院友id || !formData.記錄日期 || !formData.記錄時間 || !formData.記錄類型) {
-      alert('請填寫所有必填欄位');
-      return;
-    }
-
-    if (formData.記錄類型 === '血糖控制') {
-      if (!formData.血糖值) {
-        alert('血糖控制記錄需要填寫血糖值');
-        return;
-      }
-    } else if (formData.記錄類型 === '體重控制') {
-      if (!formData.體重) {
-        alert('體重控制記錄需要填寫體重');
-        return;
-      }
-    }
-
-    // 創建記錄時間對象
-    const recordDateTime = new Date(`${formData.記錄日期}T${formData.記錄時間}:00`);
-    const now = new Date(); // 使用本地當前時間
-    
-    console.log('=== 日期時間驗證 ===');
-    console.log('輸入的記錄日期:', formData.記錄日期);
-    console.log('輸入的記錄時間:', formData.記錄時間);
-    console.log('組合的日期時間字串:', `${formData.記錄日期}T${formData.記錄時間}:00`);
-    console.log('解析後的記錄時間:', recordDateTime);
-    console.log('當前時間:', now);
-    console.log('記錄時間毫秒:', recordDateTime.getTime());
-    console.log('當前時間毫秒:', now.getTime());
-    console.log('時間差(分鐘):', (recordDateTime.getTime() - now.getTime()) / (1000 * 60));
-    
-    if (recordDateTime > now) {
-      console.log('觸發未來時間確認對話框');
-      setShowDateTimeConfirm(true);
-      return;
-    } else {
-      console.log('記錄時間不是未來時間，直接儲存');
-    }
-
-    await saveRecord();
-  };
-
-  const saveRecord = async () => {
+  const addPatient = async (patient: Omit<Patient, '院友id'>) => {
     try {
-      const recordData = {
-        院友id: parseInt(formData.院友id),
-        記錄日期: formData.記錄日期,
-        記錄時間: formData.記錄時間,
-        記錄類型: formData.記錄類型 as '生命表徵' | '血糖控制' | '體重控制',
-        血壓收縮壓: formData.血壓收縮壓 ? parseInt(formData.血壓收縮壓) : null,
-        血壓舒張壓: formData.血壓舒張壓 ? parseInt(formData.血壓舒張壓) : null,
-        脈搏: formData.脈搏 ? parseInt(formData.脈搏) : null,
-        體溫: formData.體溫 ? parseFloat(formData.體溫) : null,
-        血含氧量: formData.血含氧量 ? parseInt(formData.血含氧量) : null,
-        呼吸頻率: formData.呼吸頻率 ? parseInt(formData.呼吸頻率) : null,
-        血糖值: formData.血糖值 ? parseFloat(formData.血糖值) : null,
-        體重: formData.體重 ? parseFloat(formData.體重) : null,
-        備註: formData.備註 || null,
-        記錄人員: formData.記錄人員 || null
-      };
+      const { data, error } = await supabase
+        .from('院友主表')
+        .insert([patient])
+        .select();
 
-      if (record && record.記錄id && typeof record.記錄id === 'number') {
-        await updateHealthRecord({
-          ...recordData,
-          記錄id: record.記錄id
-        });
-      } else {
-        await addHealthRecord(recordData);
+      if (error) throw error;
+      if (data) {
+        setPatients(prev => [...prev, ...data]);
       }
-      
-      // 如果有任務完成回調，傳遞記錄的實際日期時間
-      if (onTaskCompleted) {
-        const recordDateTime = new Date(`${formData.記錄日期}T${formData.記錄時間}:00`);
-        console.log('=== HealthRecordModal 任務完成回調 ===');
-        console.log('記錄日期:', formData.記錄日期);
-        console.log('記錄時間:', formData.記錄時間);
-        console.log('轉換後的記錄時間:', recordDateTime);
-        onTaskCompleted(recordDateTime);
-      }
-      onClose();
     } catch (error) {
-      console.error('儲存健康記錄失敗:', error);
-      alert('儲存健康記錄失敗，請重試');
+      console.error('Error adding patient:', error);
+      throw error;
     }
   };
 
-  const handleConfirmDateTime = async () => {
-    setShowDateTimeConfirm(false);
-    await saveRecord();
-  };
+  const updatePatient = async (patient: Patient) => {
+    try {
+      const { data, error } = await supabase
+        .from('院友主表')
+        .update(patient)
+        .eq('院友id', patient.院友id)
+        .select();
 
-  const handleCancelDateTime = () => {
-    setShowDateTimeConfirm(false);
-  };
-
-  const getTypeIcon = (type: string) => {
-    switch (type) {
-      case '生命表徵': return <Activity className="h-5 w-5" />;
-      case '血糖控制': return <Droplets className="h-5 w-5" />;
-      case '體重控制': return <Scale className="h-5 w-5" />;
-      default: return <Heart className="h-5 w-5" />;
+      if (error) throw error;
+      if (data) {
+        setPatients(prev => prev.map(p => p.院友id === patient.院友id ? data[0] : p));
+      }
+    } catch (error) {
+      console.error('Error updating patient:', error);
+      throw error;
     }
   };
 
-  const getColorClass = (type: string) => {
-    switch (type) {
-      case '生命表徵': return 'blue';
-      case '血糖控制': return 'red';
-      case '體重控制': return 'green';
-      default: return 'purple';
+  const deletePatient = async (id: number) => {
+    try {
+      const { error } = await supabase
+        .from('院友主表')
+        .delete()
+        .eq('院友id', id);
+
+      if (error) throw error;
+      setPatients(prev => prev.filter(p => p.院友id !== id));
+    } catch (error) {
+      console.error('Error deleting patient:', error);
+      throw error;
     }
+  };
+
+  const addHealthRecord = async (record: Omit<HealthRecord, '記錄id'>) => {
+    try {
+      const { data, error } = await supabase
+        .from('健康記錄主表')
+        .insert([record])
+        .select();
+
+      if (error) throw error;
+      if (data) {
+        setHealthRecords(prev => [data[0], ...prev]);
+      }
+    } catch (error) {
+      console.error('Error adding health record:', error);
+      throw error;
+    }
+  };
+
+  const updateHealthRecord = async (record: HealthRecord) => {
+    try {
+      const { data, error } = await supabase
+        .from('健康記錄主表')
+        .update(record)
+        .eq('記錄id', record.記錄id)
+        .select();
+
+      if (error) throw error;
+      if (data) {
+        setHealthRecords(prev => prev.map(r => r.記錄id === record.記錄id ? data[0] : r));
+      }
+    } catch (error) {
+      console.error('Error updating health record:', error);
+      throw error;
+    }
+  };
+
+  const deleteHealthRecord = async (id: number) => {
+    try {
+      const { error } = await supabase
+        .from('健康記錄主表')
+        .delete()
+        .eq('記錄id', id);
+
+      if (error) throw error;
+      setHealthRecords(prev => prev.filter(r => r.記錄id !== id));
+    } catch (error) {
+      console.error('Error deleting health record:', error);
+      throw error;
+    }
+  };
+
+  const addPrescription = async (prescription: Omit<Prescription, '處方id'>) => {
+    try {
+      const { data, error } = await supabase
+        .from('處方主表')
+        .insert([prescription])
+        .select();
+
+      if (error) throw error;
+      if (data) {
+        setPrescriptions(prev => [data[0], ...prev]);
+      }
+    } catch (error) {
+      console.error('Error adding prescription:', error);
+      throw error;
+    }
+  };
+
+  const updatePrescription = async (prescription: Prescription) => {
+    try {
+      const { data, error } = await supabase
+        .from('處方主表')
+        .update(prescription)
+        .eq('處方id', prescription.處方id)
+        .select();
+
+      if (error) throw error;
+      if (data) {
+        setPrescriptions(prev => prev.map(p => p.處方id === prescription.處方id ? data[0] : p));
+      }
+    } catch (error) {
+      console.error('Error updating prescription:', error);
+      throw error;
+    }
+  };
+
+  const deletePrescription = async (id: number) => {
+    try {
+      const { error } = await supabase
+        .from('處方主表')
+        .delete()
+        .eq('處方id', id);
+
+      if (error) throw error;
+      setPrescriptions(prev => prev.filter(p => p.處方id !== id));
+    } catch (error) {
+      console.error('Error deleting prescription:', error);
+      throw error;
+    }
+  };
+
+  const addFollowUpAppointment = async (appointment: Omit<FollowUpAppointment, '覆診id'>) => {
+    try {
+      const { data, error } = await supabase
+        .from('覆診安排主表')
+        .insert([appointment])
+        .select();
+
+      if (error) throw error;
+      if (data) {
+        setFollowUpAppointments(prev => [data[0], ...prev]);
+      }
+    } catch (error) {
+      console.error('Error adding follow-up appointment:', error);
+      throw error;
+    }
+  };
+
+  const updateFollowUpAppointment = async (appointment: FollowUpAppointment) => {
+    try {
+      const { data, error } = await supabase
+        .from('覆診安排主表')
+        .update(appointment)
+        .eq('覆診id', appointment.覆診id)
+        .select();
+
+      if (error) throw error;
+      if (data) {
+        setFollowUpAppointments(prev => prev.map(a => a.覆診id === appointment.覆診id ? data[0] : a));
+      }
+    } catch (error) {
+      console.error('Error updating follow-up appointment:', error);
+      throw error;
+    }
+  };
+
+  const deleteFollowUpAppointment = async (id: string) => {
+    try {
+      const { error } = await supabase
+        .from('覆診安排主表')
+        .delete()
+        .eq('覆診id', id);
+
+      if (error) throw error;
+      setFollowUpAppointments(prev => prev.filter(a => a.覆診id !== id));
+    } catch (error) {
+      console.error('Error deleting follow-up appointment:', error);
+      throw error;
+    }
+  };
+
+  const addPatientHealthTask = async (task: Omit<PatientHealthTask, 'id'>) => {
+    try {
+      const { data, error } = await supabase
+        .from('patient_health_tasks')
+        .insert([task])
+        .select();
+
+      if (error) throw error;
+      if (data) {
+        setPatientHealthTasks(prev => [...prev, data[0]]);
+      }
+    } catch (error) {
+      console.error('Error adding patient health task:', error);
+      throw error;
+    }
+  };
+
+  const updatePatientHealthTask = async (task: PatientHealthTask) => {
+    try {
+      const { data, error } = await supabase
+        .from('patient_health_tasks')
+        .update(task)
+        .eq('id', task.id)
+        .select();
+
+      if (error) throw error;
+      if (data) {
+        setPatientHealthTasks(prev => prev.map(t => t.id === task.id ? data[0] : t));
+      }
+    } catch (error) {
+      console.error('Error updating patient health task:', error);
+      throw error;
+    }
+  };
+
+  const deletePatientHealthTask = async (id: string) => {
+    try {
+      const { error } = await supabase
+        .from('patient_health_tasks')
+        .delete()
+        .eq('id', id);
+
+      if (error) throw error;
+      setPatientHealthTasks(prev => prev.filter(t => t.id !== id));
+    } catch (error) {
+      console.error('Error deleting patient health task:', error);
+      throw error;
+    }
+  };
+
+  const dischargePatient = async (patientId: number, dischargeDate: string) => {
+    try {
+      const { data, error } = await supabase
+        .from('院友主表')
+        .update({ 
+          退住日期: dischargeDate,
+          在住狀態: '已退住'
+        })
+        .eq('院友id', patientId)
+        .select();
+
+      if (error) throw error;
+      if (data) {
+        setPatients(prev => prev.map(p => p.院友id === patientId ? data[0] : p));
+      }
+    } catch (error) {
+      console.error('Error discharging patient:', error);
+      throw error;
+    }
+  };
+
+  const cancelDischarge = async (patientId: number) => {
+    try {
+      const { data, error } = await supabase
+        .from('院友主表')
+        .update({ 
+          退住日期: null,
+          在住狀態: '在住'
+        })
+        .eq('院友id', patientId)
+        .select();
+
+      if (error) throw error;
+      if (data) {
+        setPatients(prev => prev.map(p => p.院友id === patientId ? data[0] : p));
+      }
+    } catch (error) {
+      console.error('Error canceling discharge:', error);
+      throw error;
+    }
+  };
+
+  const value: PatientContextType = {
+    patients,
+    healthRecords,
+    prescriptions,
+    followUpAppointments,
+    patientHealthTasks,
+    loading,
+    addPatient,
+    updatePatient,
+    deletePatient,
+    addHealthRecord,
+    updateHealthRecord,
+    deleteHealthRecord,
+    addPrescription,
+    updatePrescription,
+    deletePrescription,
+    addFollowUpAppointment,
+    updateFollowUpAppointment,
+    deleteFollowUpAppointment,
+    addPatientHealthTask,
+    updatePatientHealthTask,
+    deletePatientHealthTask,
+    refreshData,
+    dischargePatient,
+    cancelDischarge
   };
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-      <div className="bg-white rounded-lg shadow-xl max-w-4xl w-full max-h-[90vh] overflow-hidden">
-        <div className="flex items-center justify-between p-4 border-b border-gray-200">
-          <div className={`p-2 rounded-lg bg-${getColorClass(formData.記錄類型)}-100 text-${getColorClass(formData.記錄類型)}-600`}>
-                {getTypeIcon(formData.記錄類型)}
-          </div>
-          <h2 className="text-xl font-semibold text-gray-900">
-            {record ? '編輯健康記錄' : '新增健康記錄'}
-          </h2>
-          <button
-            onClick={onClose}
-            className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
-          >
-            <X className="h-5 w-5" />
-          </button>
-        </div>
-                                                                                  
-        <form onSubmit={handleSubmit} className="p-6 space-y-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-            <div>
-              <label className="form-label">
-                <User className="h-4 w-4 inline mr-1" />
-                院友 *
-              </label>
-              <PatientAutocomplete
-                value={formData.院友id}
-                onChange={(patientId) => setFormData(prev => ({ ...prev, 院友id: patientId }))}
-                placeholder="搜索院友..."
-              />
-            </div>
-
-            <div>
-              <label className="form-label">
-                <Calendar className="h-4 w-4 inline mr-1" />
-                記錄日期 *
-              </label>
-              <input
-                type="date"
-                name="記錄日期"
-                value={formData.記錄日期}
-                onChange={handleChange}
-                className="form-input"
-                required
-              />
-            </div>
-
-            <div>
-              <label className="form-label">
-                <Clock className="h-4 w-4 inline mr-1" />
-                記錄時間 *
-              </label>
-              <input
-                type="time"
-                name="記錄時間"
-                value={formData.記錄時間}
-                onChange={handleChange}
-                className="form-input"
-                required
-              />
-            </div>
-
-            <div>
-              <label className="form-label">記錄類型 *</label>
-              <select
-                name="記錄類型"
-                value={formData.記錄類型}
-                onChange={handleChange}
-                className="form-input"
-                required
-              >
-                <option value="生命表徵">生命表徵</option>
-                <option value="血糖控制">血糖控制</option>
-                <option value="體重控制">體重控制</option>
-              </select>
-            </div>
-          </div>
-
-          {formData.記錄類型 === '生命表徵' && (
-            <div className="space-y-4">
-              <h3 className="text-lg font-medium text-blue-600 flex items-center">
-                <Activity className="h-5 w-5 mr-2" />
-                生命表徵數據
-              </h3>
-              
-              <div className="space-y-4">
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  <div>
-                    <label className="form-label">血壓 (mmHg)</label>
-                    <div className="flex space-x-2">
-                      <input
-                        type="number"
-                        name="血壓收縮壓"
-                        value={formData.血壓收縮壓}
-                        onChange={handleChange}
-                        className="form-input"
-                        placeholder="120"
-                        min="0"
-                        max="300"
-                      />
-                      <span className="flex items-center text-gray-500">/</span>
-                      <input
-                        type="number"
-                        name="血壓舒張壓"
-                        value={formData.血壓舒張壓}
-                        onChange={handleChange}
-                        className="form-input"
-                        placeholder="80"
-                        min="0"
-                        max="200"
-                      />
-                    </div>
-                  </div>
-                  <div>
-                    <label className="form-label">脈搏 (每分鐘)</label>
-                    <input
-                      type="number"
-                      name="脈搏"
-                      value={formData.脈搏}
-                      onChange={handleChange}
-                      className="form-input"
-                      placeholder="60-100"
-                      min="0"
-                      max="300"
-                    />
-                  </div>
-                  <div>
-                    <label className="form-label">體溫 (°C)</label>
-                    <input
-                      type="number"
-                      name="體溫"
-                      value={formData.體溫}
-                      onChange={handleChange}
-                      className="form-input"
-                      placeholder="36.5"
-                      min="30"
-                      max="45"
-                      step="0.1"
-                    />
-                  </div>
-                </div>
-                
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  <div>
-                    <label className="form-label">血含氧量 (%)</label>
-                    <input
-                      type="number"
-                      name="血含氧量"
-                      value={formData.血含氧量}
-                      onChange={handleChange}
-                      className="form-input"
-                      placeholder="95-100"
-                      min="0"
-                      max="100"
-                    />
-                  </div>
-                  <div>
-                    <label className="form-label">呼吸頻率 (每分鐘)</label>
-                    <input
-                      type="number"
-                      name="呼吸頻率"
-                      value={formData.呼吸頻率}
-                      onChange={handleChange}
-                      className="form-input"
-                      placeholder="12-20"
-                      min="0"
-                      max="100"
-                    />
-                  </div>
-                  <div>
-                    <label className="form-label">備註</label>
-                    <textarea
-                      name="備註"
-                      value={formData.備註}
-                      onChange={handleChange}
-                      className="form-input"
-                      rows={1}
-                      placeholder="其他備註資訊..."
-                    />
-                  </div>
-                </div>
-              </div>
-            </div>
-          )}
-
-          {formData.記錄類型 === '血糖控制' && (
-            <div className="space-y-4">
-              <h3 className="text-lg font-medium text-red-600 flex items-center">
-                <Droplets className="h-5 w-5 mr-2" />
-                血糖控制數據
-              </h3>
-              
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <label className="form-label">血糖值 (mmol/L) *</label>
-                  <input
-                    type="number"
-                    name="血糖值"
-                    value={formData.血糖值}
-                    onChange={handleChange}
-                    className="form-input"
-                    placeholder="4.0-7.0"
-                    min="0"
-                    max="50"
-                    step="0.1"
-                    required={formData.記錄類型 === '血糖控制'}
-                  />
-                  <p className="text-xs text-gray-500 mt-1">
-                    正常範圍：空腹 4.0-6.1，餐後 4.4-7.8
-                  </p>
-                </div>
-              </div>
-            </div>
-          )}
-
-          {formData.記錄類型 === '體重控制' && (
-            <div className="space-y-4">
-              <h3 className="text-lg font-medium text-green-600 flex items-center">
-                <Scale className="h-5 w-5 mr-2" />
-                體重控制數據
-              </h3>
-              
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <label className="form-label">體重 (kg) *</label>
-                  <input
-                    type="number"
-                    name="體重"
-                    value={formData.體重}
-                    onChange={handleChange}
-                    className="form-input"
-                    placeholder="50.0"
-                    min="0"
-                    max="300"
-                    step="0.1"
-                    required={formData.記錄類型 === '體重控制'}
-                  />
-                </div>
-                
-                {weightChange && (
-                  <div>
-                    <label className="form-label">與上次比較</label>
-                    <div className={`p-3 rounded-lg border ${
-                      weightChange.startsWith('+') ? 'bg-red-50 border-red-200 text-red-800' :
-                      weightChange.startsWith('-') ? 'bg-green-50 border-green-200 text-green-800' :
-                      'bg-gray-50 border-gray-200 text-gray-800'
-                    }`}>
-                      <div className="font-medium">{weightChange}</div>
-                    </div>
-                  </div>
-                )}
-              </div>
-            </div>
-          )}
-
-          {showDateTimeConfirm && (
-            <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-              <div className="bg-white rounded-lg p-6 max-w-md w-full">
-                <h3 className="text-lg font-semibold text-gray-900 mb-4">
-                  確認未來時間記錄
-                </h3>
-                <p className="text-gray-600 mb-6">
-                  您輸入的記錄日期和時間 ({new Date(formData.記錄日期).toLocaleDateString('zh-TW')} {formData.記錄時間}) 晚於當前時間 ({new Date().toLocaleDateString('zh-TW')} {new Date().toTimeString().slice(0,5)})。
-                  是否確認要儲存此記錄？
-                </p>
-                <div className="flex space-x-3">
-                  <button
-                    type="button"
-                    onClick={handleConfirmDateTime}
-                    className="btn-primary flex-1"
-                  >
-                    確認儲存
-                  </button>
-                  <button
-                    type="button"
-                    onClick={handleCancelDateTime}
-                    className="btn-secondary flex-1"
-                  >
-                    取消
-                  </button>
-                </div>
-              </div>
-            </div>
-          )}
-
-          <div className="flex space-x-3 pt-4 border-t border-gray-200">
-            <button
-              type="submit"
-              className="btn-primary flex-1"
-            >
-              {record ? '更新記錄' : '新增記錄'}
-            </button>
-            <button
-              type="button"
-              onClick={onClose}
-              className="btn-secondary flex-1"
-            >
-              取消
-            </button>
-          </div>
-        </form>
-      </div>
-    </div>
+    <PatientContext.Provider value={value}>
+      {children}
+    </PatientContext.Provider>
   );
 };
-
-export default HealthRecordModal;
