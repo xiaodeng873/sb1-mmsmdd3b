@@ -415,4 +415,80 @@ const TaskModal: React.FC<TaskModalProps> = ({ task, onClose }) => {
 
             {/* 特定星期幾設定 */}
             {formData.frequency_unit === 'weekly' && 
-             (formData.health_record_type
+             (formData.health_record_type === '生命表徵' || formData.health_record_type === '血糖控制' || formData.health_record_type === '體重控制') && (
+              <div>
+                <label className="form-label">特定星期幾</label>
+                <div className="grid grid-cols-7 gap-2">
+                  {dayNames.map((dayName, index) => (
+                    <label key={index} className="flex items-center space-x-1">
+                      <input
+                        type="checkbox"
+                        checked={formData.specific_days_of_week.includes(index + 1)}
+                        onChange={(e) => handleDayOfWeekChange(index + 1, e.target.checked)}
+                        className="form-checkbox"
+                      />
+                      <span className="text-sm">{dayName}</span>
+                    </label>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* 特定日期設定 */}
+            {formData.frequency_unit === 'monthly' && 
+             (formData.health_record_type === '生命表徵' || formData.health_record_type === '血糖控制' || formData.health_record_type === '體重控制') && (
+              <div>
+                <label className="form-label">特定日期</label>
+                <div className="grid grid-cols-7 gap-2">
+                  {Array.from({ length: 31 }, (_, i) => i + 1).map(day => (
+                    <label key={day} className="flex items-center space-x-1">
+                      <input
+                        type="checkbox"
+                        checked={formData.specific_days_of_month.includes(day)}
+                        onChange={(e) => handleDayOfMonthChange(day, e.target.checked)}
+                        className="form-checkbox"
+                      />
+                      <span className="text-sm">{day}</span>
+                    </label>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* 備註 */}
+          <div>
+            <label className="form-label">備註</label>
+            <textarea
+              name="notes"
+              value={formData.notes}
+              onChange={(e) => setFormData(prev => ({ ...prev, notes: e.target.value }))}
+              className="form-input"
+              rows={3}
+              placeholder="輸入任務相關備註..."
+            />
+          </div>
+
+          {/* 提交按鈕 */}
+          <div className="flex justify-end space-x-3 pt-4 border-t border-gray-200">
+            <button
+              type="button"
+              onClick={onClose}
+              className="btn-secondary"
+            >
+              取消
+            </button>
+            <button
+              type="submit"
+              className="btn-primary"
+            >
+              {task ? '更新任務' : '建立任務'}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+};
+
+export default TaskModal;
