@@ -171,6 +171,7 @@ const HealthRecordModal: React.FC<HealthRecordModalProps> = ({
         await addHealthRecord(recordData);
       }
       
+      // 如果有任務完成回調，傳遞記錄的實際日期時間
       if (onTaskCompleted) {
         const recordDateTime = parseHongKongDateTime(formData.記錄日期, formData.記錄時間);
         onTaskCompleted(recordDateTime);

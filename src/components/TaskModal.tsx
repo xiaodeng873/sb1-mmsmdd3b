@@ -106,6 +106,18 @@ const TaskModal: React.FC<TaskModalProps> = ({ task, onClose }) => {
     }
 
     try {
+      // 準備基準日期時間
+      let baseDateTime: Date | undefined;
+      let lastCompletedAt: string | null = null;
+      
+      if (formData.start_date && formData.start_time) {
+        baseDateTime = new Date(`${formData.start_date}T${formData.start_time}`);
+        lastCompletedAt = baseDateTime.toISOString();
+      } else if (task?.last_completed_at) {
+        baseDateTime = new Date(task.last_completed_at);
+        lastCompletedAt = task.last_completed_at;
+      }
+      
       // 計算下次到期時間
       const mockTask: PatientHealthTask = {
         id: '',
@@ -116,16 +128,13 @@ const TaskModal: React.FC<TaskModalProps> = ({ task, onClose }) => {
         specific_times: formData.specific_times,
         specific_days_of_week: formData.specific_days_of_week,
         specific_days_of_month: formData.specific_days_of_month,
-        last_completed_at: formData.start_date && formData.start_time ? 
-          new Date(`${formData.start_date}T${formData.start_time}`).toISOString() : 
-          task?.last_completed_at,
+        last_completed_at: lastCompletedAt,
         next_due_at: '',
         created_at: '',
         updated_at: ''
       };
 
-      const nextDueAt = calculateNextDueDate(mockTask);
-
+      const nextDueAt = calculateNextDueDate(mockTask, baseDateTime);
       const taskData = {
         patient_id: parseInt(formData.patient_id),
         health_record_type: formData.health_record_type,
@@ -134,9 +143,7 @@ const TaskModal: React.FC<TaskModalProps> = ({ task, onClose }) => {
         specific_times: formData.specific_times,
         specific_days_of_week: formData.specific_days_of_week,
         specific_days_of_month: formData.specific_days_of_month,
-        last_completed_at: formData.start_date && formData.start_time ? 
-          new Date(`${formData.start_date}T${formData.start_time}`).toISOString() : 
-          (task?.last_completed_at || null),
+        last_completed_at: lastCompletedAt,
         next_due_at: nextDueAt.toISOString(),
         notes: formData.notes || null
       };

@@ -166,7 +166,12 @@ const Dashboard: React.FC = () => {
     const task = patientHealthTasks.find(t => t.id === taskId);
     if (task) {
       const { calculateNextDueDate } = await import('../utils/taskScheduler');
-      const nextDueAt = calculateNextDueDate(task, recordDateTime);
+      
+      // 使用記錄時間作為基準計算下次到期時間
+      const nextDueAt = calculateNextDueDate({
+        ...task,
+        last_completed_at: recordDateTime.toISOString()
+      }, recordDateTime);
 
       await updatePatientHealthTask({
         ...task,
@@ -182,10 +187,13 @@ const Dashboard: React.FC = () => {
     const task = patientHealthTasks.find(t => t.id === taskId);
     if (task) {
       const { calculateNextDueDate } = await import('../utils/taskScheduler');
+      
+      // 使用簽署日期作為基準計算下次到期時間
+      const signatureDateTime = new Date(newSignatureDate);
       const nextDueAt = calculateNextDueDate({
         ...task,
         last_completed_at: newSignatureDate
-      });
+      }, signatureDateTime);
 
       await updatePatientHealthTask({
         ...task,

@@ -58,8 +58,13 @@ export function calculateNextDueDate(task: PatientHealthTask, fromDate?: Date): 
         const currentDay = nextDue.getDay();
         let dayDiff = adjustedTargetDay - currentDay;
         
-        // 選擇最近的目標星期（當前週或下一週）
-        dayDiff = dayDiff > 0 ? dayDiff : dayDiff + 7;
+        // 如果是同一天，則移到下一週的同一天
+        if (dayDiff === 0) {
+          dayDiff = 7;
+        } else if (dayDiff < 0) {
+          dayDiff = dayDiff + 7;
+        }
+        
         // 應用 frequency_value（多週間隔）
         if (task.frequency_value > 1) {
           nextDue.setDate(nextDue.getDate() + (task.frequency_value - 1) * 7);
@@ -159,7 +164,17 @@ export function isTaskOverdue(task: PatientHealthTask): boolean {
     // 文件任務：僅比較日期
     const nowDate = new Date(now.getFullYear(), now.getMonth(), now.getDate());
     const dueDateOnly = new Date(dueDate.getFullYear(), dueDate.getMonth(), dueDate.getDate());
-    return dueDateOnly < nowDate && (!task.last_completed_at || new Date(task.last_completed_at) < dueDate);
+    
+    // 如果到期日期早於今天，且沒有完成記錄或完成時間早於到期時間，則為逾期
+    if (dueDateOnly < nowDate) {
+      if (!task.last_completed_at) {
+        return true;
+      }
+      const lastCompleted = new Date(task.last_completed_at);
+      const lastCompletedDate = new Date(lastCompleted.getFullYear(), lastCompleted.getMonth(), lastCompleted.getDate());
+      return lastCompletedDate < dueDateOnly;
+    }
+    return false;
   }
   
   // 監測任務：只有過了午夜12時（即不在同一天）才算逾期
@@ -193,8 +208,17 @@ export function isTaskPendingToday(task: PatientHealthTask): boolean {
     // 文件任務：僅比較日期
     const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
     const dueDateOnly = new Date(dueDate.getFullYear(), dueDate.getMonth(), dueDate.getDate());
-    return dueDateOnly.getTime() === todayStart.getTime() && 
-           (!task.last_completed_at || new Date(task.last_completed_at) < dueDate);
+    
+    // 如果到期日期是今天
+    if (dueDateOnly.getTime() === todayStart.getTime()) {
+      if (!task.last_completed_at) {
+        return true;
+      }
+      const lastCompleted = new Date(task.last_completed_at);
+      const lastCompletedDate = new Date(lastCompleted.getFullYear(), lastCompleted.getMonth(), lastCompleted.getDate());
+      return lastCompletedDate < dueDateOnly;
+    }
+    return false;
   }
   
   const todayStart = new Date(now);
@@ -230,9 +254,16 @@ export function isTaskDueSoon(task: PatientHealthTask): boolean {
     const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
     const twoWeeksLater = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 14);
     const dueDateOnly = new Date(dueDate.getFullYear(), dueDate.getMonth(), dueDate.getDate());
-    return dueDateOnly >= todayStart && 
-           dueDateOnly <= twoWeeksLater && 
-           (!task.last_completed_at || new Date(task.last_completed_at) < dueDate);
+    
+    if (dueDateOnly >= todayStart && dueDateOnly <= twoWeeksLater) {
+      if (!task.last_completed_at) {
+        return true;
+      }
+      const lastCompleted = new Date(task.last_completed_at);
+      const lastCompletedDate = new Date(lastCompleted.getFullYear(), lastCompleted.getMonth(), lastCompleted.getDate());
+      return lastCompletedDate < dueDateOnly;
+    }
+    return false;
   }
   
   // 監測任務：檢查是否即將到期
@@ -264,8 +295,20 @@ export function isTaskScheduled(task: PatientHealthTask): boolean {
     // 文件任務：僅比較日期
     const nowDate = new Date(now.getFullYear(), now.getMonth(), now.getDate());
     const dueDateOnly = new Date(dueDate.getFullYear(), dueDate.getMonth(), dueDate.getDate());
-    return dueDateOnly > nowDate || 
-           (task.last_completed_at && new Date(task.last_completed_at) >= dueDate);
+    
+    // 如果到期日期是未來，則為排程中
+    if (dueDateOnly > nowDate) {
+      return true;
+    }
+    
+    // 如果已完成且完成日期不早於到期日期，則為排程中
+    if (task.last_completed_at) {
+      const lastCompleted = new Date(task.last_completed_at);
+      const lastCompletedDate = new Date(lastCompleted.getFullYear(), lastCompleted.getMonth(), lastCompleted.getDate());
+      return lastCompletedDate >= dueDateOnly;
+    }
+    
+    return false;
   }
   
   // 監測任務：如果已完成且完成時間晚於或等於到期時間，則為排程中
