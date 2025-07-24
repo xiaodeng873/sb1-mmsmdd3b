@@ -146,6 +146,7 @@ const HealthRecordModal: React.FC<HealthRecordModalProps> = ({
     console.log('記錄時間毫秒:', recordDateTime.getTime());
     console.log('當前時間毫秒:', now.getTime());
     console.log('時間差(分鐘):', (recordDateTime.getTime() - now.getTime()) / (1000 * 60));
+    console.log('記錄時間是否晚於當前時間:', recordDateTime > now);
     
     if (recordDateTime > now) {
       console.log('觸發未來時間確認對話框');
