@@ -303,7 +303,7 @@ const Dashboard: React.FC = () => {
       </div>
 
       {/* Recent Activity */}
-      <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* 監測任務 */}
         <div className="card p-6 lg:col-span-2">
           <div className="flex items-center justify-between mb-4">
