@@ -54,8 +54,9 @@ const HealthRecordModal: React.FC<HealthRecordModalProps> = ({
   const [showDateTimeConfirm, setShowDateTimeConfirm] = useState(false);
 
   const parseHongKongDateTime = (date: string, time: string) => {
-    // 創建本地日期時間對象
+    // 創建香港時區的日期時間對象
     const dateTimeString = `${date}T${time}:00`;
+    // 直接創建本地時間對象，不需要時區轉換
     return new Date(dateTimeString);
   };
 
@@ -188,7 +189,6 @@ const HealthRecordModal: React.FC<HealthRecordModalProps> = ({
       
       // 如果有任務完成回調，傳遞記錄的實際日期時間
       if (onTaskCompleted) {
-        // 使用本地時區的記錄時間
         const recordDateTime = new Date(`${formData.記錄日期}T${formData.記錄時間}:00`);
         console.log('=== HealthRecordModal 任務完成回調 ===');
         console.log('記錄日期:', formData.記錄日期);
