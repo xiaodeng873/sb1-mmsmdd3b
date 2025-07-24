@@ -54,10 +54,10 @@ const HealthRecordModal: React.FC<HealthRecordModalProps> = ({
   const [showDateTimeConfirm, setShowDateTimeConfirm] = useState(false);
 
   const parseHongKongDateTime = (date: string, time: string) => {
-    // 創建香港時區的日期時間對象
+    // 創建本地日期時間對象
     const dateTimeString = `${date}T${time}:00`;
-    // 直接創建本地時間對象，不需要時區轉換
     return new Date(dateTimeString);
+  };
 
   useEffect(() => {
     if (formData.體重 && formData.院友id && formData.記錄類型 === '體重控制') {
@@ -145,24 +145,12 @@ const HealthRecordModal: React.FC<HealthRecordModalProps> = ({
     console.log('記錄時間毫秒:', recordDateTime.getTime());
     console.log('當前時間毫秒:', now.getTime());
     console.log('時間差(分鐘):', (recordDateTime.getTime() - now.getTime()) / (1000 * 60));
-    // 創建記錄時間對象
-    const recordDateTime = new Date(`${formData.記錄日期}T${formData.記錄時間}:00`);
-    const now = new Date(); // 使用本地當前時間
-    
-    console.log('=== 日期時間驗證 ===');
-    console.log('輸入的記錄日期:', formData.記錄日期);
-    console.log('輸入的記錄時間:', formData.記錄時間);
-    console.log('解析後的記錄時間:', recordDateTime);
-    console.log('當前時間:', now);
     console.log('記錄時間是否晚於當前時間:', recordDateTime > now);
     
     if (recordDateTime > now) {
       console.log('觸發未來時間確認對話框');
-      console.log('觸發未來時間確認對話框');
       setShowDateTimeConfirm(true);
       return;
-    } else {
-      console.log('記錄時間不是未來時間，直接儲存');
     } else {
       console.log('記錄時間不是未來時間，直接儲存');
     }
@@ -200,28 +188,7 @@ const HealthRecordModal: React.FC<HealthRecordModalProps> = ({
       
       // 如果有任務完成回調，傳遞記錄的實際日期時間
       if (onTaskCompleted) {
-                    className="form-input"
-                  >
-                    <option value="">所有類型</option>
-                    <option value="私位">私位</option>
-                    <option value="買位">買位</option>
-                    <option value="院舍卷">院舍卷</option>
-                    <option value="暫住">暫住</option>
-                  </select>
-                </div>
-                
-                <div>
-                  <label className="form-label">在住狀態</label>
-                  <select
-                    value={advancedFilters.在住狀態}
-                    onChange={(e) => setAdvancedFilters(prev => ({ ...prev, 在住狀態: e.target.value }))}
-                    className="form-input"
-                  >
-                    <option value="在住">僅在住院友</option>
-                    <option value="已退住">僅已退住院友</option>
-                    <option value="">全部院友</option>
-                  </select>
-                </div>
+        // 使用本地時區的記錄時間
         const recordDateTime = new Date(`${formData.記錄日期}T${formData.記錄時間}:00`);
         console.log('=== HealthRecordModal 任務完成回調 ===');
         console.log('記錄日期:', formData.記錄日期);
