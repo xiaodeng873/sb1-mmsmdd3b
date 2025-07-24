@@ -287,6 +287,8 @@ const Dashboard: React.FC = () => {
 
       {/* Recent Activity */}
       <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
+        {/* 留空第一欄 */}
+        <div className="hidden lg:block"></div>
 
         {/* 監測任務 */}
         <div className="card p-6 lg:col-span-2">
@@ -301,64 +303,65 @@ const Dashboard: React.FC = () => {
           </div>
           <div className="space-y-3">
             {urgentMonitoringTasks.length > 0 ? (
-              urgentMonitoringTasks.map((task, index) => {
-                const patient = patients.find(p => p.院友id === task.patient_id);
-                const status = getTaskStatus(task);
-                return (
-                  <div 
-                    key={task.id} 
-                    className={`relative flex items-center space-x-3 p-3 ${getTaskTimeBackgroundClass(task.next_due_at)} rounded-lg cursor-pointer transition-colors ${index % 4 === 0 || index % 4 === 1 ? 'lg:mr-3' : ''}`}
-                    onClick={() => handleTaskClick(task)}
-                    style={{ width: index % 4 < 2 ? '48%' : '100%', display: 'inline-block', verticalAlign: 'top' }}
-                  >
-                    {task.notes && isMonitoringTask(task.health_record_type) && (
-                      <div className={`absolute top-2 right-2 px-2 py-1 rounded-full text-xs font-medium ${getNotesBadgeClass(task.notes)}`}>
-                        {task.notes}
-                      </div>
-                    )}
-                    <div className="w-10 h-10 bg-blue-100 rounded-full overflow-hidden flex items-center justify-center">
-                      {patient?.院友相片 ? (
-                        <img 
-                          src={patient.院友相片} 
-                          alt={patient.中文姓名} 
-                          className="w-full h-full object-cover"
-                        />
-                      ) : (
-                        <User className="h-5 w-5 text-blue-600" />
+              <div className="flex flex-wrap -mx-1.5">
+                {urgentMonitoringTasks.map((task, index) => {
+                  const patient = patients.find(p => p.院友id === task.patient_id);
+                  const status = getTaskStatus(task);
+                  return (
+                    <div 
+                      key={task.id} 
+                      className={`relative flex items-center space-x-3 p-3 ${getTaskTimeBackgroundClass(task.next_due_at)} rounded-lg cursor-pointer transition-colors w-[48%] mx-1.5 mb-3`}
+                      onClick={() => handleTaskClick(task)}
+                    >
+                      {task.notes && isMonitoringTask(task.health_record_type) && (
+                        <div className={`absolute top-2 right-2 px-2 py-1 rounded-full text-xs font-medium ${getNotesBadgeClass(task.notes)}`}>
+                          {task.notes}
+                        </div>
                       )}
-                    </div>
-                    <div className="flex-1">
-                      <div className="flex items-center space-x-2">
-                        <p className="font-medium text-gray-900">{patient?.中文姓名}</p>
-                        <span className="text-xs text-gray-500">({patient?.床號})</span>
+                      <div className="w-10 h-10 bg-blue-100 rounded-full overflow-hidden flex items-center justify-center">
+                        {patient?.院友相片 ? (
+                          <img 
+                            src={patient.院友相片} 
+                            alt={patient.中文姓名} 
+                            className="w-full h-full object-cover"
+                          />
+                        ) : (
+                          <User className="h-5 w-5 text-blue-600" />
+                        )}
                       </div>
-                      <div className="flex items-center space-x-2 mt-1">
-                        {getTaskTypeIcon(task.health_record_type)}
-                        <p className="text-sm text-gray-600">{task.health_record_type}</p>
+                      <div className="flex-1">
+                        <div className="flex items-center space-x-2">
+                          <p className="font-medium text-gray-900">{patient?.中文姓名}</p>
+                          <span className="text-xs text-gray-500">({patient?.床號})</span>
+                        </div>
+                        <div className="flex items-center space-x-2 mt-1">
+                          {getTaskTypeIcon(task.health_record_type)}
+                          <p className="text-sm text-gray-600">{task.health_record_type}</p>
+                        </div>
+                        {task.notes && (
+                          <p className="text-xs text-gray-500 mt-1">{task.notes}</p>
+                        )}
+                        <p className="text-xs text-gray-500">
+                          {isDocumentTask(task.health_record_type)
+                            ? new Date(task.next_due_at).toLocaleDateString('zh-TW')
+                            : new Date(task.next_due_at).toLocaleString('zh-TW')}
+                        </p>
                       </div>
-                      {task.notes && (
-                        <p className="text-xs text-gray-500 mt-1">{task.notes}</p>
-                      )}
-                      <p className="text-xs text-gray-500">
-                        {isDocumentTask(task.health_record_type)
-                          ? new Date(task.next_due_at).toLocaleDateString('zh-TW')
-                          : new Date(task.next_due_at).toLocaleString('zh-TW')}
-                      </p>
+                      <span className={`status-badge flex-shrink-0 ${
+                        status === 'overdue' ? 'bg-red-100 text-red-800' : 
+                        status === 'pending' ? 'bg-green-100 text-green-800' :
+                        status === 'due_soon' ? 'bg-orange-100 text-orange-800' :
+                        'bg-purple-100 text-purple-800'
+                      }`}>
+                        {status === 'overdue' ? '逾期' : 
+                         status === 'pending' ? '未完成' :
+                         status === 'due_soon' ? '即將到期' :
+                         '排程中'}
+                      </span>
                     </div>
-                    <span className={`status-badge flex-shrink-0 ${
-                      status === 'overdue' ? 'bg-red-100 text-red-800' : 
-                      status === 'pending' ? 'bg-green-100 text-green-800' :
-                      status === 'due_soon' ? 'bg-orange-100 text-orange-800' :
-                      'bg-purple-100 text-purple-800'
-                    }`}>
-                      {status === 'overdue' ? '逾期' : 
-                       status === 'pending' ? '未完成' :
-                       status === 'due_soon' ? '即將到期' :
-                       '排程中'}
-                    </span>
-                  </div>
-                );
-              })
+                  );
+                })}
+              </div>
             ) : (
               <div className="text-center py-8 text-gray-500">
                 <CheckSquare className="h-12 w-12 mx-auto mb-2 text-gray-300" />
