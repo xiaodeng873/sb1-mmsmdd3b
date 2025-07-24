@@ -147,7 +147,15 @@ const HealthRecordModal: React.FC<HealthRecordModalProps> = ({
     console.log('當前時間毫秒:', now.getTime());
     console.log('時間差(分鐘):', (recordDateTime.getTime() - now.getTime()) / (1000 * 60));
     
+    console.log('=== 日期時間驗證 ===');
+    console.log('輸入的記錄日期:', formData.記錄日期);
+    console.log('輸入的記錄時間:', formData.記錄時間);
+    console.log('解析後的記錄時間:', recordDateTime);
+    console.log('當前時間:', now);
+    console.log('記錄時間是否晚於當前時間:', recordDateTime > now);
+    
     if (recordDateTime > now) {
+      console.log('觸發未來時間確認對話框');
       console.log('觸發未來時間確認對話框');
       setShowDateTimeConfirm(true);
       return;
@@ -188,6 +196,7 @@ const HealthRecordModal: React.FC<HealthRecordModalProps> = ({
       
       // 如果有任務完成回調，傳遞記錄的實際日期時間
       if (onTaskCompleted) {
+        // 使用本地時區的記錄時間
         const recordDateTime = new Date(`${formData.記錄日期}T${formData.記錄時間}:00`);
         console.log('=== HealthRecordModal 任務完成回調 ===');
         console.log('記錄日期:', formData.記錄日期);
